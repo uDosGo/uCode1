@@ -10,6 +10,7 @@ use axum::{
 };
 use serde_json::{json, Value};
 use std::net::SocketAddr;
+use log::error;
 
 // Import your existing MCP tools directly
 use ucode1_mcp::tools::spark_launch::{spark_launch, SparkLaunchInput};
@@ -27,7 +28,21 @@ async fn handle_tool(Path(tool_name): Path<String>, Json(payload): Json<Value>) 
             let input = SparkLaunchInput {
                 prompt: prompt.to_string(),
             };
-            let output = spark_launch(input).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            // Run blocking function in a separate thread
+            let output = tokio::task::spawn_blocking(move || {
+                spark_launch(input)
+            }).await;
+            let output = match output {
+                Ok(Ok(val)) => val,
+                Ok(Err(e)) => {
+                    error!("spark_launch failed: {}", e);
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+                Err(e) => {
+                    error!("spark_launch task failed: {:?}", e);
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+            };
             serde_json::to_value(output).unwrap()
         }
         "agentic_workflow_create" => {
@@ -38,7 +53,20 @@ async fn handle_tool(Path(tool_name): Path<String>, Json(payload): Json<Value>) 
                 workflow_name: "workflow".to_string(), // Default name
                 description: desc.to_string(),
             };
-            let output = agentic_workflow_create(input).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            let output = tokio::task::spawn_blocking(move || {
+                agentic_workflow_create(input)
+            }).await;
+            let output = match output {
+                Ok(Ok(val)) => val,
+                Ok(Err(e)) => {
+                    error!("agentic_workflow_create failed: {}", e);
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+                Err(e) => {
+                    error!("agentic_workflow_create task failed: {:?}", e);
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+            };
             serde_json::to_value(output).unwrap()
         }
         "flat_data_schedule" => {
@@ -51,7 +79,20 @@ async fn handle_tool(Path(tool_name): Path<String>, Json(payload): Json<Value>) 
                 schedule: schedule.to_string(),
                 destination_path: "data/".to_string(),
             };
-            let output = flat_data_schedule(input).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            let output = tokio::task::spawn_blocking(move || {
+                flat_data_schedule(input)
+            }).await;
+            let output = match output {
+                Ok(Ok(val)) => val,
+                Ok(Err(e)) => {
+                    error!("flat_data_schedule failed: {}", e);
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+                Err(e) => {
+                    error!("flat_data_schedule task failed: {:?}", e);
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+            };
             serde_json::to_value(output).unwrap()
         }
         "copernicus_index" => {
@@ -60,7 +101,20 @@ async fn handle_tool(Path(tool_name): Path<String>, Json(payload): Json<Value>) 
                 repo_url: repo.to_string(),
                 index_path: "~/Code/Vault/indexes".to_string(),
             };
-            let output = copernicus_index(input).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            let output = tokio::task::spawn_blocking(move || {
+                copernicus_index(input)
+            }).await;
+            let output = match output {
+                Ok(Ok(val)) => val,
+                Ok(Err(e)) => {
+                    error!("copernicus_index failed: {}", e);
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+                Err(e) => {
+                    error!("copernicus_index task failed: {:?}", e);
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+            };
             serde_json::to_value(output).unwrap()
         }
         "discover_repo" => {
@@ -68,14 +122,55 @@ async fn handle_tool(Path(tool_name): Path<String>, Json(payload): Json<Value>) 
             let input = DiscoverRepoInput {
                 repo_url: repo.to_string(),
             };
-            let output = discover_repo(input).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            let output = tokio::task::spawn_blocking(move || {
+                discover_repo(input)
+            }).await;
+            let output = match output {
+                Ok(Ok(val)) => val,
+                Ok(Err(e)) => {
+                    error!("discover_repo failed: {}", e);
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+                Err(e) => {
+                    error!("discover_repo task failed: {:?}", e);
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+            };
             serde_json::to_value(output).unwrap()
         }
         "system_status" => {
-            system_status(serde_json::json!({})).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+            let output = tokio::task::spawn_blocking(|| {
+                system_status(serde_json::json!({}))
+            }).await;
+            let output = match output {
+                Ok(Ok(val)) => val,
+                Ok(Err(e)) => {
+                    error!("system_status failed: {}", e);
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+                Err(e) => {
+                    error!("system_status task failed: {:?}", e);
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+            };
+            output
         }
         "plugin_list" => {
-            plugin_list(serde_json::json!({})).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+            let output = tokio::task::spawn_blocking(|| {
+                plugin_list(serde_json::json!({}))
+            }).await;
+            let output = match output {
+                Ok(Ok(val)) => val,
+                Ok(Err(e)) => {
+                    error!("plugin_list failed: {}", e);
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+                Err(e) => {
+                    error!("plugin_list task failed: {:?}", e);
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+            };
+            output
         }
         _ => return Err(StatusCode::NOT_FOUND),
     };
