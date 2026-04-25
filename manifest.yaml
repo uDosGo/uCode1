@@ -1,0 +1,6 @@
+name: uCode1
+version: 0.1.0
+modules:
+  - base-node@1.0
+  - ok-helper@0.9   # from Registry (will be promoted later)
+  - spatial-core@0.9
