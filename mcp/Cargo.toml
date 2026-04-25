@@ -23,5 +23,12 @@ interprocess = "2.0"
 log = "0.4"
 env_logger = "0.11"
 
+# HTTP client
+reqwest = { version = "0.11", features = ["blocking", "json"] }
+
+# Utilities
+base64 = "0.21"
+tempfile = "3.8"
+
 [features]
 default = []

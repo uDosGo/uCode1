@@ -11,6 +11,8 @@ use std::os::unix::net::{UnixListener, UnixStream};
 use std::io::{Write, BufRead, BufReader, BufWriter};
 use std::thread;
 
+pub mod tools;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub enum McpRequest {
     ListNotes,
