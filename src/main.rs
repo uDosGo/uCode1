@@ -12,6 +12,9 @@ use geo::Point;
 mod modes;
 use modes::AppMode;
 
+mod mcp;
+use mcp::tools::*;
+
 #[tokio::main]
 async fn main() {
     // Initialize logging
@@ -71,6 +74,41 @@ async fn main() {
         .subcommand(
             Command::new("tui")
                 .about("Launch Terminal User Interface")
+        )
+        .subcommand(
+            Command::new("mcp")
+                .about("MCP (Model Context Protocol) tools")
+                .subcommand(
+                    Command::new("spark-launch")
+                        .about("Launch a Spark app")
+                        .arg(Arg::new("prompt").required(true).help("Prompt for Spark"))
+                )
+                .subcommand(
+                    Command::new("agentic-workflow")
+                        .about("Create an agentic workflow")
+                        .arg(Arg::new("repo").required(true).help("Repository (owner/repo)"))
+                        .arg(Arg::new("name").required(true).help("Workflow name"))
+                        .arg(Arg::new("description").required(true).help("Workflow description"))
+                )
+                .subcommand(
+                    Command::new("flat-data")
+                        .about("Schedule flat data fetch")
+                        .arg(Arg::new("repo").required(true).help("Repository (owner/repo)"))
+                        .arg(Arg::new("url").required(true).help("Data URL"))
+                        .arg(Arg::new("schedule").required(true).help("Cron schedule"))
+                        .arg(Arg::new("destination").required(true).help("Destination path"))
+                )
+                .subcommand(
+                    Command::new("copernicus-index")
+                        .about("Create a Copernicus index")
+                        .arg(Arg::new("repo").required(true).help("Repository URL"))
+                        .arg(Arg::new("index-path").required(true).help("Index path"))
+                )
+                .subcommand(
+                    Command::new("discover-repo")
+                        .about("Discover and test a repository")
+                        .arg(Arg::new("repo").required(true).help("Repository URL"))
+                )
         )
         .subcommand(
             Command::new("map")
@@ -232,6 +270,105 @@ async fn main() {
             // Keep the main process alive
             tokio::signal::ctrl_c().await.expect("Failed to listen for Ctrl+C");
             println!("Shutting down...");
+        }
+    }
+
+    // MCP Tools Command Handler
+    if let Some(("mcp", mcp_matches)) = matches.subcommand() {
+        match mcp_matches.subcommand() {
+            Some(("spark-launch", spark_matches)) => {
+                let prompt = spark_matches.get_one::<String>("prompt").unwrap();
+                let input = SparkLaunchInput {
+                    prompt: prompt.to_string(),
+                };
+                match spark_launch(input) {
+                    Ok(output) => {
+                        println!("Spark app launched successfully!");
+                        println!("Preview URL: {}", output.preview_url);
+                    }
+                    Err(e) => {
+                        eprintln!("Error launching Spark app: {}", e);
+                    }
+                }
+            }
+            Some(("agentic-workflow", workflow_matches)) => {
+                let repo = workflow_matches.get_one::<String>("repo").unwrap();
+                let name = workflow_matches.get_one::<String>("name").unwrap();
+                let description = workflow_matches.get_one::<String>("description").unwrap();
+                let input = AgenticWorkflowCreateInput {
+                    repo: repo.to_string(),
+                    workflow_name: name.to_string(),
+                    description: description.to_string(),
+                };
+                match agentic_workflow_create(input) {
+                    Ok(output) => {
+                        println!("Agentic workflow created successfully!");
+                        println!("{}", output.message);
+                    }
+                    Err(e) => {
+                        eprintln!("Error creating agentic workflow: {}", e);
+                    }
+                }
+            }
+            Some(("flat-data", flat_data_matches)) => {
+                let repo = flat_data_matches.get_one::<String>("repo").unwrap();
+                let url = flat_data_matches.get_one::<String>("url").unwrap();
+                let schedule = flat_data_matches.get_one::<String>("schedule").unwrap();
+                let destination = flat_data_matches.get_one::<String>("destination").unwrap();
+                let input = FlatDataScheduleInput {
+                    repo: repo.to_string(),
+                    url: url.to_string(),
+                    schedule: schedule.to_string(),
+                    destination_path: destination.to_string(),
+                };
+                match flat_data_schedule(input) {
+                    Ok(output) => {
+                        println!("Flat data schedule created successfully!");
+                        println!("{}", output.message);
+                    }
+                    Err(e) => {
+                        eprintln!("Error creating flat data schedule: {}", e);
+                    }
+                }
+            }
+            Some(("copernicus-index", copernicus_matches)) => {
+                let repo = copernicus_matches.get_one::<String>("repo").unwrap();
+                let index_path = copernicus_matches.get_one::<String>("index-path").unwrap();
+                let input = CopernicusIndexInput {
+                    repo_url: repo.to_string(),
+                    index_path: index_path.to_string(),
+                };
+                match copernicus_index(input) {
+                    Ok(output) => {
+                        println!("Copernicus index created successfully!");
+                        println!("Index path: {}", output.index_path);
+                        println!("{}", output.message);
+                    }
+                    Err(e) => {
+                        eprintln!("Error creating Copernicus index: {}", e);
+                    }
+                }
+            }
+            Some(("discover-repo", discover_matches)) => {
+                let repo = discover_matches.get_one::<String>("repo").unwrap();
+                let input = DiscoverRepoInput {
+                    repo_url: repo.to_string(),
+                };
+                match discover_repo(input) {
+                    Ok(output) => {
+                        println!("Repo discovery completed!");
+                        println!("Success: {}", output.success);
+                        println!("{}", output.message);
+                        println!("\nLogs:\n{}", output.logs);
+                    }
+                    Err(e) => {
+                        eprintln!("Error discovering repo: {}", e);
+                    }
+                }
+            }
+            _ => {
+                println!("Unknown MCP command");
+            }
         }
     }
 }
