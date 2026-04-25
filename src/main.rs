@@ -9,11 +9,13 @@ use ucode1_spatial::{SpatialPoint, MapManager};
 use ucode1_usystem::USystem;
 use geo::Point;
 
+mod tools;
+
 mod modes;
 use modes::AppMode;
 
 mod mcp;
-use mcp::tools::*;
+use ucode1_mcp::tools::*;
 
 #[tokio::main]
 async fn main() {
@@ -108,6 +110,14 @@ async fn main() {
                     Command::new("discover-repo")
                         .about("Discover and test a repository")
                         .arg(Arg::new("repo").required(true).help("Repository URL"))
+                )
+                .subcommand(
+                    Command::new("plugin-list")
+                        .about("List available plugins")
+                )
+                .subcommand(
+                    Command::new("system-status")
+                        .about("Get system status")
                 )
         )
         .subcommand(
@@ -363,6 +373,26 @@ async fn main() {
                     }
                     Err(e) => {
                         eprintln!("Error discovering repo: {}", e);
+                    }
+                }
+            }
+            Some(("plugin-list", _)) => {
+                match plugin_list(serde_json::json!({})) {
+                    Ok(output) => {
+                        println!("{}", serde_json::to_string_pretty(&output).unwrap());
+                    }
+                    Err(e) => {
+                        eprintln!("Error listing plugins: {}", e);
+                    }
+                }
+            }
+            Some(("system-status", _)) => {
+                match system_status(serde_json::json!({})) {
+                    Ok(output) => {
+                        println!("{}", serde_json::to_string_pretty(&output).unwrap());
+                    }
+                    Err(e) => {
+                        eprintln!("Error getting system status: {}", e);
                     }
                 }
             }
