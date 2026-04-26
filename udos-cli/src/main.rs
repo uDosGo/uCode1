@@ -7,10 +7,11 @@ use which::which;
 use portpicker::pick_unused_port;
 use std::os::unix::net::UnixStream;
 
-// Import snack and relic commands
+// Import snack, relic, and publish commands
 mod commands;
 use commands::snack;
 use commands::relic;
+use commands::publish;
 
 // Forward declaration for GridCommands
 #[derive(Subcommand, Debug)]
@@ -259,6 +260,19 @@ enum Commands {
     Relic {
         #[command(subcommand)]
         command: RelicCommands,
+    },
+    
+    /// Publish documentation
+    Publish {
+        /// Publishing engine
+        #[arg(long, default_value = "publishlane")]
+        use: String,
+        /// Config file path
+        #[arg(long, default_value = ".publishlane/config.yaml")]
+        config: String,
+        /// Only build, don't deploy
+        #[arg(long)]
+        build_only: bool,
     },
 
 #[derive(Subcommand, Debug)]
@@ -934,6 +948,22 @@ async fn main() {
         Commands::Relic { command } => {
             handle_relic_command(command).await;
         },
+        Commands::Publish { use: engine, config, build_only } => {
+            handle_publish_command(engine, config, build_only).await;
+        },
+    }
+}
+
+/// Handle publish command
+async fn handle_publish_command(engine: String, config: String, build_only: bool) {
+    match commands::publish::handle(&commands::publish::register().get_matches_from(vec![
+        "publish",
+        "--use", &engine,
+        "--config", &config,
+        "--build-only", build_only.to_string().as_str()
+    ])) {
+        Ok(_) => info!("Publish completed successfully"),
+        Err(e) => error!("Publish failed: {}", e),
     }
 }
 
