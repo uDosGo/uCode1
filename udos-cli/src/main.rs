@@ -7,6 +7,174 @@ use which::which;
 use portpicker::pick_unused_port;
 use std::os::unix::net::UnixStream;
 
+// Import snack and relic commands
+mod commands;
+use commands::snack;
+use commands::relic;
+
+// Forward declaration for GridCommands
+#[derive(Subcommand, Debug)]
+enum GridCommands {
+    /// Initialize a new grid
+    Init {
+        /// Grid width
+        width: usize,
+        /// Grid height
+        height: usize,
+    },
+    
+    /// Add a text layer to the grid
+    Text {
+        /// Layer name
+        layer: String,
+        /// Text to display
+        text: String,
+        /// X position
+        x: usize,
+        /// Y position
+        y: usize,
+        /// Foreground color (0-255)
+        #[arg(default_value_t = 7)]
+        fg: u8,
+        /// Background color (0-255)
+        #[arg(default_value_t = 0)]
+        bg: u8,
+    },
+    
+    /// Draw a border on a layer
+    Border {
+        /// Layer name
+        layer: String,
+    },
+    
+    /// Show current grid state
+    Show,
+    
+    /// Demo grid with multiple layers
+    Demo,
+    
+    /// Export grid to monodraw format
+    Export {
+        /// Output file path
+        path: String,
+    },
+    
+    /// Import grid from monodraw format
+    Import {
+        /// Input file path
+        path: String,
+    },
+}
+
+/// Snack commands
+#[derive(Subcommand, Debug)]
+enum SnackCommands {
+    /// List available snacks
+    List {
+        /// Path to snacks directory
+        #[arg(long, default_value = ".state/snacks")]
+        path: String,
+    },
+    
+    /// Show details of a snack
+    Show {
+        /// Snack ID
+        id: String,
+        /// Path to snacks directory
+        #[arg(long, default_value = ".state/snacks")]
+        path: String,
+    },
+    
+    /// Run a snack
+    Run {
+        /// Snack ID
+        id: String,
+        /// Path to snacks directory
+        #[arg(long, default_value = ".state/snacks")]
+        path: String,
+        /// Input parameters (KEY=VALUE format)
+        #[arg(long, value_name = "KEY=VALUE", multiple_values = true)]
+        params: Vec<String>,
+    },
+    
+    /// Create a new snack
+    Create {
+        /// Snack ID
+        id: String,
+        /// Snack name
+        #[arg(long)]
+        name: String,
+        /// Snack version
+        #[arg(long, default_value = "1.0.0")]
+        version: String,
+        /// Snack kind
+        #[arg(long, default_value = "script")]
+        kind: String,
+        /// Runtime environment
+        #[arg(long, default_value = "bash")]
+        runtime: String,
+        /// Snack code
+        #[arg(long)]
+        code: String,
+        /// Emoji representation
+        #[arg(long)]
+        emoji: Option<String>,
+        /// Comma-separated tags
+        #[arg(long)]
+        tags: Option<String>,
+        /// Path to save snack
+        #[arg(long, default_value = ".state/snacks")]
+        path: String,
+    },
+}
+
+/// Relic commands
+#[derive(Subcommand, Debug)]
+enum RelicCommands {
+    /// Create a relic from a snack
+    Create {
+        /// Snack ID
+        id: String,
+        /// Path to snacks directory
+        #[arg(long, default_value = ".state/snacks")]
+        path: String,
+        /// Output relic path
+        #[arg(long, default_value = ".legacy/relics")]
+        output: String,
+    },
+    
+    /// Unpack a relic to a snack
+    Unpack {
+        /// Relic ID
+        id: String,
+        /// Path to relics directory
+        #[arg(long, default_value = ".legacy/relics")]
+        path: String,
+        /// Output snack path
+        #[arg(long, default_value = ".state/snacks")]
+        output: String,
+    },
+    
+    /// List available relics
+    List {
+        /// Path to relics directory
+        #[arg(long, default_value = ".legacy/relics")]
+        path: String,
+    },
+    
+    /// Run a relic
+    Run {
+        /// Relic ID
+        id: String,
+        /// Path to relics directory
+        #[arg(long, default_value = ".legacy/relics")]
+        path: String,
+        /// Input parameters (KEY=VALUE format)
+        #[arg(long, value_name = "KEY=VALUE", multiple_values = true)]
+        params: Vec<String>,
+    },
+}
+
 #[derive(Parser, Debug)]
 #[command(name = "udos")]
 #[command(about = "uDos Unified Command - Launch and manage all uDos components", long_about = None)]
@@ -74,13 +242,28 @@ enum Commands {
         /// Optional port number
         port: Option<u16>,
     },
-}
+    
+    /// Grid operations and visual display
+    Grid {
+        #[command(subcommand)]
+        command: GridCommands,
+    },
+    
+    /// Manage executable snacks
+    Snack {
+        #[command(subcommand)]
+        command: SnackCommands,
+    },
+    
+    /// Manage snack relics (compressed snacks)
+    Relic {
+        #[command(subcommand)]
+        command: RelicCommands,
+    },
 
+#[derive(Subcommand, Debug)]
+#[derive(Debug)]
 struct ProcessManager {
-    children: Arc<Mutex<Vec<Child>>>, 
-}
-
-impl ProcessManager {
     fn new() -> Self {
         Self {
             children: Arc::new(Mutex::new(Vec::new())),
@@ -346,6 +529,230 @@ async fn handle_daemon_command(process_manager: &ProcessManager, action: &str) {
     }
 }
 
+async fn handle_grid_command(command: &GridCommands) {
+    use grid_core::{GridCanvas, GridLayer, Cell, CellChar};
+    use std::fs;
+    use std::io::Write;
+    
+    match command {
+        GridCommands::Init { width, height } => {
+            info!("Initializing grid: {}x{}", width, height);
+            let mut canvas = GridCanvas::new(*width, *height);
+            
+            // Add a base layer with border
+            let mut base = GridLayer::new("base", *width, *height);
+            base.draw_border();
+            canvas.add_layer(base);
+            
+            // Save to file
+            save_grid(&canvas, "grid.json");
+            info!("✅ Grid initialized and saved to grid.json");
+        }
+        
+        GridCommands::Text { layer, text, x, y, fg, bg } => {
+            info!("Adding text to layer '{}': '{}' at ({},{})", layer, text, x, y);
+            
+            let grid_file = "grid.json";
+            if !std::path::Path::new(grid_file).exists() {
+                error!("Grid not initialized. Run 'udos grid init' first.");
+                return;
+            }
+            
+            let mut canvas: GridCanvas = load_grid(grid_file);
+            canvas.add_text_layer(layer, text, *x, *y, *fg, *bg);
+            save_grid(&canvas, grid_file);
+            info!("✅ Text added to layer '{}'", layer);
+        }
+        
+        GridCommands::Border { layer } => {
+            info!("Adding border to layer '{}'", layer);
+            
+            let grid_file = "grid.json";
+            if !std::path::Path::new(grid_file).exists() {
+                error!("Grid not initialized. Run 'udos grid init' first.");
+                return;
+            }
+            
+            let mut canvas: GridCanvas = load_grid(grid_file);
+            if let Some(layer) = canvas.get_layer_mut(layer) {
+                layer.draw_border();
+                save_grid(&canvas, grid_file);
+                info!("✅ Border added to layer '{}'", layer.name);
+            } else {
+                error!("Layer '{}' not found.", layer);
+            }
+        }
+        
+        GridCommands::Show => {
+            info!("Displaying grid state");
+            
+            let grid_file = "grid.json";
+            if !std::path::Path::new(grid_file).exists() {
+                error!("Grid not initialized. Run 'udos grid init' first.");
+                return;
+            }
+            
+            let canvas: GridCanvas = load_grid(grid_file);
+            let rendered = canvas.render();
+            
+            info!("Grid: {}x{}", canvas.width, canvas.height);
+            info!("Layers: {}", canvas.layers.len());
+            for layer in &canvas.layers {
+                info!("  - {} ({}x{}) {}", layer.name, layer.width, layer.height, if layer.visible { "visible" } else { "hidden" });
+            }
+            
+            // Simple ASCII preview
+            info!("\nPreview (first 10x10):");
+            for y in 0..10.min(canvas.height) {
+                let mut line = String::new();
+                for x in 0..10.min(canvas.width) {
+                    let cell = &rendered[y * canvas.width + x];
+                    let ch = match cell.ch {
+                        CellChar::Ascii(c) => c,
+                        CellChar::TeletextBlock(b) => if b < 32 { ' ' } else { b as char },
+                        CellChar::Custom(ref s) => s.chars().next().unwrap_or('?'),
+                    };
+                    line.push(ch);
+                }
+                info!("{}", line);
+            }
+        }
+        
+        GridCommands::Demo => {
+            info!("Running grid demo...");
+            
+            let mut canvas = GridCanvas::new(40, 20);
+            
+            // Base layer with border
+            let mut base = GridLayer::new("base", 40, 20);
+            base.draw_border();
+            canvas.add_layer(base);
+            
+            // Title
+            canvas.add_text_layer("title", "uCode1 Grid Demo", 2, 1, 14, 0);
+            
+            // Player @ symbol
+            if let Some(layer) = canvas.get_layer_mut("base") {
+                layer.set_cell(20, 10, Cell {
+                    ch: CellChar::Ascii('@'),
+                    fg: 10,
+                    bg: 0,
+                    bold: true,
+                    blink: false,
+                });
+            }
+            
+            // Instructions
+            canvas.add_text_layer("help", "Arrow keys: move", 2, 18, 11, 0);
+            
+            // Save and show
+            save_grid(&canvas, "demo_grid.json");
+            info!("✅ Demo grid created and saved to demo_grid.json");
+            
+            // Show preview
+            let rendered = canvas.render();
+            info!("\nDemo Preview:");
+            for y in 0..20 {
+                let mut line = String::new();
+                for x in 0..40 {
+                    let cell = &rendered[y * 40 + x];
+                    let ch = match cell.ch {
+                        CellChar::Ascii(c) => c,
+                        CellChar::TeletextBlock(b) => if b < 32 { ' ' } else { b as char },
+                        CellChar::Custom(ref s) => s.chars().next().unwrap_or('?'),
+                    };
+                    line.push(ch);
+                }
+                info!("{}", line);
+            }
+        }
+        
+        GridCommands::Export { path } => {
+            info!("Exporting grid to monodraw format: {}", path);
+            
+            let grid_file = "grid.json";
+            if !std::path::Path::new(grid_file).exists() {
+                error!("Grid not initialized. Run 'udos grid init' first.");
+                return;
+            }
+            
+            let canvas: GridCanvas = load_grid(grid_file);
+            
+            // Convert to monodraw format (simple text representation)
+            let rendered = canvas.render();
+            let mut monodraw = String::new();
+            
+            for y in 0..canvas.height {
+                let mut line = String::new();
+                for x in 0..canvas.width {
+                    let cell = &rendered[y * canvas.width + x];
+                    let ch = match cell.ch {
+                        CellChar::Ascii(c) => c,
+                        CellChar::TeletextBlock(b) => if b < 32 { ' ' } else { b as char },
+                        CellChar::Custom(ref s) => s.chars().next().unwrap_or('?'),
+                    };
+                    line.push(ch);
+                }
+                monodraw.push_str(&line);
+                monodraw.push('\n');
+            }
+            
+            if let Err(e) = fs::write(path, monodraw) {
+                error!("Failed to export: {}", e);
+            } else {
+                info!("✅ Grid exported to {}", path);
+            }
+        }
+        
+        GridCommands::Import { path } => {
+            info!("Importing grid from monodraw format: {}", path);
+            
+            if let Ok(content) = fs::read_to_string(path) {
+                let lines: Vec<&str> = content.lines().collect();
+                let height = lines.len();
+                let width = lines.first().map_or(0, |line| line.chars().count());
+                
+                if width == 0 || height == 0 {
+                    error!("Invalid monodraw file: empty or malformed");
+                    return;
+                }
+                
+                let mut canvas = GridCanvas::new(width, height);
+                let mut base = GridLayer::new("imported", width, height);
+                
+                for (y, line) in lines.iter().enumerate() {
+                    for (x, ch) in line.chars().enumerate() {
+                        base.set_cell(x, y, Cell {
+                            ch: CellChar::Ascii(ch),
+                            fg: 7,
+                            bg: 0,
+                            bold: false,
+                            blink: false,
+                        });
+                    }
+                }
+                
+                canvas.add_layer(base);
+                save_grid(&canvas, "grid.json");
+                info!("✅ Grid imported from {}", path);
+                info!("   Size: {}x{}", width, height);
+            } else {
+                error!("Failed to read file: {}", path);
+            }
+        }
+    }
+}
+
+fn save_grid(canvas: &GridCanvas, path: &str) {
+    let json = serde_json::to_string_pretty(canvas).unwrap();
+    fs::write(path, json).expect("Unable to write grid file");
+}
+
+fn load_grid(path: &str) -> GridCanvas {
+    let data = fs::read_to_string(path).expect("Unable to read grid file");
+    serde_json::from_str(&data).expect("Unable to parse grid file")
+}
+
 #[tokio::main]
 async fn main() {
     // Initialize logger only once
@@ -517,5 +924,86 @@ async fn main() {
                 }
             }
         },
+        
+        Commands::Grid { command } => {
+            handle_grid_command(command).await;
+        },
+        Commands::Snack { command } => {
+            handle_snack_command(command).await;
+        },
+        Commands::Relic { command } => {
+            handle_relic_command(command).await;
+        },
     }
 }
+
+/// Handle snack commands
+async fn handle_snack_command(command: SnackCommands) {
+    match command {
+        SnackCommands::List { path } => {
+            if let Err(e) = snack::list::handle(&snack::list::register().get_matches_from(vec!["list", "--path", &path])) {
+                error!("Failed to list snacks: {}", e);
+            }
+        }
+        SnackCommands::Show { id, path } => {
+            if let Err(e) = snack::show::handle(&snack::show::register().get_matches_from(vec!["show", &id, "--path", &path])) {
+                error!("Failed to show snack: {}", e);
+            }
+        }
+        SnackCommands::Run { id, path, params } => {
+            let mut args = vec!["run", &id, "--path", &path];
+            for param in params {
+                args.push("--params");
+                args.push(&param);
+            }
+            if let Err(e) = snack::run::handle(&snack::run::register().get_matches_from(args)) {
+                error!("Failed to run snack: {}", e);
+            }
+        }
+        SnackCommands::Create { id, name, version, kind, runtime, code, emoji, tags, path } => {
+            let mut args = vec!["create", &id, "--name", &name, "--version", &version, "--kind", &kind, "--runtime", &runtime, "--code", &code, "--path", &path];
+            if let Some(emoji_val) = emoji {
+                args.push("--emoji");
+                args.push(&emoji_val);
+            }
+            if let Some(tags_val) = tags {
+                args.push("--tags");
+                args.push(&tags_val);
+            }
+            if let Err(e) = snack::create::handle(&snack::create::register().get_matches_from(args)) {
+                error!("Failed to create snack: {}", e);
+            }
+        }
+    }
+}
+
+/// Handle relic commands
+async fn handle_relic_command(command: RelicCommands) {
+    match command {
+        RelicCommands::Create { id, path, output } => {
+            if let Err(e) = relic::create::handle(&relic::create::register().get_matches_from(vec!["create", &id, "--path", &path, "--output", &output])) {
+                error!("Failed to create relic: {}", e);
+            }
+        }
+        RelicCommands::Unpack { id, path, output } => {
+            if let Err(e) = relic::unpack::handle(&relic::unpack::register().get_matches_from(vec!["unpack", &id, "--path", &path, "--output", &output])) {
+                error!("Failed to unpack relic: {}", e);
+            }
+        }
+        RelicCommands::List { path } => {
+            if let Err(e) = relic::list::handle(&relic::list::register().get_matches_from(vec!["list", "--path", &path])) {
+                error!("Failed to list relics: {}", e);
+            }
+        }
+        RelicCommands::Run { id, path, params } => {
+            let mut args = vec!["run", &id, "--path", &path];
+            for param in params {
+                args.push("--params");
+                args.push(&param);
+            }
+            if let Err(e) = relic::run::handle(&relic::run::register().get_matches_from(args)) {
+                error!("Failed to run relic: {}", e);
+            }
+        }
+    }
+}}
