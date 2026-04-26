@@ -3,7 +3,17 @@ name = "ucode1-core"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+name = "ucode1_core"
+path = "src/lib.rs"
+
+[[bin]]
+name = "ucode1-core"
+path = "src/main.rs"
+
 [dependencies]
 clap = { version = "4.0", features = ["derive"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
+serde_json = "1.0"
+grid-core = { path = "../grid-core" }
