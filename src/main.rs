@@ -2,11 +2,13 @@ use clap::{Arg, Command};
 use std::path::Path;
 use std::fs;
 use std::collections::HashMap;
+use std::io::Write;
 use ucode1_vault_bridge::Vault;
 use ucode1_ok_agent::{OkAgent, Intent};
 use ucode1_mcp::McpServer;
 use ucode1_spatial::{SpatialPoint, MapManager};
 use ucode1_usystem::USystem;
+
 use geo::Point;
 
 mod tools;
@@ -184,6 +186,7 @@ async fn main() {
                         .required(false)
                 )
         )
+
         .get_matches();
 
     // Parse mode flags
@@ -269,6 +272,7 @@ async fn main() {
         } else {
             handle_help_command(&usystem);
         }
+
     } else {
         println!("Ready.");
         
@@ -701,3 +705,5 @@ fn handle_note_command(matches: &clap::ArgMatches, vault_path: &str) {
         }
     }
 }
+
+

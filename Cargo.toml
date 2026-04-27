@@ -5,8 +5,8 @@ members = [
     "spatial",
     "tui",
     "vault-bridge",
-    "udos-cli",
-    "usystem"
+    "usystem",
+    "grid-core"
 ]
 
 [package]
@@ -34,6 +34,7 @@ ucode1-tui = { path = "tui" }
 ucode1-spatial = { path = "spatial" }
 ucode1-feed-spool = { path = "feed-spool" }
 ucode1-usystem = { path = "usystem" }
+
 shellexpand = "3.1"
 tokio = { version = "1", features = ["full"] }
 log = "0.4"
