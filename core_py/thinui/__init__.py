@@ -17,6 +17,15 @@ from .formats import (
     ThinUIComponentType
 )
 
+# ThinUI API Server (optional dependency on Flask)
+try:
+    from .api import create_api_server, run_api_server
+    API_AVAILABLE = True
+except ImportError:
+    API_AVAILABLE = False
+    create_api_server = None
+    run_api_server = None
+
 __all__ = [
     "ThinUIGridBridge",
     "ThinUIGridData",
@@ -25,4 +34,7 @@ __all__ = [
     "ThinUIComponent",
     "ThinUIComponentType",
     "ThinUILayout",
+    "create_api_server",
+    "run_api_server",
+    "API_AVAILABLE",
 ]
