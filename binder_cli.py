@@ -265,7 +265,7 @@ class BinderCLI:
                 self.registry.save_binder(file_binder)
                 print(f"✓ Imported binder from '{args.from_file}'")
                 print(f"  ID: {file_binder.metadata.id}")
-                print(f"  Title: {file_binder.metadata.title}")
+                print(f"  Name: {file_binder.metadata.name}")
                 return 0
             except Exception as e:
                 print(f"Error loading file: {e}")
@@ -292,7 +292,7 @@ class BinderCLI:
         
         # Save to registry
         filepath = self.registry.save_binder(binder)
-        print(f"✓ Created binder: {binder.metadata.title}")
+        print(f"✓ Created binder: {binder.metadata.name}")
         print(f"  ID: {binder.metadata.id}")
         print(f"  Saved to: {filepath}")
         
@@ -315,8 +315,8 @@ class BinderCLI:
             # Check metadata
             if not binder.metadata.id:
                 errors.append("Missing ID")
-            if not binder.metadata.title:
-                errors.append("Missing title")
+            if not binder.metadata.name:
+                errors.append("Missing name")
             
             # Check integrity
             if not binder.verify_integrity():
@@ -330,7 +330,7 @@ class BinderCLI:
             else:
                 print("✅ Validation Passed")
                 print(f"  ID: {binder.metadata.id}")
-                print(f"  Title: {binder.metadata.title}")
+                print(f"  Name: {binder.metadata.name}")
                 print(f"  Checksum: {binder.checksum}")
                 return 0
         
@@ -357,14 +357,15 @@ class BinderCLI:
         
         if args.list:
             print("Extractable Items:")
-            if binder.entries:
-                for i, entry in enumerate(binder.entries):
+            entries = self._flatten_entries(binder.root)
+            if entries:
+                for i, entry in enumerate(entries):
                     print(f"  Entry {i+1}: {entry.name} ({entry.entry_type})")
                     for j, res in enumerate(entry.resources):
-                        print(f"    Resource {j+1}: {res.resource_type} - {res.source}")
-            if binder.resources:
-                for i, res in enumerate(binder.resources):
-                    print(f"  Resource {i+1}: {res.resource_type} - {res.source}")
+                        print(f"    Resource {j+1}: {res.resource_type} - {res.name}")
+            if binder.root.resources:
+                for i, res in enumerate(binder.root.resources):
+                    print(f"  Resource {i+1}: {res.resource_type} - {res.name}")
             return 0
         
         # Extract specific entry or all
@@ -373,10 +374,11 @@ class BinderCLI:
             entry = None
             try:
                 index = int(args.entry) - 1
-                if 0 <= index < len(binder.entries):
-                    entry = binder.entries[index]
+                entries_list = self._flatten_entries(binder.root)
+                if 0 <= index < len(entries_list):
+                    entry = entries_list[index]
             except ValueError:
-                for e in binder.entries:
+                for e in self._flatten_entries(binder.root):
                     if e.name == args.entry:
                         entry = e
                         break
@@ -396,17 +398,18 @@ class BinderCLI:
         
         # Extract all
         all_content = []
-        if binder.entries:
-            for entry in binder.entries:
+        entries_list = self._flatten_entries(binder.root)
+        if entries_list:
+            for entry in entries_list:
                 all_content.append(f"# {entry.name}\n")
                 all_content.append(self._entry_to_text(entry))
                 all_content.append("\n")
         
-        if binder.resources:
-            for res in binder.resources:
+        if binder.root.resources:
+            for res in binder.root.resources:
                 all_content.append(f"# Resource: {res.resource_type}\n")
-                all_content.append(f"Source: {res.source}\n")
-                all_content.append(f"Data: {res.data}\n\n")
+                all_content.append(f"Name: {res.name}\n")
+                all_content.append(f"Checksum: {res.checksum}\n\n")
         
         if args.output:
             with open(args.output, 'w') as f:
@@ -422,19 +425,35 @@ class BinderCLI:
         lines = []
         lines.append(f"Name: {entry.name}")
         lines.append(f"Type: {entry.entry_type}")
-        if entry.description:
-            lines.append(f"Description: {entry.description}")
-        if entry.data:
-            lines.append(f"Data: {json.dumps(entry.data, indent=2)}")
-        if entry.entries:
-            lines.append(f"Sub-entries: {len(entry.entries)}")
-            for sub in entry.entries:
+        if entry.value:
+            value_str = json.dumps(entry.value, indent=2) if isinstance(entry.value, (dict, list)) else str(entry.value)
+            lines.append(f"Value: {value_str}")
+        if entry.children:
+            lines.append(f"Children: {len(entry.children)}")
+            for sub in entry.children:
                 lines.append(f"  - {sub.name}")
         if entry.resources:
             lines.append(f"Resources: {len(entry.resources)}")
             for res in entry.resources:
-                lines.append(f"  - {res.resource_type}: {res.source}")
+                lines.append(f"  - {res.resource_type}: {res.name}")
         return '\n'.join(lines)
+    
+    def _flatten_entries(self, entry) -> list:
+        """Flatten entry tree into a list of all entries"""
+        result = [entry]
+        for child in entry.children:
+            result.extend(self._flatten_entries(child))
+        return result
+    
+    def _flatten_resources(self, entry) -> list:
+        """Flatten all resources from entry tree into a list"""
+        result = []
+        # Add resources from this entry
+        result.extend(entry.resources)
+        # Add resources from children
+        for child in entry.children:
+            result.extend(self._flatten_resources(child))
+        return result
     
     def _command_pack(self, args):
         """Pack content into a binder"""
@@ -455,7 +474,7 @@ class BinderCLI:
             # Create new binder if doesn't exist
             metadata = BinderMetadata(
                 id=args.binder_id,
-                title=args.binder_id.replace('_', ' ').title(),
+                name=args.binder_id.replace('_', ' ').title(),
                 version='1.0.0'
             )
             binder = Binder(metadata=metadata)
@@ -526,31 +545,32 @@ class BinderCLI:
                 
                 # Search in metadata
                 if not args.name_only:
-                    if query in (binder.metadata.title or '').lower():
-                        results.append((binder, f"Title: {binder.metadata.title}"))
+                    if query in (binder.metadata.name or '').lower():
+                        results.append((binder, f"Name: {binder.metadata.name}"))
                     if query in (binder.metadata.description or '').lower():
                         results.append((binder, f"Description: {binder.metadata.description}"))
                 
                 # Search in entries
-                for entry in binder.entries:
+                for entry in self._flatten_entries(binder.root):
                     if query in entry.name.lower():
                         results.append((binder, f"Entry: {entry.name}"))
-                    if not args.name_only and entry.description:
-                        if query in entry.description.lower():
-                            results.append((binder, f"Entry description: {entry.name}"))
+                    if not args.name_only and entry.value:
+                        value_str = json.dumps(entry.value).lower() if isinstance(entry.value, (dict, list)) else str(entry.value).lower()
+                        if query in value_str:
+                            results.append((binder, f"Entry value: {entry.name}"))
                     
-                    # Search in entry data
-                    if not args.name_only and entry.data:
-                        data_str = json.dumps(entry.data).lower()
+                    # Search in entry value/data
+                    if not args.name_only and entry.value:
+                        data_str = json.dumps(entry.value).lower() if isinstance(entry.value, (dict, list)) else str(entry.value).lower()
                         if query in data_str:
                             results.append((binder, f"Entry data: {entry.name}"))
                 
                 # Search in resources
-                for res in binder.resources:
+                for res in self._flatten_resources(binder.root):
                     if query in res.resource_type.lower():
                         results.append((binder, f"Resource type: {res.resource_type}"))
-                    if not args.name_only and query in (res.source or '').lower():
-                        results.append((binder, f"Resource: {res.source}"))
+                    if not args.name_only and query in (res.name or '').lower():
+                        results.append((binder, f"Resource: {res.name}"))
                         
             except Exception as e:
                 print(f"Warning: Error loading {binder_info['filename']}: {e}")
@@ -653,7 +673,7 @@ class BinderCLI:
         
         info = {
             'id': binder.metadata.id,
-            'title': binder.metadata.title,
+            'name': binder.metadata.name,
             'version': binder.metadata.version,
             'description': binder.metadata.description,
             'author': binder.metadata.author,
@@ -661,7 +681,7 @@ class BinderCLI:
             'updated_at': binder.metadata.updated_at,
             'checksum': binder.checksum,
             'integrity': binder.verify_integrity(),
-            'entries': len(binder.entries),
+            'entries': len(self._flatten_entries(binder.root)),
             'resources': len(binder.resources),
             'size': binder.calculate_size()
         }
@@ -717,9 +737,9 @@ class BinderCLI:
         """Convert binder to USXD format"""
         metadata = USXDMetadata(
             id=binder.metadata.id,
-            title=binder.metadata.title,
+            title=binder.metadata.name,
             version=binder.metadata.version,
-            description=binder.metadata.description or f"USXD export of {binder.metadata.title}",
+            description=binder.metadata.description or f"USXD export of {binder.metadata.name}",
             author=binder.metadata.author,
             created_at=binder.metadata.created_at
         )
@@ -740,15 +760,14 @@ class BinderCLI:
         doc.add_section(metadata_section)
         
         # Add entries as sections
-        for i, entry in enumerate(binder.entries):
+        for i, entry in enumerate(self._flatten_entries(binder.root)):
             entry_section = USXDSection(
                 id=f'entry_{i}',
                 name=entry.name,
                 section_type='content',
                 content={
                     'type': entry.entry_type,
-                    'description': entry.description,
-                    'data': entry.data,
+                    'value': entry.value,
                     'resources': len(entry.resources)
                 }
             )
@@ -783,13 +802,14 @@ class BinderCLI:
                 target_binder = self.registry.load_binder(args.binder_id)
                 
                 # Import entries
-                for entry in import_binder.entries:
+                for entry in self._flatten_entries(import_binder.root):
                     if args.as_entry:
                         entry.name = args.as_entry
-                    target_binder.add_entry(entry)
+                    target_binder.add_entry("root", entry)
                 
                 self.registry.save_binder(target_binder)
-                print(f"✓ Imported {len(import_binder.entries)} entries from '{args.file}'")
+                entries_count = len(self._flatten_entries(import_binder.root))
+                print(f"✓ Imported {entries_count} entries from '{args.file}'")
                 return 0
                 
             except:
@@ -805,11 +825,10 @@ class BinderCLI:
                     entry = BinderEntry(
                         name=args.as_entry or doc.metadata.title,
                         entry_type='usxd',
-                        description=doc.metadata.description,
-                        data={'usxd_document': doc.to_dict()}
+                        value={'usxd_document': doc.to_dict()}
                     )
                     
-                    binder.add_entry(entry)
+                    binder.add_entry("root", entry)
                     self.registry.save_binder(binder)
                     print(f"✓ Imported USXD document as entry '{entry.name}'")
                     return 0
