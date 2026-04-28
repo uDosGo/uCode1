@@ -25,6 +25,7 @@ from .binder.models import Binder, BinderMetadata, BinderEntry, BinderResource, 
 from .usxd.models import USXDDocument, USXDMetadata, USXDSection, USXDRegistry, USXDFormat
 from .usxd.grid_parser import ASCIIGridParser, ParsedGrid, GridCell, GridComponent, GridFormat
 from .usxd.component_mapper import ComponentMapper, ComponentMapping, ComponentType, ThinUIProperties
+from .usxd.grid_renderer import GridRenderer, Style, ColorMode, TerminalUI
 
 __all__ = [
     "snack",
@@ -70,5 +71,10 @@ __all__ = [
     "ComponentMapper",
     "ComponentMapping",
     "ComponentType",
-    "ThinUIProperties"
+    "ThinUIProperties",
+    # Grid Renderer
+    "GridRenderer",
+    "Style",
+    "ColorMode",
+    "TerminalUI"
 ]
