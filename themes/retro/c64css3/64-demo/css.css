@@ -1,0 +1,698 @@
+/* http://meyerweb.com/eric/tools/css/reset/
+   v2.0 | 20110126
+   License: none (public domain)
+*/
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed,
+figure, figcaption, footer, header, hgroup,
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section {
+  display: block;
+}
+body {
+  line-height: 1;
+}
+ol, ul {
+  list-style: none;
+}
+blockquote, q {
+  quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+  content: '';
+  content: none;
+}
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+*, *:before, *:after {
+  -moz-box-sizing: border-box; box-sizing: border-box; box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  background: #333;
+}
+.credits {
+  text-decoration: none;
+  font: normal 8px "C64 User Mono";
+  color: #777;
+  position: absolute;
+  right: 1em;
+  bottom: 1em;
+}
+.credits:hover {
+  color: #aaa;
+}
+
+/**
+ * Fonts
+ */
+@font-face {
+   font-family: "C64 User Mono";
+   src: url("C64_User_Mono_v1.0-STYLE.eot");
+   src: url("C64_User_Mono_v1.0-STYLE.eot?#iefix") format("embedded-opentype"),
+        url("C64_User_Mono_v1.0-STYLE.woff") format("woff"),
+        url("C64_User_Mono_v1.0-STYLE.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Giana";
+  src: url("giana.eot");
+  src: url("giana.eot?#iefix") format("embedded-opentype"),
+       url("giana.woff") format("woff"),
+       url("giana.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+/**
+ * The blue C64 screen
+ */
+.spacebar,
+section {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 640px;
+  height: 400px;
+
+  margin-top: -200px;
+  margin-left: -320px;
+
+  color: #6076c5;
+  font: normal 16px "C64 User Mono";
+  text-transform: uppercase;
+
+  z-index: 1;
+}
+/* Border of the sceen */
+section:before {
+  position: absolute;
+  left: -64px;
+  right: -64px;
+  top: -74px;
+  bottom: -74px;
+  content: "";
+  background: #6076c5;
+  z-index: -1;
+}
+/* Inside screen */
+section:after {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  content: "";
+  background: #20398d;
+  z-index: -1;
+}
+
+/**
+ * Blue screen animations
+ */
+@keyframes cursor {
+  0% {
+    background: #20398d;
+  }
+  50% {
+    background: #6076c5;
+  }
+}
+@keyframes line_one {
+  from {
+    height: auto;
+    text-indent: 0;
+  }
+  to {
+    height: auto;
+    width: 23em; /* Number of chars + one for cursor */
+    text-indent: 0;
+  }
+}
+@keyframes line_two {
+  to {
+    width: 100%;
+    height: 100%;
+  }
+}
+@keyframes line_three {
+  from {
+    height: 100%;
+    text-indent: 0;
+  }
+  to {
+    height: 100%;
+    width: 4em; /* Number of chars + one for cursor */
+    text-indent: 0;
+  }
+}
+@keyframes decrunch {
+  /* Firefox and IE10 won't animate linear-gradients, so we fall back to full border color change */
+  20% {
+    background: #b8b8b8;
+    background-image: linear-gradient(to bottom, #ffffff 5%,#000000 5%,#000000 10%,#b8b8b8 10%,#b8b8b8 16%,#5090d0 16%,#5090d0 23%,#98ff98 23%,#98ff98 28%,#808080 28%,#808080 33%,#484848 33%,#484848 40%,#c87870 40%,#c87870 46%,#472b1b 46%,#472b1b 51%,#a04800 51%,#a04800 57%,#f0e858 57%,#f0e858 62%,#181090 62%,#181090 69%,#50b818 69%,#50b818 78%,#a838a0 78%,#a838a0 86%,#68d0a8 86%,#68d0a8 95%,#882000 95%);
+  }
+  40% {
+    background: #484848;
+    background-image: linear-gradient(to bottom, #882000 10%,#68d0a8 10%,#68d0a8 12%,#a838a0 12%,#a838a0 18%,#50b818 18%,#50b818 27%,#181090 27%,#181090 38%,#f0e858 38%,#f0e858 41%,#a04800 41%,#a04800 56%,#472b1b 56%,#472b1b 61%,#c87870 61%,#c87870 66%,#484848 66%,#484848 68%,#808080 68%,#808080 75%,#98ff98 75%,#98ff98 77%,#5090d0 77%,#5090d0 92%,#b8b8b8 92%,#b8b8b8 94%,#000000 94%,#000000 97%,#ffffff 97%);
+  }
+  60% {
+    background: #c87870;
+    background-image: linear-gradient(to bottom, #ffffff 5%,#c87870 5%,#c87870 14%,#484848 14%,#484848 22%,#808080 22%,#808080 31%,#98ff98 31%,#98ff98 38%,#5090d0 38%,#5090d0 43%,#b8b8b8 43%,#b8b8b8 49%,#000000 49%,#000000 54%,#68d0a8 54%,#68d0a8 60%,#a838a0 60%,#a838a0 67%,#50b818 67%,#50b818 72%,#181090 72%,#181090 77%,#f0e858 77%,#f0e858 84%,#a04800 84%,#a04800 90%,#472b1b 90%,#472b1b 95%,#882000 95%);
+  }
+  80% {
+    background: #68d0a8;
+    background-image: linear-gradient(to bottom, #882000 5%,#68d0a8 5%,#68d0a8 14%,#a838a0 14%,#a838a0 22%,#50b818 22%,#50b818 31%,#181090 31%,#181090 38%,#f0e858 38%,#f0e858 43%,#a04800 43%,#a04800 49%,#472b1b 49%,#472b1b 54%,#c87870 54%,#c87870 60%,#484848 60%,#484848 67%,#808080 67%,#808080 72%,#98ff98 72%,#98ff98 77%,#5090d0 77%,#5090d0 84%,#b8b8b8 84%,#b8b8b8 90%,#000000 90%,#000000 95%,#ffffff 95%);
+  }
+  100% {
+    background: #50b818;
+    background-image: linear-gradient(to bottom, #ffffff 3%,#000000 3%,#000000 6%,#b8b8b8 6%,#b8b8b8 8%,#5090d0 8%,#5090d0 23%,#98ff98 23%,#98ff98 25%,#808080 25%,#808080 32%,#484848 32%,#484848 34%,#c87870 34%,#c87870 39%,#472b1b 39%,#472b1b 44%,#a04800 44%,#a04800 59%,#f0e858 59%,#f0e858 62%,#181090 62%,#181090 73%,#50b818 73%,#50b818 82%,#a838a0 82%,#a838a0 88%,#68d0a8 88%,#68d0a8 90%,#882000 90%);
+  }
+}
+
+/**
+ * All the typing stuff on the blue screen
+ */
+.loading {
+  line-height: 1;
+}
+.loading li {
+  padding-right: 1em;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  display: inline-block;
+  position: relative;
+  float: left;
+  clear: left;
+}
+.loading li:first-child {
+  height: auto;
+  width: auto;
+}
+.loading li:before {
+  white-space: pre;
+}
+.spacebar:before,
+.loading li:first-child:before {
+
+  content: "\0a     **** commodore 64 basic v2 ****\
+    \0a\0a  64k ram system  38911 basic bytes free\
+    \0a\0aready.";
+
+}
+.loading li:nth-child(2):before {
+  content: "load\"pixelambacht\",8,1";
+}
+.loading li:nth-child(3):before {
+  content: "\0asearching for pixelambacht\0aloading";
+}
+.loading li:nth-child(4):before {
+  content: "ready.";
+}
+.loading li:nth-child(5):before {
+  content: "run";
+}
+.loading li:nth-child(2) {
+  width: 1em;
+  height: auto;
+  text-indent: 1em;
+  animation-name: line_one;
+  animation-delay: 2s;
+  animation-duration: 3s;
+  animation-iteration-count: 1;
+  animation-timing-function: steps(22);
+  animation-fill-mode: forwards;
+}
+.loading li:nth-child(2):after {
+  width: 1em;
+  height: 1em;
+  background: rgba(0,0,0,0);
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  animation-name: cursor;
+  animation-duration: 1s;
+  animation-iteration-count: 7; /* must be even, so we end on invisible cursor */
+  animation-timing-function: steps(1);
+  animation-fill-mode: forwards;
+}
+.loading li:nth-child(3) {
+  animation-delay: 7s;
+  animation-duration: 1s;
+  animation-name: line_two;
+  animation-iteration-count: 1;
+  animation-timing-function: steps(1, start);
+  animation-fill-mode: forwards;
+}
+.loading li:nth-child(4) {
+  animation-delay: 11s;
+  animation-duration: 1s;
+  animation-name: line_two;
+  animation-iteration-count: 1;
+  animation-timing-function: steps(1, start);
+  animation-fill-mode: forwards;
+}
+.loading li:nth-child(5) {
+  width: 1em;
+  height: auto;
+  text-indent: 1em;
+  animation-delay: 12s;
+  animation-duration: 1s;
+  animation-name: line_three;
+  animation-iteration-count: 1;
+  animation-timing-function: steps(3, start);
+  animation-fill-mode: forwards;
+}
+.loading li:nth-child(5):after {
+  width: 1em;
+  height: 1em;
+  background: rgba(0,0,0,0);
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  animation-name: cursor;
+  animation-duration: 1s;
+  animation-delay: 10.5s;
+  animation-iteration-count: 3; /* must be even, so we end on invisible cursor */
+  animation-timing-function: steps(1);
+  animation-fill-mode: forwards;
+}
+
+/**
+ * Decrunching
+ */
+section.bluescreen:before {
+  animation-name: decrunch;
+  animation-delay: 15s;
+  animation-duration: 0.25s;
+  animation-iteration-count: 14;
+  animation-timing-function: steps(1);
+}
+
+/**
+ * Intro screen animations
+ */
+@keyframes startintro {
+  to {
+    visibility: visible;
+  }
+}
+@keyframes logoswing {
+  50% {
+    left: -162px;
+  }
+}
+@keyframes rasterswing {
+  50% {
+    top: 168px;
+  }
+}
+@keyframes rasterindex {
+  50% {
+    z-index: 10;
+  }
+}
+@keyframes textflash {
+  0% { color: #000000; }
+  1% { color: #20398d; }
+  2% { color: #6076c5; }
+  3% { color: #86bec5; }
+  4% { color: #ffffff; }
+  5% { color: #86bec5; }
+  6% { color: #6076c5; }
+  7% { color: #20398d; }
+  8% { color: #000000; }
+  26% { color: #873b31; }
+  27% { color: #ba7369; }
+  28% { color: #dce78c; }
+  29% { color: #ffffff; }
+  30% { color: #dce78c; }
+  31% { color: #ba7369; }
+  32% { color: #873b31; }
+  33% { color: #000000; }
+  51% { color: #555555; }
+  52% { color: #808080; }
+  53% { color: #ababab; }
+  54% { color: #ffffff; }
+  55% { color: #ababab; }
+  56% { color: #808080; }
+  57% { color: #555555; }
+  58% { color: #000000; }
+  76% { color: #625000; }
+  77% { color: #74ab54; }
+  78% { color: #b7eb9b; }
+  79% { color: #ffffff; }
+  80% { color: #b7eb9b; }
+  81% { color: #74ab54; }
+  82% { color: #625000; }
+  83% { color: #000000; }
+}
+@keyframes starscroll {
+  to {
+    left: -40em;
+  }
+}
+@keyframes scroller {
+  to {
+    text-indent: -220em; /* Should match text length */
+  }
+}
+@keyframes scrollerbounce {
+  from, to  {
+    animation-timing-function: ease-out;
+  }
+  50% {
+    line-height: 1em;
+    animation-timing-function: ease-in;
+  }
+}
+
+/**
+ * The intro screem
+ */
+section.introscreen {
+  animation-name: startintro;
+  animation-delay: 19s; /* Blue screen animation takes 19s */
+  animation-fill-mode: forwards;
+  animation-duration: 1s; /* Doesn't matter */
+
+  visibility: hidden;
+  background: #000;
+  border-color: #000;
+
+  font: normal 16px "Giana";
+  text-transform: uppercase;
+
+}
+section.introscreen:before,
+section.introscreen:after {
+  background: #000;
+}
+
+/**
+ * The swinging Pixelambacht logo
+ */
+div.logo {
+  position: absolute;
+  top: 64px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  margin: 0 auto;
+  height: 96px;
+  color: #6076c5;
+  overflow: hidden;
+}
+div.logo:before {
+  content: url(pixelambacht-logo.png);
+  position: absolute;
+  left: 40px;
+
+  animation-name: logoswing;
+  animation-duration: 3s;
+  animation-iteration-count: infinite;
+  animation-timing-function: cubic-bezier(0.420, 0.000, 0.580, 1.000);
+  animation-fill-mode: forwards;
+
+  z-index: 9;
+}
+
+/**
+ * The swinging raster bar
+ */
+section.introscreen:after {
+  height: 100px;
+  left: -64px;
+  right: -64px;
+  z-index: 8;
+  position: absolute;
+
+  animation-name: rasterswing, rasterindex;
+  animation-duration: 4s, 4s;
+  animation-iteration-count: infinite, infinite;
+  animation-timing-function: cubic-bezier(0.420, 0.000, 0.580, 1.000), steps(1);
+  animation-fill-mode: forwards;
+
+  background: linear-gradient(to bottom, #873b31 0%,#000000 2%,#873b31 2%,#873b31 4%,#873b31 4%,#873b31 6%,#ba7369 6%,#ba7369 8%,#873b31 8%,#873b31 10%,#ba7369 10%,#ba7369 12%,#ba7369 12%,#ba7369 14%,#dce78c 14%,#dce78c 16%,#ba7369 16%,#ba7369 18%,#dce78c 18%,#dce78c 20%,#dce78c 20%,#dce78c 22%,#ffffff 22%,#ffffff 24%,#dce78c 24%,#dce78c 26%,#ffffff 26%,#ffffff 28%,#ffffff 28%,#ffffff 30%,#dce78c 30%,#dce78c 32%,#ffffff 32%,#ffffff 34%,#dce78c 34%,#dce78c 36%,#dce78c 36%,#dce78c 38%,#ba7369 38%,#ba7369 40%,#dce78c 40%,#dce78c 42%,#ba7369 42%,#ba7369 44%,#ba7369 44%,#ba7369 46%,#873b31 46%,#873b31 48%,#ba7369 48%,#ba7369 50%,#873b31 50%,#873b31 52%,#873b31 52%,#873b31 54%,#000000 54%,#000000 56%,#873b31 56%,#873b31 58%,rgba(0,0,0,0) 58%,rgba(0,0,0,0) 100%);
+}
+
+/**
+ * Credits block
+ */
+ul.presents {
+  z-index: 10;
+  color: #000000;
+  position: absolute;
+  top: 228px;
+  left: -64px;
+  right: -64px;
+  text-align: center;
+  padding: 34px 0; /* Making it 100px high */
+
+  background: linear-gradient(to bottom, #20398d 0%,#000000 2%,#20398d 2%,#20398d 4%,#20398d 4%,#20398d 6%,#6076c5 6%,#6076c5 8%,#20398d 8%,#20398d 10%,#6076c5 10%,#6076c5 12%,#6076c5 12%,#6076c5 14%,#86bec5 14%,#86bec5 16%,#6076c5 16%,#6076c5 18%,#86bec5 18%,#86bec5 20%,#86bec5 20%,#86bec5 22%,#ffffff 22%,#ffffff 24%,#86bec5 24%,#86bec5 26%,#ffffff 26%,#ffffff 74%,#86bec5 74%,#86bec5 76%,#ffffff 76%,#ffffff 78%,#86bec5 78%,#86bec5 80%,#86bec5 80%,#86bec5 82%,#6076c5 82%,#6076c5 84%,#86bec5 84%,#86bec5 86%,#6076c5 86%,#6076c5 88%,#6076c5 88%,#6076c5 90%,#20398d 90%,#20398d 92%,#6076c5 92%,#6076c5 94%,#20398d 94%,#20398d 96%,#20398d 96%,#20398d 98%,#000000 98%,#000000 100%); /* W3C */
+}
+ul.presents li:first-child:before {
+  content: "c64 in css3";
+  animation-name: textflash;
+  animation-duration: 10s;
+  animation-iteration-count: infinite;
+  animation-timing-function: steps(1);
+}
+ul.presents li:last-child:before {
+  content: "coded by pixelambacht";
+  animation-name: textflash;
+  animation-duration: 10s;
+  animation-delay: 0.5s;
+  animation-iteration-count: infinite;
+  animation-timing-function: steps(1);
+}
+
+/**
+ * Flashing startfield behind the scrolltext
+ */
+.starfield {
+  position: relative;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  overflow: hidden;
+  height: 4em;
+  width: 40em;
+}
+.starfield li {
+  position: relative;
+  display: inline;
+  left: 0;
+}
+.starfield li:before {
+  content: ".";
+}
+/* Create an exact copy of each star */
+.starfield li:after {
+  content: ".";
+  position: absolute;
+  top: 0;
+  left: 40em;
+}
+.starfield li {
+  animation-name: starscroll;
+  animation-duration: 5s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-fill-mode: forwards;
+}
+.starfield li:before,
+.starfield li:after {
+  animation-name: textflash;
+  animation-iteration-count: infinite;
+  animation-timing-function: steps(1);
+  animation-duration: 6.5s;
+  padding-left: 3em;
+}
+.starfield li:nth-child(2n):before,
+.starfield li:nth-child(2n):after {
+  padding-left: 4em;
+}
+.starfield li:nth-child(3n):before,
+.starfield li:nth-child(3n):after {
+  padding-left: 7em;
+}
+.starfield li:nth-child(4n):before,
+.starfield li:nth-child(4n):after {
+  padding-left: 2em;}
+
+/* Flash each star at a different time */
+.starfield li:nth-child(1):before,
+.starfield li:nth-child(1):after {
+  animation-delay: -1s;
+}
+.starfield li:nth-child(2):before,
+.starfield li:nth-child(2):after {
+  animation-delay: -1.5s;
+}
+.starfield li:nth-child(3):before,
+.starfield li:nth-child(3):after {
+  animation-delay: -2s;
+}
+.starfield li:nth-child(4):before,
+.starfield li:nth-child(4):after {
+  animation-delay: -2.5s;
+}
+.starfield li:nth-child(5):before,
+.starfield li:nth-child(5):after {
+  animation-delay: -3s;
+}
+.starfield li:nth-child(6):before,
+.starfield li:nth-child(6):after {
+  animation-delay: -3.5s;
+}
+.starfield li:nth-child(7):before,
+.starfield li:nth-child(7):after {
+  animation-delay: -4s;
+}
+.starfield li:nth-child(8):before,
+.starfield li:nth-child(8):after {
+  animation-delay: -4.5s;
+}
+.starfield li:nth-child(9):before,
+.starfield li:nth-child(9):after {
+  animation-delay: -5s;
+}
+.starfield li:nth-child(10):before,
+.starfield li:nth-child(10):after {
+  animation-delay: -5.5s;
+}
+.starfield li:nth-child(11):before,
+.starfield li:nth-child(11):after {
+  animation-delay: -6s;
+}
+.starfield li:nth-child(12):before,
+.starfield li:nth-child(12):after {
+  animation-delay: -6.5s;
+}
+.starfield li:nth-child(13):before,
+.starfield li:nth-child(13):after {
+  animation-delay: -7s;
+}
+.starfield li:nth-child(14):before,
+.starfield li:nth-child(14):after {
+  animation-delay: -7.5s;
+}
+.starfield li:nth-child(15):before,
+.starfield li:nth-child(15):after {
+  animation-delay: -8s;
+}
+.starfield li:nth-child(16):before,
+.starfield li:nth-child(16):after {
+  animation-delay: -8.5s;
+}
+.starfield li:nth-child(17):before,
+.starfield li:nth-child(17):after {
+  animation-delay: -9s;
+}
+.starfield li:nth-child(18):before,
+.starfield li:nth-child(18):after {
+  animation-delay: -9.5s;
+}
+.starfield li:nth-child(19):before,
+.starfield li:nth-child(19):after {
+  animation-delay: -10s;
+}
+.starfield li:nth-child(20):before,
+.starfield li:nth-child(20):after {
+  animation-delay: -10.5s;
+}
+.starfield li:nth-child(21):before,
+.starfield li:nth-child(21):after {
+  animation-delay: -11s;
+}
+
+/**
+ * And finally the meat of a C64 cracktro... the scrolltext
+ */
+p.scrolltext {
+  /* Bounce-animation needs to be separate from the scroll animation, otherwise the
+     change in timing-functions will be applied to both animations */
+  line-height: 7em;
+
+  animation-name: scrollerbounce;
+  animation-delay: 20s; /* Blue screen animation takes 19s, wait another second */
+  animation-duration: 1s;
+  animation-iteration-count: infinite;
+}
+p.scrolltext:before {
+  content: "welcome to my little c64 intro entirely done in css! no javascript was used \
+    for these effects... greetz to all the elite! press space to reset, and have fun \
+    typing some basic! pixelambacht signing off...";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 40em;
+  overflow: hidden;
+  white-space: nowrap;
+  text-indent: 40em;
+  height: 60px;
+  color: #fff;
+
+  animation-name: scroller;
+  animation-delay: 20s; /* Blue screen animation takes 19s, wait another second */
+  animation-duration: 16s;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+}
+
+/**
+ * Act like a real C64 once space bar has been pressed
+ */
+.spacebar:valid + section li + li {
+  display: none;
+}
+.spacebar:valid + section,
+.spacebar:valid + section:before,
+.spacebar:valid + section + section {
+  animation-name: none;
+}
+.spacebar:valid + section + section {
+  /* This selector doesn't work in Chrome, although it's valid :( */
+  visibility: hidden;
+}
+.spacebar {
+  background: transparent;
+  outline: none;
+  padding: 0;
+  border: none;
+  resize: none;
+}
+.spacebar:valid {
+  z-index: 20;
+  margin-top: -104px;
+  text-indent: -1em; /* Hide that first space */
+  height: 19em;
+  overflow: hidden;
+}
