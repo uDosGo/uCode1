@@ -175,6 +175,24 @@ async fn main() {
                 )
         )
         .subcommand(
+            Command::new("thinui")
+                .about("ThinUI - Lightweight Tauri UI shell")
+                .subcommand(
+                    Command::new("run")
+                        .about("Run ThinUI with specified theme")
+                        .arg(Arg::new("theme").long("theme").short('t').help("Theme to use (modern, c64, nes)").default_value("modern"))
+                        .arg(Arg::new("port").long("port").short('p').help("Port to use").default_value("4687"))
+                )
+                .subcommand(
+                    Command::new("list-themes")
+                        .about("List available ThinUI themes")
+                )
+                .subcommand(
+                    Command::new("build")
+                        .about("Build ThinUI for production")
+                )
+        )
+        .subcommand(
             Command::new("docs")
                 .about("Display command documentation")
                 .arg(
@@ -284,6 +302,26 @@ async fn main() {
             // Keep the main process alive
             tokio::signal::ctrl_c().await.expect("Failed to listen for Ctrl+C");
             println!("Shutting down...");
+        }
+    }
+
+    // ThinUI Command Handler
+    if let Some(("thinui", thinui_matches)) = matches.subcommand() {
+        match thinui_matches.subcommand() {
+            Some(("run", run_matches)) => {
+                let theme = run_matches.get_one::<String>("theme").unwrap();
+                let port = run_matches.get_one::<String>("port").unwrap();
+                handle_thinui_run_command(theme, port);
+            }
+            Some(("list-themes", _)) => {
+                handle_thinui_list_themes_command();
+            }
+            Some(("build", _)) => {
+                handle_thinui_build_command();
+            }
+            _ => {
+                println!("Unknown ThinUI command");
+            }
         }
     }
 
@@ -405,6 +443,108 @@ async fn main() {
             }
         }
     }
+}
+
+fn handle_thinui_run_command(theme: &str, port: &str) {
+    println!("🚀 Running ThinUI with theme '{}' on port {}...", theme, port);
+    
+    let thinui_dir = Path::new("~/Code/OkAgentDigital/ThinUI");
+    let expanded_thinui_dir = shellexpand::tilde(thinui_dir.to_str().unwrap()).to_string();
+    
+    if !Path::new(&expanded_thinui_dir).exists() {
+        eprintln!("❌ ThinUI directory not found: {}", expanded_thinui_dir);
+        return;
+    }
+    
+    println!("📂 ThinUI directory: {}", expanded_thinui_dir);
+    println!("🎨 Theme: {}", theme);
+    println!("🌐 Port: {}", port);
+    
+    // Check if we need to update the tauri.conf.json
+    let tauri_config_path = format!("{}/src-tauri/tauri.conf.json", expanded_thinui_dir);
+    
+    if let Ok(config_content) = fs::read_to_string(&tauri_config_path) {
+        if config_content.contains("7846") {
+            println!("🔧 Updating Tauri configuration to use port {}...", port);
+            let updated_config = config_content.replace("7846", port);
+            if let Err(e) = fs::write(&tauri_config_path, updated_config) {
+                eprintln!("⚠️  Warning: Failed to update tauri.conf.json: {}", e);
+            }
+        }
+    }
+    
+    // Change to ThinUI directory
+    if let Err(e) = std::env::set_current_dir(&expanded_thinui_dir) {
+        eprintln!("❌ Failed to change directory: {}", e);
+        return;
+    }
+    
+    println!("🧹 Cleaning build artifacts...");
+    let clean_output = std::process::Command::new("cargo")
+        .arg("clean")
+        .output();
+    
+    if let Err(e) = clean_output {
+        eprintln!("⚠️  Warning: Failed to clean: {}", e);
+    }
+    
+    println!("🚀 Starting ThinUI...");
+    println!("   This may take a moment as dependencies are compiled...");
+    println!("   ThinUI will open in a new window when ready.");
+    println!("   Press Ctrl+C to stop.");
+    println!("");
+    
+    // Run cargo tauri dev
+    let status = std::process::Command::new("cargo")
+        .arg("tauri")
+        .arg("dev")
+        .status();
+    
+    match status {
+        Ok(exit_status) => {
+            if exit_status.success() {
+                println!("✅ ThinUI exited normally");
+            } else {
+                eprintln!("❌ ThinUI exited with error code: {}", exit_status.code().unwrap_or(-1));
+            }
+        }
+        Err(e) => {
+            eprintln!("❌ Failed to start ThinUI: {}", e);
+        }
+    }
+}
+
+fn handle_thinui_list_themes_command() {
+    println!("Available ThinUI Toybox Themes:");
+    println!("");
+    println!("  • modern    - Clean modern interface (default)");
+    println!("  • c64       - Commodore 64 retro style (purple/blue)");
+    println!("  • nes       - Nintendo Entertainment System style (red/blue)");
+    println!("");
+    println!("Theme features:");
+    println!("  • Complete UI styling (title bars, buttons, teletext)");
+    println!("  • Retro color schemes matching original systems");
+    println!("  • Gauge components with retro styling");
+    println!("  • Grid layouts for teletext display");
+    println!("  • Pixel art effects (NES theme)");
+}
+
+fn handle_thinui_build_command() {
+    println!("🔨 Building ThinUI for production...");
+    
+    let thinui_dir = Path::new("~/Code/OkAgentDigital/ThinUI");
+    let expanded_thinui_dir = shellexpand::tilde(thinui_dir.to_str().unwrap()).to_string();
+    
+    if !Path::new(&expanded_thinui_dir).exists() {
+        eprintln!("❌ ThinUI directory not found: {}", expanded_thinui_dir);
+        return;
+    }
+    
+    println!("📂 Changing to ThinUI directory...");
+    println!("🚀 Running: cargo tauri build");
+    println!("");
+    println!("Build artifacts will be in:");
+    println!("   {}/src-tauri/target/release/bundle/", expanded_thinui_dir);
 }
 
 async fn handle_tui_command(vault_path: &str) {

@@ -2193,7 +2193,6 @@ dependencies = [
  "ucode1-feed-spool",
  "ucode1-mcp",
  "ucode1-ok-agent",
- "ucode1-re3",
  "ucode1-spatial",
  "ucode1-tui",
  "ucode1-usystem",
@@ -2247,22 +2246,6 @@ name = "ucode1-ok-agent"
 version = "0.1.0"
 dependencies = [
  "ucode1-core",
-]
-
-[[package]]
-name = "ucode1-re3"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "chrono",
- "log",
- "serde",
- "serde_json",
- "tokio",
- "ucode1-core",
- "ucode1-mcp",
- "ucode1-tui",
- "uuid",
 ]
 
 [[package]]
