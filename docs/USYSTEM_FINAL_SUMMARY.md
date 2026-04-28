@@ -49,7 +49,7 @@ This document provides a comprehensive summary of the complete uSystem implement
 
 ### 2. Rust Implementation ✅
 
-**Module**: `ucode1-usystem`
+**Module**: `ucode2-usystem` (moved to uCode2 workspace)
 
 **Structs Implemented**: 12
 

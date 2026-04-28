@@ -286,7 +286,7 @@ pub fn initialize_default_commands(&self) -> SqliteResult<()>
 1. **Add Dependency**
 ```toml
 [dependencies]
-ucode1-usystem = { path = "usystem" }
+ucode2-usystem = { path = "../uCode2/usystem" }
 ```
 
 2. **Initialize uSystem**

@@ -63,7 +63,7 @@ class McpResponse:
     @property
     def is_success(self) -> bool:
         """Check if the response indicates success."""
-        return "Error" not in self.raw_data or "error" not in self.raw_data.get("Error", {}).lower()
+        return "Error" not in self.raw_data
     
     @property
     def is_error(self) -> bool:

@@ -11,7 +11,7 @@ The uDos MCP server provides a Unix socket interface that allows any MCP-compati
 
 ## MCP Server
 
-The MCP server is implemented in Rust as part of the `ucode1-mcp` crate and provides the following vault operations:
+The MCP server is implemented in Rust as part of the `ucode2-mcp` crate (in the uCode2 workspace) and provides the following vault operations:
 
 ### Available Tools
 
