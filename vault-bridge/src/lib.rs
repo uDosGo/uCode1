@@ -345,6 +345,143 @@ impl Vault {
         let note_path = self.notes_dir().join(format!("{}.md", name));
         note_path.exists()
     }
+
+    pub fn list_notes_in_directory(&self, path: &str) -> io::Result<Vec<String>> {
+        let dir_path = if path.is_empty() || path == "/" {
+            self.notes_dir()
+        } else {
+            self.notes_dir().join(path)
+        };
+
+        if !dir_path.exists() {
+            return Ok(Vec::new());
+        }
+
+        let mut items = Vec::new();
+        for entry in fs::read_dir(dir_path)? {
+            let entry = entry?;
+            let path = entry.path();
+            
+            if path.is_file() {
+                if let Some(name) = path.file_name() {
+                    items.push(name.to_string_lossy().into_owned());
+                }
+            } else if path.is_dir() {
+                if let Some(name) = path.file_name() {
+                    items.push(format!("{}/", name.to_string_lossy().into_owned()));
+                }
+            }
+        }
+
+        Ok(items)
+    }
+
+    pub fn search_notes(&self, query: &str) -> io::Result<Vec<String>> {
+        let notes_dir = self.notes_dir();
+        
+        if !notes_dir.exists() {
+            return Ok(Vec::new());
+        }
+
+        let mut results = Vec::new();
+        for entry in fs::read_dir(notes_dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            
+            if path.is_file() && path.extension().map_or(false, |ext| ext == "md") {
+                if let Some(name) = path.file_stem() {
+                    let content = fs::read_to_string(&path)?;
+                    if content.contains(query) {
+                        results.push(name.to_string_lossy().into_owned());
+                    }
+                }
+            }
+        }
+
+        Ok(results)
+    }
+
+    pub fn delete_note(&self, path: &str) -> io::Result<()> {
+        let file_path = self.notes_dir().join(path);
+        
+        if !file_path.exists() {
+            return Err(io::Error::new(io::ErrorKind::NotFound, "File not found"));
+        }
+
+        // Move to trash instead of permanent deletion
+        let trash_dir = self.notes_dir().join(".trash");
+        if !trash_dir.exists() {
+            fs::create_dir_all(&trash_dir)?;
+        }
+
+        let timestamp = chrono::Local::now().format("%Y%m%d_%H%M%S").to_string();
+        let trash_path = trash_dir.join(format!("deleted_{}_{}", timestamp, file_path.file_name().unwrap().to_string_lossy()));
+        
+        fs::rename(file_path, trash_path)?;
+        Ok(())
+    }
+
+    pub fn get_note_metadata(&self, path: &str) -> io::Result<NoteMetadata> {
+        let file_path = self.notes_dir().join(path);
+        
+        if !file_path.exists() {
+            return Err(io::Error::new(io::ErrorKind::NotFound, "File not found"));
+        }
+
+        let metadata = fs::metadata(&file_path)?;
+        let modified = metadata.modified()?;
+        let modified_str = modified.duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or(std::time::Duration::from_secs(0))
+            .as_secs()
+            .to_string();
+
+        // Extract tags from frontmatter if present
+        let mut tags = Vec::new();
+        let content = fs::read_to_string(&file_path)?;
+        
+        if let Some(frontmatter_end) = content.find("---\n") {
+            let frontmatter = &content[..frontmatter_end + 4];
+            for line in frontmatter.lines() {
+                if line.starts_with("tags:") {
+                    let tags_str = line.trim_start_matches("tags:").trim();
+                    tags = tags_str.split(',')
+                        .map(|t| t.trim().to_string())
+                        .filter(|t| !t.is_empty())
+                        .collect();
+                    break;
+                }
+            }
+        }
+
+        Ok(NoteMetadata {
+            path: path.to_string(),
+            size: metadata.len(),
+            modified: modified_str,
+            tags,
+        })
+    }
+
+    pub fn write_note(&self, path: &str, content: &str) -> io::Result<()> {
+        let file_path = self.notes_dir().join(path);
+        
+        // Ensure parent directory exists
+        if let Some(parent) = file_path.parent() {
+            if !parent.exists() {
+                fs::create_dir_all(parent)?;
+            }
+        }
+
+        fs::write(file_path, content)?;
+        Ok(())
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct NoteMetadata {
+    pub path: String,
+    pub size: u64,
+    pub modified: String,
+    pub tags: Vec<String>,
 }
 
 fn parse_frontmatter(content: &str) -> (std::collections::HashMap<String, Vec<String>>, String) {

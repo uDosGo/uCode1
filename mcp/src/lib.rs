@@ -22,6 +22,14 @@ pub enum McpRequest {
     Status,
     Ping,
     Shutdown,
+    // Vault operations
+    VaultRead { path: String },
+    VaultWrite { path: String, content: String },
+    VaultList { path: String },
+    VaultSearch { query: String },
+    VaultDelete { path: String },
+    VaultMetadata { path: String },
+    VaultWatch { path: String },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -34,6 +42,12 @@ pub enum McpResponse {
     StatusInfo { version: String, mode: String, vault_path: String },
     Pong,
     Acknowledged,
+    // Vault responses
+    VaultContent { path: String, content: String },
+    VaultList { path: String, items: Vec<String> },
+    VaultSearchResults { query: String, results: Vec<String> },
+    VaultMetadata { path: String, size: u64, modified: String, tags: Vec<String> },
+    VaultWatchEvent { event: String, path: String },
 }
 
 pub struct McpServer {
@@ -212,6 +226,61 @@ impl McpServer {
             McpRequest::Shutdown => {
                 *running.blocking_lock() = false;
                 McpResponse::Acknowledged
+            }
+            // Vault operations
+            McpRequest::VaultRead { path } => {
+                let vault = vault.blocking_lock();
+                match vault.read_note(&path) {
+                    Ok(note) => McpResponse::VaultContent {
+                        path: note.title,
+                        content: note.content,
+                    },
+                    Err(e) => McpResponse::Error { message: e.to_string() },
+                }
+            }
+            McpRequest::VaultWrite { path, content } => {
+                let vault = vault.blocking_lock();
+                match vault.write_note(&path, &content) {
+                    Ok(_) => McpResponse::Success { data: serde_json::json!({"message": "File written successfully"}) },
+                    Err(e) => McpResponse::Error { message: e.to_string() },
+                }
+            }
+            McpRequest::VaultList { path } => {
+                let vault = vault.blocking_lock();
+                match vault.list_notes_in_directory(&path) {
+                    Ok(items) => McpResponse::VaultList { path, items },
+                    Err(e) => McpResponse::Error { message: e.to_string() },
+                }
+            }
+            McpRequest::VaultSearch { query } => {
+                let vault = vault.blocking_lock();
+                match vault.search_notes(&query) {
+                    Ok(results) => McpResponse::VaultSearchResults { query, results },
+                    Err(e) => McpResponse::Error { message: e.to_string() },
+                }
+            }
+            McpRequest::VaultDelete { path } => {
+                let vault = vault.blocking_lock();
+                match vault.delete_note(&path) {
+                    Ok(_) => McpResponse::Success { data: serde_json::json!({"message": "File deleted successfully"}) },
+                    Err(e) => McpResponse::Error { message: e.to_string() },
+                }
+            }
+            McpRequest::VaultMetadata { path } => {
+                let vault = vault.blocking_lock();
+                match vault.get_note_metadata(&path) {
+                    Ok(metadata) => McpResponse::VaultMetadata {
+                        path: metadata.path,
+                        size: metadata.size,
+                        modified: metadata.modified,
+                        tags: metadata.tags,
+                    },
+                    Err(e) => McpResponse::Error { message: e.to_string() },
+                }
+            }
+            McpRequest::VaultWatch { path } => {
+                // Watch functionality would require async handling
+                McpResponse::Error { message: "Watch not implemented yet".to_string() }
             }
         };
         
