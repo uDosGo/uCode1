@@ -46,8 +46,11 @@ class ThemeLoader:
         if self.config_path:
             config_file = Path(self.config_path)
         else:
-            # Default config location
-            config_file = Path(__file__).parent.parent.parent.parent / "themes" / "config.yaml"
+            # Default config location: uCode1/themes/config.yaml
+            # From uCode1/core_py/themes/loader.py:
+            # parent.parent = uCode1/core_py
+            # parent.parent.parent = uCode1
+            config_file = Path(__file__).parent.parent.parent / "themes" / "config.yaml"
         
         if config_file.exists():
             with open(config_file, 'r') as f:
