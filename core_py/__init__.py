@@ -15,6 +15,8 @@ from . import usxd    # USXD module implemented
 from . import thinui  # ThinUI integration module (NEW)
 from . import plugin  # Plugin system (NEW)
 from . import grid    # Python grid-core (NEW)
+from . import text    # Python text/md tools (NEW)
+from . import mcp_client  # MCP client for uCode2 communication (NEW)
 
 # Export main types for convenience
 from .snack.models import Snack, SnackInput, SnackOutput
@@ -58,6 +60,37 @@ from .grid import (
     GridSize,
     Coordinate,
     CoordSystem,
+)
+
+# Text System
+from .text import (
+    TextInjector,
+    TemplateEngine,
+    TextFormatter,
+    WrapMode,
+    Alignment,
+    ANSIColor,
+    ANSIStyle,
+)
+from .text.exceptions import (
+    TextProcessingError,
+    InjectionError,
+    MarkdownError,
+    FormattingError,
+)
+
+# MCP Client
+from .mcp_client import (
+    McpClient,
+    McpClientError,
+    McpConnectionError,
+    McpTimeoutError,
+    McpRequest,
+    McpRequestType,
+    McpResponse,
+    get_default_socket_path,
+    socket_exists,
+    test_connection,
 )
 
 __all__ = [
@@ -133,6 +166,33 @@ __all__ = [
     "GridRegion",
     "GridSize",
     "Coordinate",
+    "CoordSystem",
+    "text",
+    "mcp_client",
+    # Text System
+    "TextInjector",
+    "TemplateEngine",
+    "TextFormatter",
+    "WrapMode",
+    "Alignment",
+    "ANSIColor",
+    "ANSIStyle",
+    "TextProcessingError",
+    "InjectionError",
+    "MarkdownError",
+    "FormattingError",
+    # MCP Client
+    "McpClient",
+    "McpClientError",
+    "McpConnectionError",
+    "McpTimeoutError",
+    "McpRequest",
+    "McpRequestType",
+    "McpResponse",
+    "get_default_socket_path",
+    "socket_exists",
+    "test_connection",
+    # Plugin System
     "PluginDiscovery",
     "PluginRegistry",
     "PluginLoader",

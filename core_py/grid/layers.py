@@ -28,8 +28,8 @@ class GridLayer(Generic[T]):
     Layers can be stacked to create complex multi-layer grids.
     """
     name: str
-    layer_type: LayerType = LayerType.BASE
     grid: Grid[T]
+    layer_type: LayerType = LayerType.BASE
     visible: bool = True
     opacity: float = 1.0
     z_index: int = 0
