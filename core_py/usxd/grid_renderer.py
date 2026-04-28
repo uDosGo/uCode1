@@ -8,6 +8,7 @@ enabling interactive display of USXD content in Terminal User Interfaces.
 
 import sys
 import os
+import io
 from typing import Optional, List, Dict, Any, Tuple, Callable, Union
 from dataclasses import dataclass, field
 from enum import Enum
@@ -206,63 +207,79 @@ class KeyboardInput:
     """Handle keyboard input in terminal"""
     
     def __init__(self):
-        self._fd = sys.stdin.fileno()
+        self._fd = None
         self._old_settings = None
+        self._test_mode = False
+        
+        # Handle redirected stdin (e.g., during pytest)
+        try:
+            self._fd = sys.stdin.fileno()
+        except (io.UnsupportedOperation, AttributeError, ValueError):
+            # stdin is redirected or not available (e.g., pytest)
+            self._test_mode = True
+            self._fd = None
     
     def __enter__(self):
         """Enable raw input mode"""
-        if os.name == 'nt':
-            import msvcrt
+        if os.name == 'nt' or self._test_mode:
             return self
         
-        self._old_settings = termios.tcgetattr(self._fd)
-        new_settings = termios.tcgetattr(self._fd)
-        new_settings[3] = new_settings[3] & ~(termios.ICANON | termios.ECHO)
-        termios.tcsetattr(self._fd, termios.TCSANOW, new_settings)
+        try:
+            self._old_settings = termios.tcgetattr(self._fd)
+            new_settings = termios.tcgetattr(self._fd)
+            new_settings[3] = new_settings[3] & ~(termios.ICANON | termios.ECHO)
+            termios.tcsetattr(self._fd, termios.TCSANOW, new_settings)
+        except (termios.error, AttributeError, ValueError, io.UnsupportedOperation):
+            # Terminal settings cannot be changed (test mode or non-TTY)
+            self._test_mode = True
         return self
     
     def __exit__(self, *args):
         """Restore terminal settings"""
-        if os.name == 'nt':
+        if os.name == 'nt' or self._test_mode:
             return
-        if self._old_settings:
-            termios.tcsetattr(self._fd, termios.TCSANOW, self._old_settings)
+        try:
+            if self._old_settings:
+                termios.tcsetattr(self._fd, termios.TCSANOW, self._old_settings)
+        except (termios.error, AttributeError, ValueError, io.UnsupportedOperation):
+            pass
     
     def get_key(self, timeout: float = None) -> Key:
         """Get a single key press"""
-        if os.name == 'nt':
-            import msvcrt
-            if msvcrt.kbhit():
-                return self._parse_windows_key(msvcrt.getch())
+        if os.name == 'nt' or self._test_mode:
             return Key.UNKNOWN
         
-        if timeout is not None:
-            ready, _, _ = select.select([sys.stdin], [], [], timeout)
-            if not ready:
-                return Key.UNKNOWN
-        
-        char = sys.stdin.read(1)
-        
-        if char == '\x1b':  # ESC
-            # Check for arrow keys, function keys, etc.
-            next_chars = []
-            while True:
-                if select.select([sys.stdin], [], [], 0.1)[0]:
-                    c = sys.stdin.read(1)
-                    if c == '\x1b':
-                        continue
-                    next_chars.append(c)
-                    if len(next_chars) >= 2:
-                        break
-                else:
-                    break
+        try:
+            if timeout is not None:
+                ready, _, _ = select.select([sys.stdin], [], [], timeout)
+                if not ready:
+                    return Key.UNKNOWN
             
-            if next_chars:
-                seq = char + ''.join(next_chars)
-                return self._parse_escape_sequence(seq)
-            return Key.ESC
-        
-        return self._parse_key(char)
+            char = sys.stdin.read(1)
+            
+            if char == '\x1b':  # ESC
+                # Check for arrow keys, function keys, etc.
+                next_chars = []
+                while True:
+                    if select.select([sys.stdin], [], [], 0.1)[0]:
+                        c = sys.stdin.read(1)
+                        if c == '\x1b':
+                            continue
+                        next_chars.append(c)
+                        if len(next_chars) >= 2:
+                            break
+                    else:
+                        break
+                
+                if next_chars:
+                    seq = char + ''.join(next_chars)
+                    return self._parse_escape_sequence(seq)
+                return Key.ESC
+            
+            return self._parse_key(char)
+        except (ValueError, io.UnsupportedOperation, AttributeError):
+            self._test_mode = True
+            return Key.UNKNOWN
     
     def _parse_key(self, char: str) -> Key:
         """Parse single character"""
