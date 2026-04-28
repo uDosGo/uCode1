@@ -24,6 +24,7 @@ from .relic.models import Relic, RelicMetadata, RelicResource, RelicBinaryFormat
 from .binder.models import Binder, BinderMetadata, BinderEntry, BinderResource, BinderRegistry
 from .usxd.models import USXDDocument, USXDMetadata, USXDSection, USXDRegistry, USXDFormat
 from .usxd.grid_parser import ASCIIGridParser, ParsedGrid, GridCell, GridComponent, GridFormat
+from .usxd.component_mapper import ComponentMapper, ComponentMapping, ComponentType, ThinUIProperties
 
 __all__ = [
     "snack",
@@ -64,5 +65,10 @@ __all__ = [
     "ParsedGrid",
     "GridCell",
     "GridComponent",
-    "GridFormat"
+    "GridFormat",
+    # Component Mapper
+    "ComponentMapper",
+    "ComponentMapping",
+    "ComponentType",
+    "ThinUIProperties"
 ]

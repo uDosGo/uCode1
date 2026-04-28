@@ -19,6 +19,16 @@ from .grid_parser import (
     GridFormat,
 )
 
+# Import component mapper
+from .component_mapper import (
+    ComponentMapper,
+    ComponentMapping,
+    ComponentType,
+    ThinUIProperties,
+    Alignment,
+    StylePreset,
+)
+
 __all__ = [
     # USXD Models
     "USXDDocument",
@@ -32,4 +42,11 @@ __all__ = [
     "GridCell",
     "GridComponent",
     "GridFormat",
+    # Component Mapper
+    "ComponentMapper",
+    "ComponentMapping",
+    "ComponentType",
+    "ThinUIProperties",
+    "Alignment",
+    "StylePreset",
 ]
