@@ -8,6 +8,7 @@ use ucode1_ok_agent::{OkAgent, Intent};
 use ucode1_mcp::McpServer;
 use ucode1_spatial::{SpatialPoint, MapManager};
 use ucode1_usystem::USystem;
+use rustui;
 
 use geo::Point;
 
@@ -18,6 +19,9 @@ use modes::AppMode;
 
 mod mcp;
 use ucode1_mcp::tools::*;
+use ucode1_mcp::tools::spark_launch::{SparkLaunchInput, SparkLaunchOutput};
+use ucode1_mcp::tools::agentic_workflow_create::{AgenticWorkflowCreateInput, AgenticWorkflowCreateOutput};
+use ucode1_mcp::tools::system_status::{SystemStatusInput, SystemStatusOutput};
 
 #[tokio::main]
 async fn main() {
@@ -42,6 +46,10 @@ async fn main() {
         .arg(Arg::new("dev")
             .long("dev")
             .help("Run in development mode")
+            .action(clap::ArgAction::SetTrue))
+        .arg(Arg::new("tui")
+            .long("tui")
+            .help("Run in interactive TUI mode (disables MCP server)")
             .action(clap::ArgAction::SetTrue))
         .arg(Arg::new("debug")
             .long("debug")
@@ -208,6 +216,7 @@ async fn main() {
         .get_matches();
 
     // Parse mode flags
+    let tui_mode = matches.get_flag("tui");
     let mode = AppMode::from_flags(
         matches.get_flag("user"),
         matches.get_flag("privacy"),
@@ -295,13 +304,23 @@ async fn main() {
         println!("Ready.");
         
         // Keep the process alive if MCP server is enabled (daemon mode)
-        if mode.mcp_enabled() {
+        // Unless TUI mode is explicitly requested
+        if mode.mcp_enabled() && !tui_mode {
             println!("Running in daemon mode with MCP server...");
             println!("Press Ctrl+C to exit.");
             
             // Keep the main process alive
             tokio::signal::ctrl_c().await.expect("Failed to listen for Ctrl+C");
             println!("Shutting down...");
+        } else {
+            // Run interactive TUI mode
+            println!("Starting interactive TUI mode...");
+            println!("Press 'q' to quit, '?' for help");
+            
+            // Run the TUI
+            if let Err(e) = rustui::run_tui(&vault_path).await {
+                eprintln!("TUI error: {}", e);
+            }
         }
     }
 
@@ -349,13 +368,13 @@ async fn main() {
                 let description = workflow_matches.get_one::<String>("description").unwrap();
                 let input = AgenticWorkflowCreateInput {
                     repo: repo.to_string(),
-                    workflow_name: name.to_string(),
+                    name: name.to_string(),
                     description: description.to_string(),
                 };
                 match agentic_workflow_create(input) {
                     Ok(output) => {
                         println!("Agentic workflow created successfully!");
-                        println!("{}", output.message);
+                        println!("Workflow ID: {}", output.workflow_id);
                     }
                     Err(e) => {
                         eprintln!("Error creating agentic workflow: {}", e);
@@ -366,17 +385,14 @@ async fn main() {
                 let repo = flat_data_matches.get_one::<String>("repo").unwrap();
                 let url = flat_data_matches.get_one::<String>("url").unwrap();
                 let schedule = flat_data_matches.get_one::<String>("schedule").unwrap();
-                let destination = flat_data_matches.get_one::<String>("destination").unwrap();
                 let input = FlatDataScheduleInput {
-                    repo: repo.to_string(),
-                    url: url.to_string(),
                     schedule: schedule.to_string(),
-                    destination_path: destination.to_string(),
+                    data_source: format!("{}/{}", repo, url),
                 };
                 match flat_data_schedule(input) {
                     Ok(output) => {
                         println!("Flat data schedule created successfully!");
-                        println!("{}", output.message);
+                        println!("{}", serde_json::to_string_pretty(&output).unwrap());
                     }
                     Err(e) => {
                         eprintln!("Error creating flat data schedule: {}", e);
@@ -385,16 +401,15 @@ async fn main() {
             }
             Some(("copernicus-index", copernicus_matches)) => {
                 let repo = copernicus_matches.get_one::<String>("repo").unwrap();
-                let index_path = copernicus_matches.get_one::<String>("index-path").unwrap();
+                let query = copernicus_matches.get_one::<String>("query").unwrap();
                 let input = CopernicusIndexInput {
-                    repo_url: repo.to_string(),
-                    index_path: index_path.to_string(),
+                    query: query.to_string(),
+                    filters: None,
                 };
                 match copernicus_index(input) {
                     Ok(output) => {
                         println!("Copernicus index created successfully!");
-                        println!("Index path: {}", output.index_path);
-                        println!("{}", output.message);
+                        println!("{}", serde_json::to_string_pretty(&output).unwrap());
                     }
                     Err(e) => {
                         eprintln!("Error creating Copernicus index: {}", e);
@@ -429,7 +444,7 @@ async fn main() {
                 }
             }
             Some(("system-status", _)) => {
-                match system_status(serde_json::json!({})) {
+                match system_status(SystemStatusInput {}) {
                     Ok(output) => {
                         println!("{}", serde_json::to_string_pretty(&output).unwrap());
                     }
@@ -550,7 +565,7 @@ fn handle_thinui_build_command() {
 async fn handle_tui_command(vault_path: &str) {
     println!("Launching TUI...");
     
-    match ucode1_tui::run_tui(vault_path).await {
+    match rustui::run_tui(vault_path).await {
         Ok(_) => println!("TUI exited normally"),
         Err(e) => eprintln!("TUI error: {}", e),
     }

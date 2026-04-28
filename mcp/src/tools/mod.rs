@@ -6,6 +6,7 @@ pub mod copernicus_index;
 pub mod discover_repo;
 pub mod plugin_list;
 pub mod system_status;
+pub mod vault_tools;
 
 pub use spark_launch::*;
 pub use agentic_workflow_create::*;
@@ -14,3 +15,4 @@ pub use copernicus_index::*;
 pub use discover_repo::*;
 pub use plugin_list::*;
 pub use system_status::*;
+pub use vault_tools::*;

@@ -18,8 +18,12 @@ use ucode1_mcp::tools::agentic_workflow_create::{agentic_workflow_create, Agenti
 use ucode1_mcp::tools::flat_data_schedule::{flat_data_schedule, FlatDataScheduleInput};
 use ucode1_mcp::tools::copernicus_index::{copernicus_index, CopernicusIndexInput};
 use ucode1_mcp::tools::discover_repo::{discover_repo, DiscoverRepoInput};
-use ucode1_mcp::tools::system_status::system_status;
+use ucode1_mcp::tools::system_status::{system_status, SystemStatusInput};
 use ucode1_mcp::tools::plugin_list::plugin_list;
+use ucode1_mcp::tools::vault_tools::{
+    vault_read, vault_write, vault_list, vault_search, vault_delete, vault_metadata,
+    VaultReadInput, VaultWriteInput, VaultListInput, VaultSearchInput, VaultDeleteInput, VaultMetadataInput
+};
 
 async fn handle_tool(Path(tool_name): Path<String>, Json(payload): Json<Value>) -> Result<Json<Value>, StatusCode> {
     let result: serde_json::Value = match tool_name.as_str() {
@@ -50,7 +54,7 @@ async fn handle_tool(Path(tool_name): Path<String>, Json(payload): Json<Value>) 
             let repo = payload["repo"].as_str().ok_or(StatusCode::BAD_REQUEST)?;
             let input = AgenticWorkflowCreateInput {
                 repo: repo.to_string(),
-                workflow_name: "workflow".to_string(), // Default name
+                name: "workflow".to_string(), // Default name
                 description: desc.to_string(),
             };
             let output = tokio::task::spawn_blocking(move || {
@@ -74,10 +78,8 @@ async fn handle_tool(Path(tool_name): Path<String>, Json(payload): Json<Value>) 
             let schedule = payload["schedule"].as_str().ok_or(StatusCode::BAD_REQUEST)?;
             let repo = payload["repo"].as_str().ok_or(StatusCode::BAD_REQUEST)?;
             let input = FlatDataScheduleInput {
-                repo: repo.to_string(),
-                url: source.to_string(),
                 schedule: schedule.to_string(),
-                destination_path: "data/".to_string(),
+                data_source: format!("{}/{}", repo, source),
             };
             let output = tokio::task::spawn_blocking(move || {
                 flat_data_schedule(input)
@@ -98,8 +100,8 @@ async fn handle_tool(Path(tool_name): Path<String>, Json(payload): Json<Value>) 
         "copernicus_index" => {
             let repo = payload["repo"].as_str().ok_or(StatusCode::BAD_REQUEST)?;
             let input = CopernicusIndexInput {
-                repo_url: repo.to_string(),
-                index_path: "~/Code/Vault/indexes".to_string(),
+                query: repo.to_string(),
+                filters: None,
             };
             let output = tokio::task::spawn_blocking(move || {
                 copernicus_index(input)
@@ -140,7 +142,7 @@ async fn handle_tool(Path(tool_name): Path<String>, Json(payload): Json<Value>) 
         }
         "system_status" => {
             let output = tokio::task::spawn_blocking(|| {
-                system_status(serde_json::json!({}))
+                system_status(SystemStatusInput {})
             }).await;
             let output = match output {
                 Ok(Ok(val)) => val,
@@ -167,6 +169,136 @@ async fn handle_tool(Path(tool_name): Path<String>, Json(payload): Json<Value>) 
                 }
                 Err(e) => {
                     error!("plugin_list task failed: {:?}", e);
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+            };
+            output
+        }
+        "vault_read" => {
+            let path = payload["path"].as_str().ok_or(StatusCode::BAD_REQUEST)?;
+            let input = VaultReadInput {
+                path: path.to_string(),
+            };
+            let output = tokio::task::spawn_blocking(move || {
+                vault_read(input)
+            }).await;
+            let output = match output {
+                Ok(Ok(val)) => serde_json::to_value(val).unwrap(),
+                Ok(Err(e)) => {
+                    error!("vault_read failed: {}", e);
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+                Err(e) => {
+                    error!("vault_read task failed: {:?}", e);
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+            };
+            output
+        }
+        "vault_write" => {
+            let path = payload["path"].as_str().ok_or(StatusCode::BAD_REQUEST)?;
+            let content = payload["content"].as_str().ok_or(StatusCode::BAD_REQUEST)?;
+            let input = VaultWriteInput {
+                path: path.to_string(),
+                content: content.to_string(),
+            };
+            let output = tokio::task::spawn_blocking(move || {
+                vault_write(input)
+            }).await;
+            let output = match output {
+                Ok(Ok(val)) => serde_json::to_value(val).unwrap(),
+                Ok(Err(e)) => {
+                    error!("vault_write failed: {}", e);
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+                Err(e) => {
+                    error!("vault_write task failed: {:?}", e);
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+            };
+            output
+        }
+        "vault_list" => {
+            let path = payload["path"].as_str().map(|s| s.to_string());
+            let input = VaultListInput {
+                path,
+            };
+            let output = tokio::task::spawn_blocking(move || {
+                vault_list(input)
+            }).await;
+            let output = match output {
+                Ok(Ok(val)) => serde_json::to_value(val).unwrap(),
+                Ok(Err(e)) => {
+                    error!("vault_list failed: {}", e);
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+                Err(e) => {
+                    error!("vault_list task failed: {:?}", e);
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+            };
+            output
+        }
+        "vault_search" => {
+            let query = payload["query"].as_str().ok_or(StatusCode::BAD_REQUEST)?;
+            let path = payload["path"].as_str().map(|s| s.to_string());
+            let input = VaultSearchInput {
+                query: query.to_string(),
+                path,
+            };
+            let output = tokio::task::spawn_blocking(move || {
+                vault_search(input)
+            }).await;
+            let output = match output {
+                Ok(Ok(val)) => serde_json::to_value(val).unwrap(),
+                Ok(Err(e)) => {
+                    error!("vault_search failed: {}", e);
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+                Err(e) => {
+                    error!("vault_search task failed: {:?}", e);
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+            };
+            output
+        }
+        "vault_delete" => {
+            let path = payload["path"].as_str().ok_or(StatusCode::BAD_REQUEST)?;
+            let input = VaultDeleteInput {
+                path: path.to_string(),
+            };
+            let output = tokio::task::spawn_blocking(move || {
+                vault_delete(input)
+            }).await;
+            let output = match output {
+                Ok(Ok(val)) => serde_json::to_value(val).unwrap(),
+                Ok(Err(e)) => {
+                    error!("vault_delete failed: {}", e);
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+                Err(e) => {
+                    error!("vault_delete task failed: {:?}", e);
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+            };
+            output
+        }
+        "vault_metadata" => {
+            let path = payload["path"].as_str().ok_or(StatusCode::BAD_REQUEST)?;
+            let input = VaultMetadataInput {
+                path: path.to_string(),
+            };
+            let output = tokio::task::spawn_blocking(move || {
+                vault_metadata(input)
+            }).await;
+            let output = match output {
+                Ok(Ok(val)) => serde_json::to_value(val).unwrap(),
+                Ok(Err(e)) => {
+                    error!("vault_metadata failed: {}", e);
+                    return Err(StatusCode::INTERNAL_SERVER_ERROR);
+                }
+                Err(e) => {
+                    error!("vault_metadata task failed: {:?}", e);
                     return Err(StatusCode::INTERNAL_SERVER_ERROR);
                 }
             };

@@ -3,7 +3,6 @@ members = [
     "core",
     "ok-agent", 
     "spatial",
-    "tui",
     "vault-bridge",
     "usystem",
     "grid-core"
@@ -30,7 +29,7 @@ clap = { version = "4.0", features = ["derive"] }
 ucode1-vault-bridge = { path = "vault-bridge" }
 ucode1-ok-agent = { path = "ok-agent" }
 ucode1-mcp = { path = "mcp" }
-ucode1-tui = { path = "tui" }
+rustui = { path = "../OkAgentDigital/RusTui" }
 ucode1-spatial = { path = "spatial" }
 ucode1-feed-spool = { path = "feed-spool" }
 ucode1-usystem = { path = "usystem" }
