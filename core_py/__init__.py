@@ -11,7 +11,7 @@ __license__ = "MIT"
 from . import snack
 from . import relic  # Relic module implemented
 from . import binder  # Binder module implemented
-# from . import usxd    # TODO: Implement usxd module
+from . import usxd    # USXD module implemented
 
 # Export main types for convenience
 from .snack.models import Snack, SnackInput, SnackOutput
@@ -22,13 +22,13 @@ from .snack.schema import validate_snack_schema
 from .snack.exceptions import SnackExecutionError, CircularDependencyError
 from .relic.models import Relic, RelicMetadata, RelicResource, RelicBinaryFormat, RelicRegistry
 from .binder.models import Binder, BinderMetadata, BinderEntry, BinderResource, BinderRegistry
-# from .usxd.models import UsxdDocument  # TODO: Implement
+from .usxd.models import USXDDocument, USXDMetadata, USXDSection, USXDRegistry, USXDFormat
 
 __all__ = [
     "snack",
     "relic",  # Relic module implemented
     "binder",  # Binder module implemented
-    # "usxd",    # TODO: Implement
+    "usxd",    # USXD module implemented
     "Snack",
     "SnackInput",
     "SnackOutput",
@@ -53,5 +53,9 @@ __all__ = [
     "BinderEntry",
     "BinderResource",
     "BinderRegistry",
-    # "UsxdDocument"  # TODO: Implement
+    "USXDDocument",
+    "USXDMetadata",
+    "USXDSection",
+    "USXDRegistry",
+    "USXDFormat"
 ]
