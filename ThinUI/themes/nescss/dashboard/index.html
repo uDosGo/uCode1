@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ThinUI Dashboard - NES.css Theme</title>
+
+    <!-- NES.css from CDN -->
+    <link href="https://unpkg.com/nes.css@2.3.0/css/nes.min.css" rel="stylesheet" />
+    
+    <!-- Custom dashboard styles -->
+    <link href="style.css" rel="stylesheet" />
+    
+    <!-- Vue.js for dynamic content -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    
+    <!-- Dialog polyfill -->
+    <link href="lib/dialog-polyfill.css" rel="stylesheet" />
+    <script src="lib/dialog-polyfill.js"></script>
+    
+    <!-- Syntax highlighting -->
+    <link href="lib/highlight-theme.css" rel="stylesheet" />
+    <script src="lib/highlight.js"></script>
+    
+    <meta name="description" content="ThinUI Dashboard - NES-style CSS Theme" />
+    <meta name="theme-color" content="#212529" />
+    
+    <style>
+        /* ThinUI specific styles */
+        body {
+            background: #212529;
+            font-family: 'Press Start 2P', cursive, sans-serif;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #212529 0%, #3a3f4b 100%);
+            border-bottom: 3px solid #f8d866;
+            padding: 15px 0;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .dashboard-card {
+            background: #212529;
+            border: 2px solid #f8d866;
+            border-radius: 4px;
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .dashboard-card.with-title {
+            padding: 10px 15px 15px;
+        }
+        
+        .dashboard-card.with-title .title {
+            font-family: 'Press Start 2P', cursive;
+            margin: -10px -15px 15px -15px;
+            padding: 8px 15px;
+            background: #f8d866;
+            color: #212529;
+            border-bottom: 2px solid #212529;
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #f8d866;
+        }
+        
+        .stat-label {
+            color: #aaa;
+            font-size: 12px;
+            display: block;
+            margin-top: 5px;
+        }
+        
+        .dashboard-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .quick-action-btn {
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        .component-preview {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            padding: 15px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        
+        /* Status indicator */
+        .status-online {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #4caf50;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+        }
+        
+        /* Code block styling */
+        pre {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            padding: 10px;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+        
+        code {
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        /* ThinUI component showcase */
+        .thinui-showcase {
+            background: #1a1a1a;
+            padding: 20px;
+            margin: 20px 0;
+            border: 2px solid #f8d866;
+            border-radius: 4px;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            header {
+                padding: 10px 0;
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="thinui-dashboard">
+        <!-- Header -->
+        <header>
+            <div class="container">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <div>
+                        <h1 style="margin: 0; color: #f8d866; font-size: 24px; font-family: 'Press Start 2P', cursive;">
+                            <i class="snes-jp-logo" style="color: #f8d866;"></i>
+                            THINUI DASHBOARD
+                        </h1>
+                        <p style="margin: 5px 0 0 0; color: #aaa; font-size: 12px;">NES.css Theme for uCode1</p>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <div class="status-indicator" v-if="connectionStatus">
+                            <span class="status-online"></span>
+                            <span>{{ connectionStatus }}</span>
+                        </div>
+                        <button type="button" class="nes-btn" @click="refreshData">
+                            <i class="nes-icon reload"></i>
+                        </button>
+                        <button type="button" class="nes-btn is-primary" @click="showSettings = !showSettings">
+                            <i class="nes-icon gear"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="container">
+            <main class="main-content">
+                <!-- Quick Actions -->
+                <div class="dashboard-actions">
+                    <button type="button" class="nes-btn is-primary quick-action-btn" @click="newProject">
+                        <i class="nes-icon star"></i><br>
+                        NEW PROJECT
+                    </button>
+                    <button type="button" class="nes-btn is-success quick-action-btn" @click="openTerminal">
+                        <i class="nes-icon terminal"></i><br>
+                        TERMINAL
+                    </button>
+                    <button type="button" class="nes-btn is-warning quick-action-btn" @click="showFiles">
+                        <i class="nes-icon folder"></i><br>
+                        FILES
+                    </button>
+                    <button type="button" class="nes-btn is-error quick-action-btn" @click="showLogs">
+                        <i class="nes-icon list"></i><br>
+                        LOGS
+                    </button>
+                    <button type="button" class="nes-btn quick-action-btn" @click="showBBCBasic">
+                        <i class="nes-icon code"></i><br>
+                        BBC BASIC
+                    </button>
+                </div>
+
+                <!-- Dashboard Stats -->
+                <div class="dashboard-grid">
+                    <!-- System Stats -->
+                    <section class="nes-container with-title dashboard-card">
+                        <h3 class="title">SYSTEM STATUS</h3>
+                        <div class="stat">
+                            <span class="stat-value">{{ systemStats.cpu }}</span>
+                            <span class="stat-label">CPU %</span>
+                        </div>
+                        <div class="stat" style="margin-top: 10px;">
+                            <span class="stat-value">{{ systemStats.memory }}</span>
+                            <span class="stat-label">MEMORY MB</span>
+                        </div>
+                        <div class="stat" style="margin-top: 10px;">
+                            <span class="stat-value">{{ systemStats.disk }}</span>
+                            <span class="stat-label">DISK %</span>
+                        </div>
+                    </section>
+
+                    <!-- Projects -->
+                    <section class="nes-container with-title dashboard-card">
+                        <h3 class="title">RECENT PROJECTS</h3>
+                        <ul class="nes-list is-disc" style="color: #ccc; font-size: 13px;">
+                            <li v-for="project in recentProjects" :key="project.id">
+                                <a href="#" @click.prevent="openProject(project)" style="color: #f8d866;">
+                                    {{ project.name }}
+                                </a>
+                            </li>
+                            <li v-if="recentProjects.length === 0" style="color: #666;">No recent projects</li>
+                        </ul>
+                        <button type="button" class="nes-btn is-primary" style="margin-top: 10px; width: 100%;" @click="viewAllProjects">
+                            View All Projects
+                        </button>
+                    </section>
+
+                    <!-- Quick Commands -->
+                    <section class="nes-container with-title dashboard-card">
+                        <h3 class="title">QUICK COMMANDS</h3>
+                        <div class="component-preview">
+                            <button type="button" class="nes-btn is-primary" style="margin-bottom: 5px;" @click="runCommand('build')">
+                                BUILD
+                            </button>
+                            <button type="button" class="nes-btn is-success" style="margin-bottom: 5px;" @click="runCommand('test')">
+                                TEST
+                            </button>
+                            <button type="button" class="nes-btn is-warning" style="margin-bottom: 5px;" @click="runCommand('deploy')">
+                                DEPLOY
+                            </button>
+                            <button type="button" class="nes-btn is-error" style="margin-bottom: 5px;" @click="runCommand('clean')">
+                                CLEAN
+                            </button>
+                        </div>
+                    </section>
+
+                    <!-- Notifications -->
+                    <section class="nes-container with-title dashboard-card">
+                        <h3 class="title">NOTIFICATIONS</h3>
+                        <div class="notification" v-for="(notification, index) in notifications" :key="index" 
+                             :class="['nes-balloon', notification.type]" style="margin-bottom: 10px;">
+                            <p style="margin: 0; font-size: 12px;">{{ notification.message }}</p>
+                            <p style="margin: 5px 0 0 0; font-size: 10px; color: #888;">{{ notification.time }}</p>
+                        </div>
+                        <p v-if="notifications.length === 0" style="color: #666; font-size: 12px; text-align: center;">
+                            No notifications
+                        </p>
+                    </section>
+                </div>
+
+                <!-- ThinUI Component Showcase -->
+                <section class="nes-container with-title thinui-showcase">
+                    <h3 class="title">THINUI COMPONENT SHOWCASE</h3>
+                    <p style="color: #aaa; margin-bottom: 15px;">Available NES.css components for ThinUI</p>
+                    
+                    <!-- Tabs -->
+                    <div class="nes-tabs">
+                        <a class="nes-tab is-active" href="#buttons-tab">Buttons</a>
+                        <a class="nes-tab" href="#forms-tab">Forms</a>
+                        <a class="nes-tab" href="#lists-tab">Lists & Tables</a>
+                        <a class="nes-tab" href="#dialogs-tab">Dialogs</a>
+                        <a class="nes-tab" href="#notifications-tab">Notifications</a>
+                    </div>
+                    
+                    <div id="buttons-tab" class="tab-content">
+                        <h4>Button Variants</h4>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin: 15px 0;">
+                            <button type="button" class="nes-btn">Normal</button>
+                            <button type="button" class="nes-btn is-primary">Primary</button>
+                            <button type="button" class="nes-btn is-success">Success</button>
+                            <button type="button" class="nes-btn is-warning">Warning</button>
+                            <button type="button" class="nes-btn is-error">Error</button>
+                            <button type="button" class="nes-btn is-disabled">Disabled</button>
+                        </div>
+                        <div style="margin-top: 15px;">
+                            <h4>Button Sizes</h4>
+                            <button type="button" class="nes-btn is-small">Small</button>
+                            <button type="button" class="nes-btn">Normal</button>
+                            <button type="button" class="nes-btn is-large">Large</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Terminal Section -->
+                <section class="nes-container with-title" style="margin-top: 20px;">
+                    <h3 class="title">THINUI TERMINAL</h3>
+                    <div id="terminal" class="component-preview" style="height: 200px; overflow-y: auto; background: #111;">
+                        <div v-for="(line, index) in terminalLines" :key="index" style="color: #ccc; font-family: monospace; font-size: 12px;">
+                            <span style="color: #f8d866;">{{ line }}</span>
+                        </div>
+                        <div v-if="terminalLines.length === 0" style="color: #666;">Terminal ready</div>
+                    </div>
+                    <div style="margin-top: 10px; display: flex; gap: 5px;">
+                        <input type="text" class="nes-input" v-model="terminalInput" 
+                               @keyup.enter="executeCommand" placeholder="Enter command..." style="flex: 1;">
+                        <button type="button" class="nes-btn is-primary" @click="executeCommand">Run</button>
+                    </div>
+                </section>
+            </main>
+
+            <!-- Footer -->
+            <footer style="text-align: center; padding: 20px; color: #666; border-top: 1px solid #444; margin-top: 40px;">
+                <p>
+                    <span>&copy; 2024</span>
+                    <a href="https://github.com/fredbook/DevStudio" target="_blank" style="color: #f8d866;">uCode1</a>
+                    <span>-</span>
+                    <a href="https://nostalgic-css.github.io/NES.css/" target="_blank" style="color: #f8d866;">NES.css</a>
+                    <span>-</span>
+                    <a href="https://github.com/fredbook" target="_blank" style="color: #f8d866;">FredBook</a>
+                </p>
+            </footer>
+        </div>
+
+        <!-- Settings Modal -->
+        <dialog class="nes-dialog" id="settings-dialog" :open="showSettings" @close="showSettings = false">
+            <div class="title">Settings</div>
+            <form method="dialog">
+                <div class="nes-field">
+                    <label for="theme-select">Theme</label>
+                    <select id="theme-select" class="nes-input">
+                        <option value="nes">NES (Default)</option>
+                        <option value="c64">Commodore 64</option>
+                        <option value="dark">Dark</option>
+                        <option value="light">Light</option>
+                    </select>
+                </div>
+                <div class="nes-field">
+                    <label>
+                        <input type="checkbox" class="nes-checkbox" v-model="settings.autoRefresh">
+                        <span>Auto-refresh data</span>
+                    </label>
+                </div>
+                <div class="nes-field">
+                    <label>
+                        <input type="checkbox" class="nes-checkbox" v-model="settings.soundEnabled">
+                        <span>Enable sound</span>
+                    </label>
+                </div>
+                <div class="nes-field">
+                    <label for="refresh-interval">Refresh Interval (seconds)</label>
+                    <input type="number" id="refresh-interval" class="nes-input" v-model.number="settings.refreshInterval" min="1" max="60">
+                </div>
+                <menu class="dialog-menu">
+                    <button class="nes-btn">Cancel</button>
+                    <button class="nes-btn is-primary" @click="saveSettings">Save</button>
+                </menu>
+            </form>
+        </dialog>
+
+        <!-- BBC Basic Launcher -->
+        <dialog class="nes-dialog" id="bbc-basic-dialog" v-if="showBBCModal">
+            <div class="title">BBC BASIC Interpreter</div>
+            <form method="dialog">
+                <div class="nes-container with-title" style="margin-bottom: 15px;">
+                    <h3 class="title">OPTIONS</h3>
+                    <div class="nes-field">
+                        <label for="bbc-theme">Theme</label>
+                        <select id="bbc-theme" class="nes-input">
+                            <option value="c64css3">C64 Theme</option>
+                            <option value="bbc">BBC Micro Theme</option>
+                            <option value="default">Default</option>
+                        </select>
+                    </div>
+                    <div class="nes-field">
+                        <label for="bbc-mode">Default Mode</label>
+                        <select id="bbc-mode" class="nes-input">
+                            <option value="7">Mode 7 (Teletext)</option>
+                            <option value="0">Mode 0 (640x560)</option>
+                            <option value="1">Mode 1 (320x256)</option>
+                            <option value="2">Mode 2 (640x512)</option>
+                        </select>
+                    </div>
+                </div>
+                <menu class="dialog-menu">
+                    <button class="nes-btn">Cancel</button>
+                    <button class="nes-btn is-primary" @click="launchBBCBasic">Launch</button>
+                </menu>
+            </form>
+        </dialog>
+    </div>
+
+    <!-- Load additional scripts -->
+    <script>
+        // Initialize Vue app
+        const app = new Vue({
+            el: '#thinui-dashboard',
+            data: {
+                connectionStatus: 'CONNECTED',
+                systemStats: {
+                    cpu: '25%',
+                    memory: '512',
+                    disk: '45%'
+                },
+                recentProjects: [
+                    { id: 1, name: 'uCode1 Core', path: '/uCode1/core' },
+                    { id: 2, name: 'BBC Basic', path: '/uCode1/bbc' },
+                    { id: 3, name: 'ThinUI', path: '/uCode1/ThinUI' },
+                    { id: 4, name: 'Retro Theme', path: '/uCode1/themes' }
+                ],
+                notifications: [
+                    { type: 'from-left', message: 'uCode1 system online', time: '10:00 AM' },
+                    { type: 'from-right', message: 'BBC Basic interpreter ready', time: '10:01 AM' },
+                    { type: 'from-left', message: 'ThinUI dashboard loaded', time: '10:02 AM' }
+                ],
+                settings: {
+                    theme: 'nes',
+                    autoRefresh: true,
+                    soundEnabled: true,
+                    refreshInterval: 5
+                },
+                showSettings: false,
+                showBBCModal: false,
+                terminalLines: [
+                    'ThinUI Terminal v1.0',
+                    'Type HELP for available commands',
+                    ''
+                ],
+                terminalInput: ''
+            },
+            methods: {
+                refreshData() {
+                    // Simulate data refresh
+                    this.connectionStatus = 'REFRESHING...';
+                    setTimeout(() => {
+                        this.connectionStatus = 'CONNECTED';
+                        // Update stats
+                        this.systemStats.cpu = `${Math.floor(Math.random() * 100)}%`;
+                        this.systemStats.memory = String(Math.floor(512 + Math.random() * 512));
+                        this.systemStats.disk = `${Math.floor(Math.random() * 100)}%`;
+                    }, 500);
+                },
+                newProject() {
+                    alert('New project dialog would open');
+                },
+                openTerminal() {
+                    this.terminalLines.push('Terminal opened');
+                },
+                showFiles() {
+                    alert('File browser would open');
+                },
+                showLogs() {
+                    alert('Logs viewer would open');
+                },
+                showBBCBasic() {
+                    this.showBBCModal = true;
+                },
+                launchBBCBasic() {
+                    this.showBBCModal = false;
+                    // In real implementation, this would open the BBC Basic interpreter
+                    this.terminalLines.push('Launching BBC BASIC interpreter...');
+                    setTimeout(() => {
+                        this.terminalLines.push('BBC BASIC ready. Open /uCode1/themes/retro/c64css3/index.html');
+                    }, 1000);
+                },
+                openProject(project) {
+                    this.terminalLines.push(`Opening project: ${project.name}`);
+                },
+                viewAllProjects() {
+                    this.terminalLines.push('Showing all projects...');
+                },
+                runCommand(cmd) {
+                    this.terminalLines.push(`> Running: ${cmd.toUpperCase()}`);
+                    setTimeout(() => {
+                        this.terminalLines.push(`Command '${cmd}' completed successfully`);
+                    }, 500);
+                },
+                executeCommand() {
+                    if (this.terminalInput.trim()) {
+                        const cmd = this.terminalInput.trim();
+                        this.terminalLines.push(`> ${cmd}`);
+                        this.terminalInput = '';
+                        
+                        // Simulate command execution
+                        setTimeout(() => {
+                            if (cmd.toLowerCase() === 'help') {
+                                this.terminalLines.push('Available commands: build, test, deploy, clean, help');
+                            } else if (cmd.toLowerCase() === 'version') {
+                                this.terminalLines.push('ThinUI v1.0.0 | uCode1 v0.1.0');
+                            } else if (cmd.toLowerCase() === 'bbc' || cmd.toLowerCase() === 'basic') {
+                                this.terminalLines.push('Opening BBC BASIC interpreter...');
+                                this.showBBCBasic();
+                            } else {
+                                this.terminalLines.push(`Command '${cmd}' not found. Type HELP for options.`);
+                            }
+                        }, 200);
+                    }
+                },
+                saveSettings() {
+                    this.showSettings = false;
+                    this.terminalLines.push('Settings saved');
+                }
+            },
+            mounted() {
+                // Auto-refresh if enabled
+                if (this.settings.autoRefresh) {
+                    setInterval(() => {
+                        this.refreshData();
+                    }, this.settings.refreshInterval * 1000);
+                }
+                
+                // Add welcome message to terminal
+                setTimeout(() => {
+                    this.terminalLines.push('Welcome to ThinUI Dashboard');
+                    this.terminalLines.push('');
+                }, 500);
+            }
+        });
+        
+        // Additional terminal functionality
+        function focusTerminalInput() {
+            document.querySelector('.nes-input').focus();
+        }
+        
+        // Tab switching (simplified)
+        document.querySelectorAll('.nes-tab').forEach(tab => {
+            tab.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.querySelectorAll('.nes-tab').forEach(t => t.classList.remove('is-active'));
+                this.classList.add('is-active');
+                
+                // Show corresponding content
+                const targetId = this.getAttribute('href').substring(1);
+                document.querySelectorAll('.tab-content').forEach(div => {
+                    div.style.display = 'none';
+                });
+                document.getElementById(targetId).style.display = 'block';
+            });
+        });
+        
+        // Initialize first tab content
+        document.addEventListener('DOMContentLoaded', function() {
+            // Hide all tab contents except first
+            document.querySelectorAll('.tab-content').forEach((div, index) => {
+                if (index > 0) {
+                    div.style.display = 'none';
+                }
+            });
+        });
+        
+        // Expose thinui dashboard API
+        window.ThinUIDashboard = {
+            refresh: () => app.refreshData(),
+            addNotification: (message, type = 'from-left') => {
+                app.notifications.unshift({
+                    message: message,
+                    type: type,
+                    time: new Date().toLocaleTimeString()
+                });
+            },
+            updateStats: (stats) => {
+                app.systemStats = { ...app.systemStats, ...stats };
+            },
+            addProject: (project) => {
+                app.recentProjects.unshift(project);
+            },
+            terminalPrint: (text) => {
+                app.terminalLines.push(text);
+            }
+        };
+    </script>
+    
+    <!-- Load dialog polyfill -->
+    <script>
+        dialogPolyfill.registerDialog(document.querySelectorAll('.nes-dialog'));
+    </script>
+</body>
+</html>

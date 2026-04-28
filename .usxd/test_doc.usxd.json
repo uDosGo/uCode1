@@ -1,0 +1,16 @@
+{
+  "metadata": {
+    "id": "test_doc",
+    "title": "Test Document",
+    "version": "1.0.0",
+    "description": "A test USXD document",
+    "author": null,
+    "created_at": "2026-04-29T00:56:43.832619",
+    "updated_at": "2026-04-29T00:56:43.832619",
+    "format": "json",
+    "tags": []
+  },
+  "sections": [],
+  "checksum": "8ba757366a6b581a2856bb650056b3e7fe1f0363a87c9f5e076516cfc1b0d255",
+  "signature": null
+}

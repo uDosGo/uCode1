@@ -1,0 +1,16 @@
+{
+  "metadata": {
+    "id": "test-registry-e2e",
+    "title": "Registry Test E2E",
+    "version": "1.0.0",
+    "description": null,
+    "author": null,
+    "created_at": "2026-04-29T01:18:23.268324",
+    "updated_at": "2026-04-29T01:18:23.268324",
+    "format": "json",
+    "tags": []
+  },
+  "sections": [],
+  "checksum": "653ac21cbf4c667ab7d516ba5facfbaf262b9b9a41711cc250b553f70b668608",
+  "signature": null
+}
