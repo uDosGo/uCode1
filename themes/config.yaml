@@ -1,0 +1,93 @@
+# uCode1 Theme Configuration
+# Default surfaces for the uCode1 platform
+
+# BBC BASIC Terminal Surface
+bbcbasic:
+  name: "BBC BASIC Terminal"
+  path: "themes/bbcbasic/index.html"
+  type: "terminal"
+  description: "Commodore 64 styled BBC BASIC terminal with decrunch animation"
+  default: true
+  features:
+    - decrunch_animation: 4s
+    - typing_effect: true
+    - interactive_commands: [LOAD, RUN, LIST, NEW, HELP]
+    - font: "C64 User Mono"
+
+# NES Dashboard Surface  
+nesdash:
+  name: "NES Dashboard"
+  path: "themes/nesdash/index.html"
+  type: "dashboard"
+  description: "Retro NES.css styled dashboard and menu system for uCode1"
+  default: true
+  features:
+    - grid_layout: true
+    - navigation_cards: [PROJECTS, SYSTEMS, VAULT, THINUI]
+    - quick_actions: [NEW_PROJECT, IMPORT, SEARCH, DOCS, SETTINGS]
+    - system_info: true
+    - font: "Press Start 2P"
+
+# Theme Selection Priority
+priority:
+  - bbcbasic
+  - nesdash
+  - ceefax
+
+# Theme Assets
+assets:
+  bbcbasic:
+    fonts:
+      - C64_User_Mono_v1.0-STYLE.eot
+      - C64_User_Mono_v1.0-STYLE.ttf
+      - C64_User_Mono_v1.0-STYLE.woff
+      - giana.eot
+      - giana.ttf
+      - giana.woff
+    images:
+      - pixelambacht-logo.png
+    scripts:
+      - prefixfree.min.js
+
+  nesdash:
+    fonts:
+      - fonts/press-start-2p.woff2
+    styles:
+      - nes.css
+
+  ceefax:
+    # CeefaxThinUI uses pure CSS, no external assets needed
+
+# CeefaxThinUI Surface
+ceefax:
+  name: "Ceefax ThinUI"
+  path: "../ThinUI/ceefax/index.html"
+  type: "teletext"
+  description: "Teletext Mode 7 renderer with NES-style interface"
+  default: false
+  features:
+    - mode7_rendering: true
+    - grid_layout: "40x25"
+    - color_support: 8
+    - mcp_commands: [NEXT, PREV, INDEX, REVEAL, FLASH]
+    - font: "Courier New"
+
+# Integration Points
+integration:
+  # BBC BASIC integrates with uCode1 Core BBC BASIC Interpreter
+  bbcbasic:
+    core_module: "uCode1.core_py.bbc"
+    surface_type: "terminal"
+    command_handler: "bbc_interpreter.execute"
+    
+  # NES Dash integrates with uCode1 ThinUI
+  nesdash:
+    core_module: "uCode1.ThinUI"
+    surface_type: "dashboard"
+    router: "thinui.router.navigate"
+    
+  # CeefaxThinUI integrates as teletext surface
+  ceefax:
+    core_module: "uCode1.ThinUI.ceefax"
+    surface_type: "teletext"
+    renderer: "teletext.render"

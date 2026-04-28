@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CeefaxThinUI - Teletext Renderer</title>
+    <style>
+        /* CeefaxThinUI - Teletext Mode 7 Renderer */
+        
+        :root {
+            --teletext-bg: #000000;
+            --teletext-fg: #ffffff;
+            --teletext-block: #000080;
+            --teletext-red: #800000;
+            --teletext-green: #008000;
+            --teletext-yellow: #808000;
+            --teletext-blue: #0000ff;
+            --teletext-magenta: #800080;
+            --teletext-cyan: #008080;
+            --teletext-white: #ffffff;
+        }
+        
+        body {
+            background-color: var(--teletext-bg);
+            color: var(--teletext-fg);
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            line-height: 1.4;
+            margin: 0;
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        /* Teletext Screen Container - Mode 7: 40x25 characters */
+        .teletext-screen {
+            display: grid;
+            grid-template-columns: repeat(40, 1fr);
+            grid-template-rows: repeat(25, auto);
+            gap: 0;
+            width: 100%;
+            max-width: 800px;
+            height: 600px;
+            margin: 0 auto;
+            background: var(--teletext-bg);
+            border: 8px solid var(--teletext-block);
+            box-shadow: 0 0 20px rgba(0, 100, 255, 0.5);
+            overflow: hidden;
+        }
+        
+        /* Teletext Character Cell */
+        .teletext-cell {
+            width: 20px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: var(--teletext-fg);
+            background: var(--teletext-bg);
+            box-sizing: border-box;
+        }
+        
+        /* Teletext Color Classes */
+        .color-0 { color: var(--teletext-bg); background: var(--teletext-bg); }
+        .color-1 { color: var(--teletext-red); }
+        .color-2 { color: var(--teletext-green); }
+        .color-3 { color: var(--teletext-yellow); }
+        .color-4 { color: var(--teletext-blue); }
+        .color-5 { color: var(--teletext-magenta); }
+        .color-6 { color: var(--teletext-cyan); }
+        .color-7 { color: var(--teletext-white); }
+        
+        /* Flash / Inverse */
+        .flash {
+            animation: flash 1s infinite;
+        }
+        
+        @keyframes flash {
+            0%, 50% { background: var(--teletext-bg); color: var(--teletext-fg); }
+            51%, 100% { background: var(--teletext-fg); color: var(--teletext-bg); }
+        }
+        
+        /* Double Height / Width */
+        .double-height {
+            grid-row: span 2;
+            height: 48px;
+        }
+        .double-width {
+            grid-column: span 2;
+            width: 40px;
+        }
+        
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-bottom: 2px solid var(--teletext-cyan);
+        }
+        
+        header h1 {
+            color: var(--teletext-cyan);
+            font-size: 24px;
+            margin: 0;
+        }
+        
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        
+        .controls button {
+            background: var(--teletext-blue);
+            color: var(--teletext-white);
+            border: 2px solid var(--teletext-cyan);
+            padding: 8px 16px;
+            font-family: monospace;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        
+        .controls button:hover {
+            background: var(--teletext-cyan);
+            border-color: var(--teletext-white);
+        }
+        
+        /* Status Bar */
+        .status {
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px;
+            border-top: 2px solid var(--teletext-cyan);
+            color: var(--teletext-cyan);
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>CEEFAX THINUI</h1>
+        <p>Teletext Renderer - Mode 7</p>
+    </header>
+    
+    <div class="controls">
+        <button onclick="previousPage()">PREV</button>
+        <button onclick="nextPage()">NEXT</button>
+        <button onclick="showIndex()">INDEX</button>
+        <button onclick="reveal()">REVEAL</button>
+        <button onclick="flash()">FLASH</button>
+    </div>
+    
+    <div class="teletext-screen" id="screen">
+        <!-- Teletext content will be rendered here -->
+        <script>
+            // Initialize teletext screen
+            const screen = document.getElementById('screen');
+            const rows = 25;
+            const cols = 40;
+            
+            // Create teletext grid
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'teletext-cell';
+                    cell.id = `cell-${r}-${c}`;
+                    cell.textContent = ' ';
+                    screen.appendChild(cell);
+                }
+            }
+            
+            // Current page
+            let currentPage = 100;
+            let pages = {
+                100: [
+                    {row: 0, col: 0, text: 'CEEFAX', color: 6},
+                    {row: 2, col: 0, text: 'Page 100', color: 7},
+                    {row: 4, col: 0, text: 'NEWS HEADLINES', color: 2},
+                    {row: 6, col: 0, text: '1. Breaking: uCode1 Release', color: 7},
+                    {row: 7, col: 0, text: '2. Python Core Stable', color: 7},
+                    {row: 8, col: 0, text: '3. Theme System Deployed', color: 7},
+                    {row: 10, col: 0, text: 'WEATHER', color: 2},
+                    {row: 12, col: 0, text: 'Sunny, 22C', color: 7},
+                    {row: 14, col: 0, text: 'SPORT', color: 2},
+                    {row: 16, col: 0, text: 'Match Results: uCode 3-0 Legacy', color: 7},
+                ],
+                101: [
+                    {row: 0, col: 0, text: 'TECH NEWS', color: 6},
+                    {row: 2, col: 0, text: 'uCode1 Updates', color: 7},
+                    {row: 4, col: 0, text: 'Python core migration complete', color: 7},
+                    {row: 5, col: 0, text: 'Rust core now in uCode3', color: 7},
+                    {row: 7, col: 0, text: 'New themes: bbcbasic, nesdash', color: 7},
+                    {row: 9, col: 0, text: 'CeefaxThinUI under development', color: 3},
+                ],
+                1: [
+                    {row: 0, col: 0, text: 'INDEX', color: 6},
+                    {row: 2, col: 0, text: '1 - News Headlines', color: 7},
+                    {row: 3, col: 0, text: '2 - Technology News', color: 7},
+                    {row: 4, col: 0, text: '3 - Weather', color: 7},
+                    {row: 5, col: 0, text: '4 - Sports', color: 7},
+                    {row: 10, col: 0, text: 'MCP Commands:', color: 6},
+                    {row: 12, col: 0, text: 'NEXT - Go to next page', color: 7},
+                    {row: 13, col: 0, text: 'PREV - Go to previous page', color: 7},
+                    {row: 14, col: 0, text: 'INDEX - Show page index', color: 7},
+                    {row: 15, col: 0, text: 'REVEAL - Reveal hidden content', color: 7},
+                    {row: 16, col: 0, text: 'FLASH - Toggle flash mode', color: 7},
+                ]
+            };
+            
+            function renderPage(pageNum) {
+                // Clear screen
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        const cell = document.getElementById(`cell-${r}-${c}`);
+                        cell.textContent = ' ';
+                        cell.className = 'teletext-cell';
+                    }
+                }
+                
+                // Render page content
+                const page = pages[pageNum] || [];
+                page.forEach(item => {
+                    const cell = document.getElementById(`cell-${item.row}-${item.col}`);
+                    if (cell) {
+                        cell.textContent = item.text;
+                        if (item.color !== undefined) {
+                            cell.classList.add(`color-${item.color}`);
+                        }
+                    }
+                });
+                
+                // Update status
+                document.querySelector('p').textContent = `Teletext Page ${pageNum}`;
+            }
+            
+            function previousPage() {
+                const pageNums = Object.keys(pages).map(Number).sort((a, b) => a - b);
+                const currentIndex = pageNums.indexOf(currentPage);
+                const prevIndex = (currentIndex - 1 + pageNums.length) % pageNums.length;
+                currentPage = pageNums[prevIndex];
+                renderPage(currentPage);
+            }
+            
+            function nextPage() {
+                const pageNums = Object.keys(pages).map(Number).sort((a, b) => a - b);
+                const currentIndex = pageNums.indexOf(currentPage);
+                const nextIndex = (currentIndex + 1) % pageNums.length;
+                currentPage = pageNums[nextIndex];
+                renderPage(currentPage);
+            }
+            
+            function showIndex() {
+                currentPage = 1;
+                renderPage(currentPage);
+            }
+            
+            let revealMode = false;
+            function reveal() {
+                revealMode = !revealMode;
+                const flashed = document.querySelectorAll('.flash');
+                flashed.forEach(el => {
+                    if (revealMode) {
+                        el.classList.remove('flash');
+                        el.style.background = 'var(--teletext-white)';
+                        el.style.color = 'var(--teletext-bg)';
+                    } else {
+                        el.classList.add('flash');
+                        el.style.background = '';
+                        el.style.color = '';
+                    }
+                });
+            }
+            
+            function flash() {
+                // Trigger flash on current page
+                const cells = document.querySelectorAll('.teletext-cell');
+                cells.forEach(cell => {
+                    cell.classList.toggle('flash');
+                });
+            }
+            
+            // Initial render
+            renderPage(currentPage);
+            
+            // Add hidden content example
+            const hiddenCell = document.getElementById('cell-20-0');
+            if (hiddenCell) {
+                hiddenCell.textContent = 'HIDDEN CONTENT';
+                hiddenCell.className = 'teletext-cell flash';
+            }
+        </script>
+    </div>
+    
+    <div class="status">
+        uCode1 CeefaxThinUI - Teletext Mode 7 Renderer | MCP Ready
+    </div>
+</body>
+</html>
