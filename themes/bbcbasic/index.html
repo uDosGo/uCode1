@@ -1,0 +1,104 @@
+<!doctype html>
+<html>
+<head>
+    <title>uDosGo C64 Terminal</title>
+    <link href="css.css" rel="stylesheet">
+    <script src="prefixfree.min.js"></script>
+</head>
+<body>
+
+  <textarea class="spacebar" required autofocus spellcheck="false"></textarea>
+
+  <section class="bluescreen">
+    <ul class="loading">
+      <li></li>
+      <li></li>
+      <li></li>
+      <li></li>
+      <li></li>
+    </ul>
+  </section>
+
+  <a href="https://pixelambacht.nl/2013/css3-c64/" class="credits">C64 Terminal | uDosGo</a>
+
+  <script>
+    // After 4 seconds of decrunch, make it ready for BBC BASIC terminal
+    setTimeout(function() {
+        document.querySelector('.spacebar').style.display = 'none';
+        
+        // Show READY prompt
+        const readyDiv = document.createElement('div');
+        readyDiv.className = 'ready-prompt';
+        readyDiv.innerHTML = '<span>*** commodore 64 basic v2 ***\n\n  64k ram system  38911 basic bytes free\n\nready.<span class="terminal-cursor"></span></span>';
+        document.querySelector('section.bluescreen').appendChild(readyDiv);
+        
+        // Setup terminal
+        const output = readyDiv.querySelector('span');
+        const cursor = readyDiv.querySelector('.terminal-cursor');
+        
+        let commandMode = false;
+        let currentInput = '';
+        
+        document.addEventListener('keydown', function(e) {
+            if (commandMode) {
+                if (e.key === 'Enter') {
+                    output.innerHTML += '\n' + currentInput;
+                    output.appendChild(cursor);
+                    
+                    // Process BBC BASIC command
+                    const cmd = currentInput.toUpperCase().trim();
+                    if (cmd === 'LOAD') {
+                        setTimeout(() => {
+                            output.innerHTML += '\nsearching...\nloading\nready.' + currentInput;
+                            output.appendChild(cursor);
+                        }, 500);
+                    } else if (cmd === 'RUN') {
+                        setTimeout(() => {
+                            output.innerHTML += '\nrunning\nready.' + currentInput;
+                            output.appendChild(cursor);
+                        }, 500);
+                    } else if (cmd === 'LIST') {
+                        setTimeout(() => {
+                            output.innerHTML += '\n 10 PRINT "HELLO"\n 20 GOTO 10\nready.' + currentInput;
+                            output.appendChild(cursor);
+                        }, 500);
+                    } else if (cmd === 'NEW') {
+                        setTimeout(() => {
+                            output.innerHTML += '\nnew program\nready.' + currentInput;
+                            output.appendChild(cursor);
+                        }, 500);
+                    } else if (cmd === 'HELP') {
+                        setTimeout(() => {
+                            output.innerHTML += '\nbbc basic commands: LOAD, RUN, LIST, NEW, HELP\nready.' + currentInput;
+                            output.appendChild(cursor);
+                        }, 500);
+                    } else if (cmd) {
+                        setTimeout(() => {
+                            output.innerHTML += '\nunknown command\nready.' + currentInput;
+                            output.appendChild(cursor);
+                        }, 500);
+                    }
+                    currentInput = '';
+                } else if (e.key === 'Backspace') {
+                    currentInput = currentInput.slice(0, -1);
+                    output.innerHTML = output.innerHTML.slice(0, -1);
+                    output.appendChild(cursor);
+                } else if (e.key.length === 1) {
+                    currentInput += e.key;
+                    output.innerHTML += e.key;
+                    output.appendChild(cursor);
+                }
+            } else {
+                // Initial ready state - press any key to start typing
+                if (e.key.length === 1 || e.key === 'Enter' || e.key === 'Backspace') {
+                    commandMode = true;
+                    output.innerHTML = '*** commodore 64 basic v2 ***\n\n  64k ram system  38911 basic bytes free\n\nready.';
+                    output.appendChild(cursor);
+                }
+            }
+        });
+    }, 4000);
+  </script>
+
+</body>
+</html>
