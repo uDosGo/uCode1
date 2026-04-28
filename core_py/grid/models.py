@@ -181,6 +181,20 @@ class GridCell(Generic[T]):
     def __repr__(self) -> str:
         data_repr = repr(self.data) if self.data is not None else 'None'
         return f"GridCell({data_repr}, {self.x}, {self.y})"
+    
+    def clone(self) -> 'GridCell[T]':
+        """Create a deep copy of this cell."""
+        import copy
+        return copy.deepcopy(self)
+    
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, GridCell):
+            return False
+        # Only compare data-relevant fields
+        return (self.x == other.x and 
+                self.y == other.y and
+                self.data == other.data and
+                self.char == other.char)
 
 
 @dataclass

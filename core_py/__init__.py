@@ -14,6 +14,7 @@ from . import binder  # Binder module implemented
 from . import usxd    # USXD module implemented
 from . import thinui  # ThinUI integration module (NEW)
 from . import plugin  # Plugin system (NEW)
+from . import grid    # Python grid-core (NEW)
 
 # Export main types for convenience
 from .snack.models import Snack, SnackInput, SnackOutput
@@ -49,6 +50,15 @@ from .plugin.exceptions import (
     PluginCompatibilityError,
     PluginDisabledError,
 )
+# Grid System
+from .grid import (
+    Grid,
+    GridCell,
+    GridRegion,
+    GridSize,
+    Coordinate,
+    CoordSystem,
+)
 
 __all__ = [
     "snack",
@@ -56,6 +66,7 @@ __all__ = [
     "binder",  # Binder module implemented
     "usxd",    # USXD module implemented
     "plugin",  # Plugin system (NEW)
+    "grid",    # Python grid-core (NEW)
     "Snack",
     "SnackInput",
     "SnackOutput",
@@ -115,6 +126,13 @@ __all__ = [
     "API_AVAILABLE",
     # Plugin System
     "plugin",
+    # Grid System
+    "grid",
+    "Grid",
+    "GridCell",
+    "GridRegion",
+    "GridSize",
+    "Coordinate",
     "PluginDiscovery",
     "PluginRegistry",
     "PluginLoader",
