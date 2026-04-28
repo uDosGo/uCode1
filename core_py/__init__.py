@@ -23,6 +23,7 @@ from .snack.exceptions import SnackExecutionError, CircularDependencyError
 from .relic.models import Relic, RelicMetadata, RelicResource, RelicBinaryFormat, RelicRegistry
 from .binder.models import Binder, BinderMetadata, BinderEntry, BinderResource, BinderRegistry
 from .usxd.models import USXDDocument, USXDMetadata, USXDSection, USXDRegistry, USXDFormat
+from .usxd.grid_parser import ASCIIGridParser, ParsedGrid, GridCell, GridComponent, GridFormat
 
 __all__ = [
     "snack",
@@ -57,5 +58,11 @@ __all__ = [
     "USXDMetadata",
     "USXDSection",
     "USXDRegistry",
-    "USXDFormat"
+    "USXDFormat",
+    # Grid Parser
+    "ASCIIGridParser",
+    "ParsedGrid",
+    "GridCell",
+    "GridComponent",
+    "GridFormat"
 ]

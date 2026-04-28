@@ -10,10 +10,26 @@ from .models import (
     USXDDocument, USXDMetadata, USXDSection, USXDRegistry, USXDFormat
 )
 
+# Import grid parser components
+from .grid_parser import (
+    ASCIIGridParser,
+    ParsedGrid,
+    GridCell,
+    GridComponent,
+    GridFormat,
+)
+
 __all__ = [
+    # USXD Models
     "USXDDocument",
     "USXDMetadata",
     "USXDSection",
     "USXDRegistry",
-    "USXDFormat"
+    "USXDFormat",
+    # Grid Parser
+    "ASCIIGridParser",
+    "ParsedGrid",
+    "GridCell",
+    "GridComponent",
+    "GridFormat",
 ]
