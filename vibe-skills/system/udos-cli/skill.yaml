@@ -1,0 +1,40 @@
+name: udos-cli
+description: Install, update, and repair the uDos CLI locally.
+version: 1.0.0
+author: uDos System
+type: system
+
+commands:
+  - name: udos-cli
+    script: udos-cli.sh
+    help: Manage uDos CLI installation (install, update, repair, status).
+    args:
+      - name: action
+        description: Action to perform (install, update, repair, status, uninstall).
+        default: status
+        options:
+          - install
+          - update
+          - repair
+          - status
+          - uninstall
+      - name: force
+        description: Force reinstallation or repair (yes/no).
+        default: "no"
+
+examples:
+  - "vibe udos-cli status"
+  - "vibe udos-cli install"
+  - "vibe udos-cli update"
+  - "vibe udos-cli repair"
+  - "vibe udos-cli repair yes"
+  - "vibe udos-cli uninstall"
+
+notes:
+  - install: Build and install uDos CLI from source
+  - update: Rebuild and update existing installation
+  - repair: Fix broken installation (reinstall binary and wrapper)
+  - status: Check current installation status
+  - uninstall: Remove uDos CLI installation
+  - All actions work with local user directories (~/.local/share/udos/bin)
+  - Requires Rust/Cargo for building from source
