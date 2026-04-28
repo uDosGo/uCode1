@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>uCode1 Dashboard</title>
+    <link rel="stylesheet" href="nes.css">
+    <style>
+        body {
+            background: #D74B35;
+            padding: 0;
+            margin: 0;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 8px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: #5A281E;
+            padding: 1rem;
+            border-bottom: 4px solid #F8F8F8;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        header h1 {
+            color: #F8F8F8;
+            margin: 0;
+            font-size: 24px;
+            text-shadow: 2px 2px 0 #855C38;
+        }
+        
+        header p {
+            color: #F8F8F8;
+            margin: 10px 0 0 0;
+            font-size: 12px;
+        }
+        
+        .nes-container {
+            background: #5A281E;
+            padding: 20px;
+            margin: 20px 0;
+            position: relative;
+            border: 4px solid #D74B35;
+        }
+        
+        .nes-container.with-title {
+            padding: 10px 20px 20px;
+        }
+        
+        .nes-container.with-title .title {
+            font-family: 'Press Start 2P', cursive;
+            margin: -20px -20px 15px -20px;
+            padding: 8px 20px;
+            background: #D74B35;
+            color: #F8F8F8;
+            border-bottom: 2px solid #5A281E;
+            font-size: 16px;
+        }
+        
+        .title {
+            margin-bottom: 10px;
+            color: #F8F8F8;
+        }
+        
+        /* Grid layout for dashboard */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .dashboard-card {
+            background: #5A281E;
+            border: 4px solid #D74B35;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .dashboard-card h3 {
+            color: #F8F8F8;
+            margin: 0 0 15px 0;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        
+        .dashboard-card p {
+            color: #ccc;
+            font-size: 10px;
+            line-height: 1.4;
+        }
+        
+        .card-icon {
+            font-size: 48px;
+            color: #F8F8F8;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 0 #855C38;
+        }
+        
+        /* Main navigation */
+        .main-nav {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .nav-button {
+            background: #5A281E;
+            border: 4px solid #D74B35;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: #F8F8F8;
+        }
+        
+        .nav-button:hover {
+            background: #E75B45;
+            box-shadow: 3px 3px 0 #855C38;
+        }
+        
+        .nav-button:active {
+            box-shadow: 1px 1px 0 #855C38;
+        }
+        
+        .nav-button h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+        }
+        
+        .nav-button p {
+            font-size: 10px;
+            color: #ccc;
+        }
+        
+        /* Status bar */
+        footer {
+            background: #5A281E;
+            padding: 1rem;
+            border-top: 4px solid #D74B35;
+            margin-top: 20px;
+            text-align: center;
+            font-size: 10px;
+            color: #ccc;
+        }
+        
+        /* System info */
+        .system-info {
+            background: #5A281E;
+            border: 4px solid #D74B35;
+            padding: 15px;
+            margin: 20px 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .info-item {
+            color: #F8F8F8;
+            font-size: 10px;
+        }
+        
+        .info-item dt {
+            font-weight: bold;
+            color: #D74B35;
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .info-item dd {
+            color: #ccc;
+            margin: 0;
+        }
+        
+        /* NES.css original colors */
+        .nes-btn {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            display: inline-block;
+            padding: 8px 16px;
+            margin: 4px;
+            background: #D74B35;
+            color: #F8F8F8;
+            border: 2px solid #5A281E;
+            border-radius: 2px;
+            box-shadow: 2px 2px 0 #5A281E;
+            cursor: pointer;
+            transition: all 0.2s;
+            outline: none;
+            text-decoration: none;
+        }
+        
+        .nes-btn:hover {
+            background: #E75B45;
+            box-shadow: 3px 3px 0 #5A281E;
+        }
+        
+        .nes-btn:active {
+            box-shadow: 1px 1px 0 #5A281E;
+        }
+        
+        .nes-btn.is-success {
+            background: #50b818;
+        }
+        
+        .nes-btn.is-warning {
+            background: #f0e858;
+            color: #5A281E;
+        }
+        
+        .nes-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            font-size: 10px;
+            background: #F8F8F8;
+            color: #D74B35;
+            border: 2px solid #D74B35;
+            margin-right: 10px;
+        }
+        
+        .nes-badge.is-splited {
+            display: flex;
+            align-items: center;
+        }
+        
+        .nes-badge.is-splited .is-dark {
+            background: #5A281E;
+            color: #F8F8F8;
+            padding: 4px 8px;
+        }
+        
+        .nes-badge.is-splited .is-primary {
+            background: #D74B35;
+            color: #F8F8F8;
+            padding: 4px 8px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>UCODE1 DASHBOARD</h1>
+            <p>Next Generation Code Platform</p>
+        </div>
+    </header>
+    
+    <div class="container">
+        <!-- Main Navigation -->
+        <div class="main-nav">
+            <a href="#" class="nav-button">
+                <h3>📁 PROJECTS</h3>
+                <p>Manage your code projects</p>
+            </a>
+            <a href="#" class="nav-button">
+                <h3>🎮 SYSTEMS</h3>
+                <p>Snack, Relic, Binder, USXD</p>
+            </a>
+            <a href="#" class="nav-button">
+                <h3>💾 VAULT</h3>
+                <p>Access your knowledge base</p>
+            </a>
+            <a href="#" class="nav-button">
+                <h3>⚡ THINUI</h3>
+                <p>Lightweight UI framework</p>
+            </a>
+        </div>
+        
+        <!-- Quick Actions -->
+        <section class="nes-container with-title">
+            <h2 class="title">QUICK ACTIONS</h2>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                <a href="#" class="nes-btn is-success">NEW PROJECT</a>
+                <a href="#" class="nes-btn is-warning">IMPORT</a>
+                <a href="#" class="nes-btn">SEARCH</a>
+                <a href="#" class="nes-btn">DOCS</a>
+                <a href="#" class="nes-btn">SETTINGS</a>
+            </div>
+        </section>
+        
+        <!-- Dashboard Overview -->
+        <section class="nes-container with-title">
+            <h2 class="title">DASHBOARD</h2>
+            <div class="grid">
+                <div class="dashboard-card">
+                    <div class="card-icon">📊</div>
+                    <h3>Total Projects</h3>
+                    <p><span class="nes-badge">12</span> Active Projects</p>
+                </div>
+                <div class="dashboard-card">
+                    <div class="card-icon">⚡</div>
+                    <h3>System Status</h3>
+                    <p><span class="nes-badge is-success">ONLINE</span> All Systems Operational</p>
+                </div>
+                <div class="dashboard-card">
+                    <div class="card-icon">💾</div>
+                    <h3>Vault Entries</h3>
+                    <p><span class="nes-badge">248</span> Notes in Knowledge Base</p>
+                </div>
+                <div class="dashboard-card">
+                    <div class="card-icon">⏱️</div>
+                    <h3>Last Activity</h3>
+                    <p><span class="nes-badge is-warning">TODAY</span> Recent: 2 hours ago</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- System Information -->
+        <section class="nes-container with-title">
+            <h2 class="title">SYSTEM INFORMATION</h2>
+            <div class="system-info">
+                <div class="info-item">
+                    <dt>Platform</dt>
+                    <dd>uCode1 v1.0</dd>
+                </div>
+                <div class="info-item">
+                    <dt>MCP Server</dt>
+                    <dd><span class="nes-badge is-success">CONNECTED</span></dd>
+                </div>
+                <div class="info-item">
+                    <dt>ThinUI</dt>
+                    <dd><span class="nes-badge is-success">ACTIVE</span></dd>
+                </div>
+                <div class="info-item">
+                    <dt>Vault</dt>
+                    <dd><span class="nes-badge is-success">SYNCED</span></dd>
+                </div>
+            </div>
+        </section>
+    </div>
+    
+    <footer>
+        <div class="container">
+            <p>uCode1 Dashboard | NES.css Theme | Default Menu Surface for uCode1</p>
+        </div>
+    </footer>
+    
+    <script>
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add click handlers for navigation
+            document.querySelectorAll('.nav-button').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const title = this.querySelector('h3').textContent;
+                    alert('Navigate to: ' + title + '\n(Integration with uCode1 coming soon)');
+                });
+            });
+            
+            // Quick action buttons
+            document.querySelectorAll('.nes-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const text = this.textContent.trim();
+                    alert('Action: ' + text + '\n(Integration with uCode1 coming soon)');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
