@@ -12,6 +12,7 @@ from . import snack
 from . import relic  # Relic module implemented
 from . import binder  # Binder module implemented
 from . import usxd    # USXD module implemented
+from . import thinui  # ThinUI integration module (NEW)
 
 # Export main types for convenience
 from .snack.models import Snack, SnackInput, SnackOutput
@@ -26,6 +27,10 @@ from .usxd.models import USXDDocument, USXDMetadata, USXDSection, USXDRegistry, 
 from .usxd.grid_parser import ASCIIGridParser, ParsedGrid, GridCell, GridComponent, GridFormat
 from .usxd.component_mapper import ComponentMapper, ComponentMapping, ComponentType, ThinUIProperties
 from .usxd.grid_renderer import GridRenderer, Style, ColorMode, TerminalUI
+# ThinUI Integration
+from .thinui import ThinUIGridBridge, ThinUIGridData
+from .thinui.formats import ThinUILayout, ThinUIComponent, ThinUIColor, ThinUIFormat
+from .thinui import ThinUIComponentType
 
 __all__ = [
     "snack",
@@ -76,5 +81,14 @@ __all__ = [
     "GridRenderer",
     "Style",
     "ColorMode",
-    "TerminalUI"
+    "TerminalUI",
+    # ThinUI Integration
+    "thinui",
+    "ThinUIGridBridge",
+    "ThinUIGridData",
+    "ThinUILayout",
+    "ThinUIComponent",
+    "ThinUIComponentType",
+    "ThinUIColor",
+    "ThinUIFormat"
 ]
