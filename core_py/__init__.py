@@ -13,6 +13,7 @@ from . import relic  # Relic module implemented
 from . import binder  # Binder module implemented
 from . import usxd    # USXD module implemented
 from . import thinui  # ThinUI integration module (NEW)
+from . import plugin  # Plugin system (NEW)
 
 # Export main types for convenience
 from .snack.models import Snack, SnackInput, SnackOutput
@@ -32,12 +33,29 @@ from .thinui import ThinUIGridBridge, ThinUIGridData
 from .thinui.formats import ThinUILayout, ThinUIComponent, ThinUIColor, ThinUIFormat
 from .thinui import ThinUIComponentType
 from .thinui import API_AVAILABLE, create_api_server, run_api_server
+# Plugin System
+from .plugin import (
+    PluginDiscovery,
+    PluginRegistry,
+    PluginLoader,
+    PluginWrapper,
+    PluginMetadata,
+    PluginManifest,
+)
+from .plugin.exceptions import (
+    PluginError,
+    PluginNotFoundError,
+    PluginLoadError,
+    PluginCompatibilityError,
+    PluginDisabledError,
+)
 
 __all__ = [
     "snack",
     "relic",  # Relic module implemented
     "binder",  # Binder module implemented
     "usxd",    # USXD module implemented
+    "plugin",  # Plugin system (NEW)
     "Snack",
     "SnackInput",
     "SnackOutput",
@@ -94,5 +112,18 @@ __all__ = [
     "ThinUIFormat",
     "create_api_server",
     "run_api_server",
-    "API_AVAILABLE"
+    "API_AVAILABLE",
+    # Plugin System
+    "plugin",
+    "PluginDiscovery",
+    "PluginRegistry",
+    "PluginLoader",
+    "PluginWrapper",
+    "PluginMetadata",
+    "PluginManifest",
+    "PluginError",
+    "PluginNotFoundError",
+    "PluginLoadError",
+    "PluginCompatibilityError",
+    "PluginDisabledError",
 ]
