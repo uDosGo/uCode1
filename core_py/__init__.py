@@ -31,7 +31,7 @@ from .usxd.grid_renderer import GridRenderer, Style, ColorMode, TerminalUI
 from .thinui import ThinUIGridBridge, ThinUIGridData
 from .thinui.formats import ThinUILayout, ThinUIComponent, ThinUIColor, ThinUIFormat
 from .thinui import ThinUIComponentType
-from .thinui.api import create_api_server, run_api_server, API_AVAILABLE
+from .thinui import API_AVAILABLE, create_api_server, run_api_server
 
 __all__ = [
     "snack",
