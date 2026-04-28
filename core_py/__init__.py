@@ -9,7 +9,7 @@ __license__ = "MIT"
 
 # Core modules
 from . import snack
-# from . import relic  # TODO: Implement relic module
+from . import relic  # Relic module implemented
 # from . import binder  # TODO: Implement binder module
 # from . import usxd    # TODO: Implement usxd module
 
@@ -20,13 +20,13 @@ from .snack.dependency import DependencyResolver, resolve_snack_dependencies, Ci
 from .snack.validator import validate_snack, validate_snack_file, validate_snack_resources
 from .snack.schema import validate_snack_schema
 from .snack.exceptions import SnackExecutionError, CircularDependencyError
-# from .relic.models import Relic  # TODO: Implement
+from .relic.models import Relic, RelicMetadata, RelicResource, RelicBinaryFormat, RelicRegistry
 # from .binder.models import Binder  # TODO: Implement
 # from .usxd.models import UsxdDocument  # TODO: Implement
 
 __all__ = [
     "snack",
-    # "relic",  # TODO: Implement
+    "relic",  # Relic module implemented
     # "binder",  # TODO: Implement
     # "usxd",    # TODO: Implement
     "Snack",
@@ -43,7 +43,11 @@ __all__ = [
     "validate_snack_schema",
     "SnackExecutionError",
     "CircularDependencyError",
-    # "Relic",   # TODO: Implement
+    "Relic",
+    "RelicMetadata",
+    "RelicResource",
+    "RelicBinaryFormat",
+    "RelicRegistry",
     # "Binder",   # TODO: Implement
     # "UsxdDocument"  # TODO: Implement
 ]
