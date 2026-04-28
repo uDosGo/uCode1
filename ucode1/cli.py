@@ -3,6 +3,7 @@ uCode1 CLI - Command-line interface for uCode1
 
 Usage:
   ucode1 [OPTIONS] [FILE]
+  ucode1 snack [COMMAND] [OPTIONS]  # Snack management
 
 Options:
   --help       Show this help
@@ -10,6 +11,14 @@ Options:
   --rust       Enable Rust acceleration (if available)
   --repl       Start interactive REPL
   --debug      Enable debug output
+
+Snack Commands:
+  ucode1 snack list        List available snacks
+  ucode1 snack show ID     Show snack details
+  ucode1 snack create     Create a new snack
+  ucode1 snack validate    Validate a snack file
+  ucode1 snack run FILE    Run a snack
+  ucode1 snack test        Test snack functionality
 """
 
 import sys
@@ -18,6 +27,12 @@ from .runtime import Runtime
 
 
 def main():
+    # Handle snack subcommand
+    if len(sys.argv) > 1 and sys.argv[1] == 'snack':
+        from .snack_cli import main as snack_main
+        snack_main()
+        return
+    
     parser = argparse.ArgumentParser(
         description='uCode1 - BASIC-inspired scripting language',
         add_help=False

@@ -17,6 +17,9 @@ from . import snack
 from .snack.models import Snack, SnackInput, SnackOutput
 from .snack.engine import SnackEngine, execute_snack
 from .snack.dependency import DependencyResolver, resolve_snack_dependencies, CircularDependencyError
+from .snack.validator import validate_snack, validate_snack_file, validate_snack_resources
+from .snack.schema import validate_snack_schema
+from .snack.exceptions import SnackExecutionError, CircularDependencyError
 # from .relic.models import Relic  # TODO: Implement
 # from .binder.models import Binder  # TODO: Implement
 # from .usxd.models import UsxdDocument  # TODO: Implement
@@ -33,6 +36,12 @@ __all__ = [
     "execute_snack",
     "DependencyResolver",
     "resolve_snack_dependencies",
+    "CircularDependencyError",
+    "validate_snack",
+    "validate_snack_file",
+    "validate_snack_resources",
+    "validate_snack_schema",
+    "SnackExecutionError",
     "CircularDependencyError",
     # "Relic",   # TODO: Implement
     # "Binder",   # TODO: Implement

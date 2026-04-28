@@ -10,11 +10,7 @@ from typing import List, Dict, Set, Optional
 from collections import defaultdict, deque
 
 from .models import Snack
-
-
-class CircularDependencyError(Exception):
-    """Exception raised when circular dependencies are detected"""
-    pass
+from .exceptions import CircularDependencyError
 
 
 class DependencyResolver:

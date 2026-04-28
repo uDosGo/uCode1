@@ -17,13 +17,7 @@ import shlex
 
 from .models import Snack, SnackInput, SnackOutput
 from .validator import validate_snack
-
-
-class SnackExecutionError(Exception):
-    """Exception raised when Snack execution fails"""
-    def __init__(self, message: str, exit_code: Optional[int] = None):
-        super().__init__(message)
-        self.exit_code = exit_code
+from .exceptions import SnackExecutionError
 
 
 class SnackEngine:
