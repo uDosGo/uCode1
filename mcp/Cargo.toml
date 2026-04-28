@@ -3,6 +3,10 @@ name = "ucode1-mcp"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "mcp-server"
+path = "src/main.rs"
+
 [dependencies]
 ucode1-core = { path = "../core" }
 ucode1-vault-bridge = { path = "../vault-bridge" }

@@ -653,7 +653,7 @@ async fn handle_feed_command(matches: &clap::ArgMatches, vault_path: &str) {
                 .unwrap_or(10);
             
             // Read from the feed spool replies file
-            let replies_path = format!("{}/.uds/state/feed_spool/replies.jsonl", vault_path);
+            let replies_path = format!("{}/.local/state/feed_spool/replies.jsonl", vault_path);
             let expanded_replies_path = shellexpand::tilde(&replies_path).to_string();
             
             if let Ok(content) = std::fs::read_to_string(&expanded_replies_path) {
@@ -677,7 +677,7 @@ async fn handle_feed_command(matches: &clap::ArgMatches, vault_path: &str) {
             let tag = search_matches.get_one::<String>("tag").unwrap();
             
             // Read from the feed spool replies file
-            let replies_path = format!("{}/.uds/state/feed_spool/replies.jsonl", vault_path);
+            let replies_path = format!("{}/.local/state/feed_spool/replies.jsonl", vault_path);
             let expanded_replies_path = shellexpand::tilde(&replies_path).to_string();
             
             if let Ok(content) = std::fs::read_to_string(&expanded_replies_path) {

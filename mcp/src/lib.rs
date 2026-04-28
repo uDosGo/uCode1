@@ -59,7 +59,7 @@ pub struct McpServer {
 
 impl McpServer {
     pub fn new(vault_path: &str) -> Self {
-        let socket_path = PathBuf::from(vault_path).join(".uds/mcp.sock");
+        let socket_path = PathBuf::from(vault_path).join(".local/mcp.sock");
         
         McpServer {
             socket_path,
@@ -75,7 +75,7 @@ impl McpServer {
             fs::remove_file(&self.socket_path)?;
         }
         
-        // Create .uds directory if it doesn't exist
+        // Create .local directory if it doesn't exist
         if let Some(parent) = self.socket_path.parent() {
             fs::create_dir_all(parent)?;
         }
@@ -217,7 +217,7 @@ impl McpServer {
                 McpResponse::StatusInfo {
                     version: "0.1.0".to_string(),
                     mode: "user".to_string(),
-                    vault_path: ".uds/mcp.sock".to_string(),
+                    vault_path: ".local/mcp.sock".to_string(),
                 }
             }
             McpRequest::Ping => {
@@ -308,7 +308,7 @@ mod tests {
         let vault_path = dir.path().to_str().unwrap();
         
         let server = McpServer::new(vault_path);
-        assert!(server.socket_path.ends_with(".uds/mcp.sock"));
+        assert!(server.socket_path.ends_with(".local/mcp.sock"));
     }
 
     #[test]
@@ -317,6 +317,6 @@ mod tests {
         let vault_path = dir.path().to_str().unwrap();
         
         let server = McpServer::new(vault_path);
-        assert!(server.socket_path.ends_with(".uds/mcp.sock"));
+        assert!(server.socket_path.ends_with(".local/mcp.sock"));
     }
 }

@@ -89,7 +89,7 @@ pub fn parse_simple_usxd(text: &str) -> Result<UsxdDocument, String> {
         }
     }
 
-    let grid_refs: Vec<String> = grid_lines.iter().map(|s| s.to_string()).collect();
+    let grid_refs: Vec<&str> = grid_lines.iter().map(|s| s.as_str()).collect();
     Ok(parse_ascii_grid(&title, &grid_refs))
 }
 

@@ -29,7 +29,7 @@ The MCP server is implemented in Rust as part of the `ucode1-mcp` crate and prov
 
 The MCP server creates a Unix domain socket at:
 ```
-~/vault/.uds/mcp.sock
+~/vault/.local/mcp.sock
 ```
 
 ## Protocol
@@ -72,7 +72,7 @@ For chat UIs running on the same local network:
 
 ```bash
 # Forward Unix socket to TCP port
-socat TCP-LISTEN:3010,reuseaddr,fork UNIX-CONNECT:~/vault/.uds/mcp.sock
+socat TCP-LISTEN:3010,reuseaddr,fork UNIX-CONNECT:~/vault/.local/mcp.sock
 ```
 
 Then configure your chat UI to connect to `tcp://localhost:3010`
@@ -183,7 +183,7 @@ vault:
   path: "~/vault"
   mcp:
     enabled: true
-    socket: ".uds/mcp.sock"
+    socket: ".local/mcp.sock"
     network:
       enabled: false
       port: 3010
@@ -221,16 +221,16 @@ vault:
 
 **Socket not found:**
 - Ensure the MCP server is running: `udos dev`
-- Check socket permissions: `ls -la ~/vault/.uds/`
+- Check socket permissions: `ls -la ~/vault/.local/`
 - Verify socket path in settings
 
 **Permission denied:**
-- Check socket permissions: `chmod 600 ~/vault/.uds/mcp.sock`
+- Check socket permissions: `chmod 600 ~/vault/.local/mcp.sock`
 - Ensure your user owns the socket
 
 **Connection refused:**
 - Check if the server is running: `ps aux | grep mcp`
-- Verify the socket exists: `ls ~/vault/.uds/mcp.sock`
+- Verify the socket exists: `ls ~/vault/.local/mcp.sock`
 - Check for port conflicts if using TCP forwarding
 
 ## Future Enhancements
@@ -249,7 +249,7 @@ To test the MCP server:
 cargo run --bin mcp-server
 
 # Test with netcat
-nc -U ~/vault/.uds/mcp.sock
+nc -U ~/vault/.local/mcp.sock
 ```
 
 To add new tools:
