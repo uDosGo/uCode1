@@ -1,6 +1,13 @@
 """
 MCP Client for uCode1
 
+**DEPRECATED** — Superseded by `mcp_client` package (OkAgentDigital/mcp_client/).
+This module now delegates to the new client via compatibility shim.
+
+To migrate:
+    # Old: from core_py.mcp_client import McpClient
+    # New: from mcp_client import McpClient
+
 This module provides a Python client for connecting to the uCode2 MCP server
 via Unix domain sockets. The MCP server provides access to vault operations,
 notes, intents, and other uCode2 functionality.
@@ -178,7 +185,7 @@ class McpClient:
     ```
     """
     
-    DEFAULT_SOCKET_PATH = "~/.local/mcp.sock"
+    DEFAULT_SOCKET_PATH = "~/.local/share/udos/mcp/core.sock"
     SOCKET_TIMEOUT = 30.0  # seconds
     
     def __init__(
@@ -471,3 +478,14 @@ __all__ = [
     'socket_exists',
     'test_connection',
 ]
+
+# ── Compatibility bridge to new mcp_client package ──
+# When the new package is installed, existing imports keep working.
+try:
+    from mcp_client import McpClient as _NewMcpClient  # noqa: F401
+    from mcp_client import (
+        McpRequest as _NewMcpRequest,
+        McpResponse as _NewMcpResponse,
+    )
+except ImportError:
+    pass  # New package not installed; use this legacy module as-is
