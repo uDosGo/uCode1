@@ -10,6 +10,8 @@ Usage:
 
 Commands:
   ok          OK Agent — local AI assistant
+  narrator    Narrator — story generation from events
+  lexicon     Lexicon — term mapping across dev/story/student lanes
   snack       Snack management (create, validate, run, list)
   binder      Binder management (create, validate, extract, tree)
   relic       Relic management (create, validate, pack, unpack)
@@ -52,18 +54,20 @@ def main():
 
     # Strip argv[1] so sub-command handlers get clean args
     handlers = {
-        "ok":     lambda: dispatch_cli("ok_agent.cli"),
-        "snack":  lambda: dispatch("snack_cli"),
-        "binder": lambda: dispatch("binder_cli"),
-        "relic":  lambda: dispatch("relic_cli"),
-        "usxd":   lambda: dispatch("usxd_cli"),
-        "grid":   lambda: dispatch("grid_cli"),
-        "thinui": lambda: dispatch_cli("thinui_cli"),
-        "vault":  lambda: dispatch_cli("vault_cli"),
-        "plugin": lambda: dispatch_cli("plugin_cli"),
-        "help":   lambda: show_help(),
-        "--help": lambda: show_help(),
-        "-h":     lambda: show_help(),
+        "ok":       lambda: dispatch_cli("ok_agent.cli"),
+        "narrator": lambda: dispatch_cli("narrator.cli"),
+        "lexicon":  lambda: dispatch_with_prefix("narrator.cli", "lexicon"),
+        "snack":    lambda: dispatch("snack_cli"),
+        "binder":   lambda: dispatch("binder_cli"),
+        "relic":    lambda: dispatch("relic_cli"),
+        "usxd":     lambda: dispatch("usxd_cli"),
+        "grid":     lambda: dispatch("grid_cli"),
+        "thinui":   lambda: dispatch_cli("thinui_cli"),
+        "vault":    lambda: dispatch_cli("vault_cli"),
+        "plugin":   lambda: dispatch_cli("plugin_cli"),
+        "help":     lambda: show_help(),
+        "--help":   lambda: show_help(),
+        "-h":       lambda: show_help(),
         "--version": lambda: print(f"uCode v{VERSION}"),
     }
 
@@ -85,6 +89,21 @@ def dispatch(module_name: str):
         mod.main()
     except ImportError as e:
         print(f"Error loading {module_name}: {e}")
+        sys.exit(1)
+
+
+def dispatch_with_prefix(module_path: str, prefix: str):
+    """Import a CLI module and run its main with a prefix in argv."""
+    parts = module_path.split(".")
+    mod_name = parts[0]
+    try:
+        mod = __import__(mod_name, fromlist=parts[1:])
+        for attr in parts[1:]:
+            mod = getattr(mod, attr)
+        sys.argv = [module_path, prefix] + sys.argv[2:]
+        mod.main()
+    except (ImportError, AttributeError) as e:
+        print(f"Error loading {module_path}: {e}")
         sys.exit(1)
 
 
