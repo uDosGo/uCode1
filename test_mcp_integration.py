@@ -122,8 +122,9 @@ class TestMcpRequest(unittest.TestCase):
         json_str = request.to_json()
         
         parsed = json.loads(json_str)
-        self.assertIn("type", parsed)
-        self.assertEqual(parsed["type"], "Ping")
+        # Server expects {"Ping": null} format, not {"type": "Ping"}
+        self.assertIn("Ping", parsed)
+        self.assertEqual(parsed["Ping"], None)
     
     def test_request_with_data(self):
         """Test McpRequest with data."""
@@ -137,8 +138,9 @@ class TestMcpRequest(unittest.TestCase):
         
         import json
         parsed = json.loads(json_str)
-        self.assertEqual(parsed["type"], "ReadNote")
-        self.assertIn("name", parsed)
+        # Server expects {"ReadNote": {"name": "test-note"}} format
+        self.assertIn("ReadNote", parsed)
+        self.assertIn("name", parsed["ReadNote"])
 
 
 class TestMcpResponse(unittest.TestCase):

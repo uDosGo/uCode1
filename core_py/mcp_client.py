@@ -44,10 +44,12 @@ class McpRequest:
     data: Optional[Dict[str, Any]] = None
     
     def to_dict(self) -> Dict[str, Any]:
-        """Convert request to dictionary for JSON serialization."""
-        result = {"type": self.request_type.value}
-        if self.data:
-            result.update(self.data)
+        """Convert request to dictionary for JSON serialization.
+        
+        The Rust server expects the variant name as the key (e.g., {"Ping": null})
+        rather than {"type": "Ping"}.
+        """
+        result = {self.request_type.value: self.data if self.data else None}
         return result
     
     def to_json(self) -> str:
@@ -269,15 +271,17 @@ class McpClient:
             McpConnectionError: If not connected or send fails
             McpTimeoutError: If request times out
         """
-        if not self.is_connected:
-            raise McpConnectionError("Not connected to MCP server")
+        # Reconnect for each request since server closes connection after each response
+        if self.is_connected:
+            self.close()
         
         try:
+            self.connect()
             # Send request as JSON followed by newline
             request_json = request.to_json() + "\n"
             self._socket.sendall(request_json.encode('utf-8'))
             
-            # Read response line by line
+            # Read response - MCP server sends one JSON response per request, terminated by newline
             response_lines = []
             buffer = ""
             
@@ -286,6 +290,9 @@ class McpClient:
                 if not data:
                     break
                 buffer += data.decode('utf-8')
+                # Check if we have a complete response (ends with newline)
+                if buffer.endswith('\n'):
+                    break
             
             # Parse response(s)
             responses = []

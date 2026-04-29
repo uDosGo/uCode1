@@ -39,7 +39,8 @@ class TestMcpRequest(unittest.TestCase):
         """Test converting a simple request to dict."""
         request = McpRequest(request_type=McpRequestType.PING)
         result = request.to_dict()
-        self.assertEqual(result["type"], "Ping")
+        # Server expects {"Ping": null} format, not {"type": "Ping"}
+        self.assertIn("Ping", result)
     
     def test_request_to_dict_with_data(self):
         """Test converting a request with data to dict."""
@@ -48,8 +49,9 @@ class TestMcpRequest(unittest.TestCase):
             data={"name": "test-note"}
         )
         result = request.to_dict()
-        self.assertEqual(result["type"], "ReadNote")
-        self.assertEqual(result["name"], "test-note")
+        # Server expects {"ReadNote": {"name": "test-note"}} format
+        self.assertIn("ReadNote", result)
+        self.assertEqual(result["ReadNote"]["name"], "test-note")
     
     def test_request_to_json(self):
         """Test converting a request to JSON string."""
@@ -57,7 +59,8 @@ class TestMcpRequest(unittest.TestCase):
         result = request.to_json()
         self.assertIsInstance(result, str)
         parsed = json.loads(result)
-        self.assertEqual(parsed["type"], "Status")
+        # Server expects {"Status": null} format
+        self.assertIn("Status", parsed)
 
 
 class TestMcpResponse(unittest.TestCase):
