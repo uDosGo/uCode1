@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ceefax — uDos Teletext</title>
+  <script src="../udos-widgets.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #000; color: #0ff;
+      font-family: 'VT323', 'Courier New', monospace;
+      padding: 20px; min-height: 100vh;
+    }
+    .ceefax {
+      max-width: 780px; margin: 0 auto;
+      border: 2px solid #0ff; padding: 12px;
+    }
+    .header {
+      display: flex; justify-content: space-between;
+      border-bottom: 2px solid #0ff; padding-bottom: 6px; margin-bottom: 10px;
+      font-size: 18px;
+    }
+    .page-num { color: #ff0; }
+    .content { font-size: 16px; line-height: 1.4; white-space: pre; }
+    .content .highlight { color: #ff0; }
+    .content .flash { animation: blink 1s step-end infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+    .footer {
+      border-top: 2px solid #0ff; margin-top: 12px; padding-top: 6px;
+      display: flex; justify-content: space-between; font-size: 14px;
+    }
+    .widget-area {
+      border: 1px solid #0ff; padding: 8px; margin-top: 10px;
+      font-size: 14px;
+    }
+    .widget-area h3 { color: #ff0; font-size: 14px; margin-bottom: 6px; }
+    .key {
+      color: #ff0; background: #033; padding: 1px 6px;
+      border: 1px solid #0ff; cursor: pointer;
+    }
+    .key:hover { background: #0ff; color: #000; }
+    .nav-bar {
+      display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="ceefax">
+    <div class="header">
+      <span>uDos CEEFAX</span>
+      <span class="page-num">PAGE 101</span>
+      <span id="clock">00:00</span>
+    </div>
+
+    <div class="content" id="mainContent">
+    </div>
+
+    <div class="widget-area">
+      <h3>⚡ SYSTEM STATUS</h3>
+      <div data-udos-widget="fullDashboard" style="font-size:12px;"></div>
+    </div>
+
+    <div class="nav-bar">
+      <span class="key" onclick="loadPage(100)">100</span>
+      <span class="key" onclick="loadPage(101)">101</span>
+      <span class="key" onclick="loadPage(200)">200</span>
+      <span class="key" onclick="loadPage(300)">300</span>
+      <span class="key" onclick="loadPage(888)">888</span>
+    </div>
+
+    <div class="footer">
+      <span id="subpage">SUBPAGE 01</span>
+      <span id="date"></span>
+      <span>uCode2 Ceefax v0.1</span>
+    </div>
+  </div>
+
+  <script>
+    const pages = {
+      100: [
+        '┌──────────────────────────────────────────┐',
+        '│                                          │',
+        '│   🏠 <span class="highlight">uDos Ceefax — Main Menu</span>              │',
+        '│                                          │',
+        '│   101  System Dashboard                   │',
+        '│   200  Vault Notes                        │',
+        '│   300  Snack Runner                       │',
+        '│   400  Spatial Map                        │',
+        '│   888  About                              │',
+        '│                                          │',
+        '│   <span class="flash">►</span> Press a number to navigate              │',
+        '└──────────────────────────────────────────┘',
+      ],
+      101: [
+        '┌──────────────────────────────────────────┐',
+        '│                                          │',
+        '│   <span class="highlight">System Dashboard</span>                          │',
+        '│   See widget panel below for live stats   │',
+        '│                                          │',
+        '│   Components:                            │',
+        '│   • uCode1 Python Core     ✅ ACTIVE     │',
+        '│   • uCode2 Rust Backend    ✅ ACTIVE     │',
+        '│   • ThinUI Tauri Shell     ✅ STANDBY    │',
+        '│   • MCP Socket             ✅ LISTENING  │',
+        '│                                          │',
+        '└──────────────────────────────────────────┘',
+      ],
+      200: [
+        '┌──────────────────────────────────────────┐',
+        '│                                          │',
+        '│   <span class="highlight">Vault Notes</span>                               │',
+        '│                                          │',
+        '│   Your knowledge base is accessible via: │',
+        '│                                          │',
+        '│   $ ucode vault list /                    │',
+        '│   $ ucode vault read <path>               │',
+        '│   $ ucode vault search <query>            │',
+        '│                                          │',
+        '│   Or browse in notionish surface          │',
+        '│                                          │',
+        '└──────────────────────────────────────────┘',
+      ],
+      300: [
+        '┌──────────────────────────────────────────┐',
+        '│                                          │',
+        '│   <span class="highlight">Snack Runner</span>                               │',
+        '│                                          │',
+        '│   Available snacks:                      │',
+        '│   • snack:hello — Hello World            │',
+        '│   • snack:bash — Run bash script         │',
+        '│   • snack:python — Run Python script     │',
+        '│                                          │',
+        '│   $ ucode snack list                      │',
+        '│   $ ucode snack run <id>                  │',
+        '│                                          │',
+        '└──────────────────────────────────────────┘',
+      ],
+      888: [
+        '┌──────────────────────────────────────────┐',
+        '│                                          │',
+        '│   <span class="highlight">About uDos Ceefax</span>                          │',
+        '│                                          │',
+        '│   Ceefax Teletext Emulator               │',
+        '│   Part of the uDos Ecosystem             │',
+        '│                                          │',
+        '│   Version: 0.1.0                         │',
+        '│   Engine: uCode1 Python + uCode2 Rust     │',
+        '│   Surface: HTML/CSS Teletext             │',
+        '│   Protocol: MCP over Unix socket         │',
+        '│                                          │',
+        '│   <span class="flash">© 2026 uDos Team</span>                            │',
+        '└──────────────────────────────────────────┘',
+      ],
+    };
+
+    function loadPage(num) {
+      const content = pages[num] || pages[100];
+      document.querySelector('.page-num').textContent = `PAGE ${num}`;
+      document.getElementById('mainContent').innerHTML = content.join('\n');
+    }
+
+    // Clock update
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('clock').textContent =
+        String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+      document.getElementById('date').textContent = now.toLocaleDateString('en-GB');
+    }
+
+    // Keyboard nav: type page number
+    let pageBuffer = '';
+    document.addEventListener('keydown', function(e) {
+      if (e.key >= '0' && e.key <= '9') {
+        pageBuffer += e.key;
+        if (pageBuffer.length >= 3) {
+          const page = parseInt(pageBuffer);
+          if (pages[page]) loadPage(page);
+          pageBuffer = '';
+        }
+      } else {
+        pageBuffer = '';
+      }
+    });
+
+    loadPage(100);
+    updateClock();
+    setInterval(updateClock, 10000);
+  </script>
+</body>
+</html>

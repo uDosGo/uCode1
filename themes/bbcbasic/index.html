@@ -4,8 +4,28 @@
     <title>uCode1 BBC BASIC Terminal</title>
     <link href="css.css" rel="stylesheet">
     <script src="prefixfree.min.js"></script>
+    <script src="../udos-widgets.js"></script>
     <style>
         /* Default BBC BASIC surface for uCode1 */
+        .widget-panel {
+            position: fixed; bottom: 0; right: 0;
+            width: 280px; z-index: 100;
+            border-top: 2px solid #0ff; border-left: 2px solid #0ff;
+            background: rgba(0, 0, 64, 0.95);
+            padding: 8px;
+            font-family: 'C64 User Mono', monospace;
+            font-size: 10px;
+        }
+        .widget-panel h4 {
+            color: #0ff; margin: 0 0 6px 0; font-size: 10px;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .widget-toggle {
+            position: fixed; bottom: 4px; right: 4px; z-index: 101;
+            background: #00a; color: #0ff; border: 1px solid #0ff;
+            padding: 2px 6px; font-family: 'C64 User Mono', monospace;
+            font-size: 9px; cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -20,6 +40,7 @@
       <li></li>
       <li></li>
     </ul>
+    <!-- Widget panel injected here after decrunch -->
   </section>
 
   <a href="https://pixelambacht.nl/2013/css3-c64/" class="credits">CSS3 C64 | uCode1 BBC BASIC Default Surface</a>
@@ -28,26 +49,41 @@
     // After 4 seconds of decrunch, make it ready for BBC BASIC terminal
     setTimeout(function() {
         document.querySelector('.spacebar').style.display = 'none';
-        
+
+        // Inject system widget panel
+        const panel = document.createElement('div');
+        panel.className = 'widget-panel';
+        panel.innerHTML = '<h4>⚡ uDos System</h4><div data-udos-widget="fullDashboard"></div>';
+        document.querySelector('section.bluescreen').appendChild(panel);
+
+        // Add toggle button
+        const toggle = document.createElement('button');
+        toggle.className = 'widget-toggle';
+        toggle.textContent = '[SYS]';
+        toggle.onclick = function() {
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        };
+        document.body.appendChild(toggle);
+
         // Show READY prompt
         const readyDiv = document.createElement('div');
         readyDiv.className = 'ready-prompt';
         readyDiv.innerHTML = '<span>*** commodore 64 basic v2 ***\n\n  64k ram system  38911 basic bytes free\n\nready.<span class="terminal-cursor"></span></span>';
         document.querySelector('section.bluescreen').appendChild(readyDiv);
-        
+
         // Setup terminal
         const output = readyDiv.querySelector('span');
         const cursor = readyDiv.querySelector('.terminal-cursor');
-        
+
         let commandMode = false;
         let currentInput = '';
-        
+
         document.addEventListener('keydown', function(e) {
             if (commandMode) {
                 if (e.key === 'Enter') {
                     output.innerHTML += '\n' + currentInput;
                     output.appendChild(cursor);
-                    
+
                     // Process BBC BASIC command
                     const cmd = currentInput.toUpperCase().trim();
                     if (cmd === 'LOAD') {
