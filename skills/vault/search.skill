@@ -1,0 +1,9 @@
+# vault/search.skill
+name: vault_search
+description: Search vault files by keyword
+parameters:
+  - name: query
+    type: string
+    required: true
+action: cd /Users/fredbook/Code/uDosGo/uCode1 && python3 ucode vault search {{query}}
+output: List of matching files

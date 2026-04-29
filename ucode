@@ -9,6 +9,7 @@ Usage:
   ucode <command> [<subcommand>] [options]
 
 Commands:
+  ok          OK Agent — local AI assistant
   snack       Snack management (create, validate, run, list)
   binder      Binder management (create, validate, extract, tree)
   relic       Relic management (create, validate, pack, unpack)
@@ -51,6 +52,7 @@ def main():
 
     # Strip argv[1] so sub-command handlers get clean args
     handlers = {
+        "ok":     lambda: dispatch_cli("ok_agent.cli"),
         "snack":  lambda: dispatch("snack_cli"),
         "binder": lambda: dispatch("binder_cli"),
         "relic":  lambda: dispatch("relic_cli"),

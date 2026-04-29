@@ -1,0 +1,12 @@
+# binder/search.skill
+name: binder_search
+description: Search binder content by tag or keyword
+parameters:
+  - name: query
+    type: string
+    required: true
+  - name: tag
+    type: string
+    required: false
+action: echo "Searching binder for {{query}}..."
+output: Markdown list of matching entries
