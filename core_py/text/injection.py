@@ -50,7 +50,8 @@ class TextInjector:
         result = template
         
         for match in self._pattern.finditer(template):
-            full_match, escaped, var_expr = match.groups()
+            escaped, var_expr = match.groups()
+            full_match = match.group(0)
             
             if escaped:
                 # It's escaped, restore the literal
