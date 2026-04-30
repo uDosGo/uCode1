@@ -115,7 +115,106 @@
     });
   };
 
-  // ── Display Scaling ─────────────────────────────────────────────────────
+  // ── Shared Menu (injected by all surfaces) ──────────────────────────────
+
+  /**
+   * uDosWidgets.Menu — single global +/x sidebar for all surfaces.
+   *
+   * Usage:
+   *   uDosWidgets.Menu.init({
+   *     sections: [
+   *       { label: 'SIZE', type: 'grid', buttons: ['20x10','32x16','40x24'] },
+   *       { label: 'SYSTEM', type: 'info', lines: ['seed: XYZ', 'ver: 1.0'] }
+   *     ]
+   *   });
+   *
+   * Creates the + toggle and slide-out panel with the given sections.
+   * Only one menu exists per page — calling init() again replaces content.
+   */
+  uDosWidgets.Menu = {
+    _initialized: false,
+
+    init: function(opts) {
+      opts = opts || {};
+      var sections = opts.sections || [];
+      var title = opts.title || 'MENU';
+
+      // Remove existing menu if any
+      var old = document.getElementById('udosMenuRoot');
+      if (old) old.parentNode.removeChild(old);
+
+      var root = document.createElement('div');
+      root.id = 'udosMenuRoot';
+
+      // ── Toggle button (+/x) ───────────────────────────────────────────
+      var toggle = document.createElement('div');
+      toggle.className = 'menu-toggle';
+      toggle.id = 'menuToggle';
+      toggle.textContent = '+';
+
+      // ── Panel ────────────────────────────────────────────────────────
+      var panel = document.createElement('div');
+      panel.className = 'menu-panel';
+      panel.id = 'menuPanel';
+
+      // Header
+      var hdr = document.createElement('div');
+      hdr.className = 'menu-header';
+      hdr.innerHTML = '<span class="menu-title">' + title + '</span>' +
+        '<button class="menu-close" id="menuClose">x</button>';
+      panel.appendChild(hdr);
+
+      // Sections
+      sections.forEach(function(sec) {
+        var secDiv = document.createElement('div');
+        secDiv.className = 'menu-section';
+        secDiv.innerHTML = '<span class="menu-label">' + sec.label + '</span>';
+
+        if (sec.type === 'grid') {
+          var grid = document.createElement('div');
+          grid.className = 'menu-grid';
+          (sec.buttons || []).forEach(function(btn) {
+            var b = document.createElement('button');
+            b.className = 'menu-btn' + (btn.active ? ' active' : '');
+            b.textContent = btn.label || btn;
+            b.setAttribute('data-value', btn.value || btn);
+            if (btn.onclick) b.addEventListener('click', btn.onclick);
+            grid.appendChild(b);
+          });
+          secDiv.appendChild(grid);
+        } else if (sec.type === 'info') {
+          var info = document.createElement('div');
+          info.className = 'menu-info';
+          (sec.lines || []).forEach(function(line) {
+            var d = document.createElement('div');
+            d.textContent = line;
+            info.appendChild(d);
+          });
+          secDiv.appendChild(info);
+        } else if (sec.type === 'custom') {
+          secDiv.appendChild(sec.element);
+        }
+
+        panel.appendChild(secDiv);
+      });
+
+      root.appendChild(toggle);
+      root.appendChild(panel);
+      document.body.appendChild(root);
+
+      // ── Toggle logic ────────────────────────────────────────────────
+      var isOpen = false;
+      function openP() { isOpen = true; panel.classList.add('open'); toggle.textContent = 'x'; toggle.classList.add('active'); }
+      function closeP() { isOpen = false; panel.classList.remove('open'); toggle.textContent = '+'; toggle.classList.remove('active'); }
+
+      toggle.addEventListener('click', function(e) { e.stopPropagation(); isOpen ? closeP() : openP(); });
+      panel.querySelector('#menuClose').addEventListener('click', closeP);
+      document.addEventListener('click', function(e) { if (isOpen && !panel.contains(e.target) && e.target !== toggle) closeP(); });
+
+      this._initialized = true;
+      return { toggle: toggle, panel: panel, open: openP, close: closeP };
+    }
+  };
 
   /**
    * uDosDisplay — BBC/C64-style proportional grid scaling.

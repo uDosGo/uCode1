@@ -109,57 +109,7 @@
 </head>
 <body>
 
-  <!-- + Menu toggle -->
-  <div class="menu-toggle" id="menuToggle">+</div>
-
-  <!-- Slide-out menu panel -->
-  <div class="menu-panel" id="menuPanel">
-    <div class="menu-header">
-      <span class="menu-title">NES DASH</span>
-      <button class="menu-close" id="menuClose">x</button>
-    </div>
-
-    <div class="menu-section">
-      <span class="menu-label">FONT SIZE</span>
-      <div style="display:flex;align-items:center;gap:8px">
-        <button class="menu-btn" id="fontDown" style="padding:4px 10px">A−</button>
-        <span class="menu-value" id="fontDisplay" style="min-width:36px;text-align:center">10px</span>
-        <button class="menu-btn" id="fontUp" style="padding:4px 10px">A+</button>
-      </div>
-    </div>
-
-    <div class="menu-section">
-      <span class="menu-label">8‑BIT PALETTE</span>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px">
-        <div class="color-swatch" style="background:#fff" onclick="applyPalette('#fff','#222','#4169E1')"></div>
-        <div class="color-swatch" style="background:#222" onclick="applyPalette('#222','#fff','#e94560')"></div>
-        <div class="color-swatch" style="background:#D74B35" onclick="applyPalette('#D74B35','#F8F8F8','#5A281E')"></div>
-        <div class="color-swatch" style="background:#20398d" onclick="applyPalette('#20398d','#6076c5','#152060')"></div>
-        <div class="color-swatch" style="background:#4169E1" onclick="applyPalette('#4169E1','#fff','#1e3a8a')"></div>
-        <div class="color-swatch" style="background:#50b818" onclick="applyPalette('#50b818','#fff','#308010')"></div>
-        <div class="color-swatch" style="background:#f0e858" onclick="applyPalette('#f0e858','#222','#b0a840')"></div>
-        <div class="color-swatch" style="background:#e94560" onclick="applyPalette('#e94560','#fff','#8b1a2b')"></div>
-      </div>
-    </div>
-
-    <div class="menu-section">
-      <span class="menu-label">VIEWPORT</span>
-      <div class="menu-grid">
-        <button class="menu-btn active" data-size="80x24">80x24</button>
-        <button class="menu-btn" data-size="40x24">40x24</button>
-        <button class="menu-btn" data-size="20x10">20x10</button>
-      </div>
-    </div>
-
-    <div class="menu-section">
-      <span class="menu-label">SYSTEM</span>
-      <div class="menu-info">
-        <div>seed: CITY-INDEX-001</div>
-        <div>cities: 83 · tz: 17</div>
-        <div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(74,106,192,0.3);color:#3a5090">CSS3 C64 | uCode1</div>
-      </div>
-    </div>
-  </div>
+  <!-- Shared menu injected by uDosWidgets.Menu.init() -->
 
   <div class="container">
 
@@ -280,38 +230,58 @@
       });
     }
 
-    // Menu toggle
-    (function() {
-      var toggle = document.getElementById('menuToggle');
-      var panel = document.getElementById('menuPanel');
-      var closeBtn = document.getElementById('menuClose');
-      var isOpen = false;
-
-      function openPanel() { isOpen = true; panel.classList.add('open'); toggle.textContent = 'x'; toggle.classList.add('active'); }
-      function closePanel() { isOpen = false; panel.classList.remove('open'); toggle.textContent = '+'; toggle.classList.remove('active'); }
-
-      toggle.addEventListener('click', function(e) { e.stopPropagation(); isOpen ? closePanel() : openPanel(); });
-      closeBtn.addEventListener('click', closePanel);
-      document.addEventListener('click', function(e) { if (isOpen && !panel.contains(e.target) && e.target !== toggle) closePanel(); });
-
-      // Font size
-      function applyNesFont() {
-        document.body.style.fontSize = currentFontSize + 'px';
-        document.getElementById('fontDisplay').textContent = currentFontSize + 'px';
-        // Sync to shared font scale (base: 10px Press Start 2P)
-        document.documentElement.style.setProperty('--udos-font-scale', (currentFontSize / 10).toFixed(2));
-      }
-      document.getElementById('fontDown').addEventListener('click', function() {
-        currentFontSize = Math.max(6, currentFontSize - 1);
-        applyNesFont();
-      });
-      document.getElementById('fontUp').addEventListener('click', function() {
-        currentFontSize = Math.min(20, currentFontSize + 1);
-        applyNesFont();
-      });
-      // Init: set shared scale on load
-      document.documentElement.style.setProperty('--udos-font-scale', '1.0');
-    })();
+    // ── Shared Menu ────────────────────────────────────────────────────
+    function applyNesFont() {
+      document.body.style.fontSize = currentFontSize + 'px';
+      // Sync to shared font scale (base: 10px Press Start 2P)
+      document.documentElement.style.setProperty('--udos-font-scale', (currentFontSize / 10).toFixed(2));
+    }
+    uDosWidgets.Menu.init({
+      title: 'NES DASH',
+      sections: [{
+        label: 'FONT SIZE', type: 'custom',
+        element: (function(){
+          var d = document.createElement('div'); d.style.cssText = 'display:flex;align-items:center;gap:8px';
+          var dn = document.createElement('button'); dn.className = 'menu-btn'; dn.textContent = 'A−'; dn.style.padding = '4px 10px';
+          dn.addEventListener('click', function(){ currentFontSize = Math.max(6, currentFontSize - 1); applyNesFont(); });
+          var disp = document.createElement('span'); disp.className = 'menu-value'; disp.textContent = currentFontSize + 'px'; disp.style.minWidth = '36px'; disp.style.textAlign = 'center';
+          var up = document.createElement('button'); up.className = 'menu-btn'; up.textContent = 'A+'; up.style.padding = '4px 10px';
+          up.addEventListener('click', function(){ currentFontSize = Math.min(20, currentFontSize + 1); applyNesFont(); });
+          // Update display on font change
+          var orig = applyNesFont;
+          applyNesFont = function() { orig(); disp.textContent = currentFontSize + 'px'; };
+          d.appendChild(dn); d.appendChild(disp); d.appendChild(up);
+          return d;
+        })()
+      },{
+        label: '8-BIT PALETTE', type: 'custom',
+        element: (function(){
+          var g = document.createElement('div'); g.style.cssText = 'display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px';
+          var colors = [
+            ['#fff','#222','#4169E1'],['#222','#fff','#e94560'],
+            ['#D74B35','#F8F8F8','#5A281E'],['#20398d','#6076c5','#152060'],
+            ['#4169E1','#fff','#1e3a8a'],['#50b818','#fff','#308010'],
+            ['#f0e858','#222','#b0a840'],['#e94560','#fff','#8b1a2b']
+          ];
+          colors.forEach(function(c){
+            var sw = document.createElement('div'); sw.className = 'color-swatch'; sw.style.background = c[0];
+            sw.addEventListener('click', function(){ applyPalette(c[0], c[1], c[2]); });
+            g.appendChild(sw);
+          });
+          return g;
+        })()
+      },{
+        label: 'VIEWPORT', type: 'grid', buttons: [
+          { label:'80x24', value:'80x24', active:true },
+          { label:'40x24', value:'40x24' },
+          { label:'20x10', value:'20x10' }
+        ]
+      },{
+        label: 'SYSTEM', type: 'info',
+        lines: ['seed: CITY-INDEX-001', 'cities: 83 tz: 17', 'CSS3 C64 | uCode1']
+      }]
+    });
+    document.documentElement.style.setProperty('--udos-font-scale', '1.0');
   </script>
 
 </body>

@@ -13,42 +13,7 @@
 
 
 
-  <!-- + toggle icon — slides down from top-right on hover -->
-  <div class="menu-toggle" id="menuToggle">+</div>
-
-  <!-- Slide-out left panel menu -->
-  <div class="menu-panel" id="menuPanel">
-    <div class="menu-header">
-      <span class="menu-title">VIEWPORT</span>
-      <button class="menu-close" id="menuClose">x</button>
-    </div>
-
-    <div class="menu-section">
-      <span class="menu-label">SIZE</span>
-      <div class="menu-grid" id="sizeGrid">
-        <button class="menu-btn" data-size="20x10">20x10</button>
-        <button class="menu-btn" data-size="32x16">32x16</button>
-        <button class="menu-btn" data-size="40x24">40x24</button>
-        <button class="menu-btn" data-size="80x30">80x30</button>
-        <button class="menu-btn" data-size="48x48">48x48</button>
-      </div>
-    </div>
-
-    <div class="menu-section">
-      <span class="menu-label">SIZE</span>
-      <span class="menu-value" id="ratioDisplay">40x24</span>
-    </div>
-
-    <div class="menu-section">
-      <span class="menu-label">SYSTEM</span>
-      <div class="menu-info" id="sysInfo">
-        <div>seed: CITY-INDEX-001</div>
-        <div>cities: 83</div>
-        <div>tz: 17</div>
-        <div style="margin-top:8px;padding-top:8px;border-top:1px solid #050;color:#030">CSS3 C64 | uCode1 BBC BASIC</div>
-      </div>
-    </div>
-  </div>
+  <!-- Shared menu injected by uDosWidgets.Menu.init() -->
 
   <!-- Terminal viewport -->
   <div class="terminal-viewport" id="terminal" data-surface="bbcbasic">
@@ -212,54 +177,32 @@
       if (vp) vp.scrollTop = vp.scrollHeight;
 
       applyViewport('40x24');
-      // applyViewport calls cascadeBuffer — but since content is already
-      // rendered, the cascade just re-appends it (no need for boot delay)
 
-      // Menu toggle
-      (function setupMenu() {
-        var toggle = document.getElementById('menuToggle');
-        var panel = document.getElementById('menuPanel');
-        var closeBtn = document.getElementById('menuClose');
-        var isOpen = false;
+      // ── Shared Menu ────────────────────────────────────────────────────
+      uDosWidgets.Menu.init({
+        title: 'VIEWPORT',
+        sections: [{
+          label: 'SIZE', type: 'grid', buttons: [
+            { label:'20x10', value:'20x10', onclick: function(){applyViewport('20x10')} },
+            { label:'32x16', value:'32x16', onclick: function(){applyViewport('32x16')} },
+            { label:'40x24', value:'40x24', active:true, onclick: function(){applyViewport('40x24')} },
+            { label:'80x30', value:'80x30', onclick: function(){applyViewport('80x30')} },
+            { label:'48x48', value:'48x48', onclick: function(){applyViewport('48x48')} }
+          ]
+        },{
+          label: 'SIZE', type: 'info', lines: ['current: 40x24']
+        },{
+          label: 'SYSTEM', type: 'info', lines: [
+            'seed: CITY-INDEX-001',
+            'cities: 83  tz: 17',
+            'CSS3 C64 | uCode1 BBC BASIC'
+          ]
+        }]
+      });
 
-        function openPanel() {
-          isOpen = true;
-          panel.classList.add('open');
-          toggle.textContent = 'x';
-          toggle.classList.add('active');
-        }
-
-        function closePanel() {
-          isOpen = false;
-          panel.classList.remove('open');
-          toggle.textContent = '+';
-          toggle.classList.remove('active');
-        }
-
-        // Click + to open panel
-        toggle.addEventListener('click', function(e) {
-          e.stopPropagation();
-          if (isOpen) { closePanel(); }
-          else { openPanel(); }
-        });
-
-        // Click x to close panel
-        closeBtn.addEventListener('click', closePanel);
-
-        // Click outside panel to close
-        document.addEventListener('click', function(e) {
-          if (isOpen && !panel.contains(e.target) && e.target !== toggle) {
-            closePanel();
-          }
-        });
-
-        // Size buttons
-        document.querySelectorAll('.menu-btn[data-size]').forEach(function(btn) {
-          btn.addEventListener('click', function() {
-            applyViewport(btn.getAttribute('data-size'));
-          });
-        });
-      })();
+      // Menu is now handled by uDosWidgets.Menu.init() above
+      
+      // Enable input after viewport appears
 
       // Enable input after viewport appears
       setTimeout(function() { ready = true; }, 3800);

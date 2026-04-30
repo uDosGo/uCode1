@@ -40,36 +40,7 @@
 </head>
 <body>
 
-  <!-- + Menu toggle -->
-  <div class="menu-toggle" id="menuToggle">+</div>
-  <div class="menu-panel" id="menuPanel">
-    <div class="menu-header">
-      <span class="menu-title">TELETEXT</span>
-      <button class="menu-close" id="menuClose">x</button>
-    </div>
-    <div class="menu-section">
-      <span class="menu-label">FONT SIZE</span>
-      <div class="menu-grid">
-        <button class="menu-btn" id="fontSmall">A−</button>
-        <button class="menu-btn active" id="fontReset">25px</button>
-        <button class="menu-btn" id="fontLarge">A+</button>
-      </div>
-    </div>
-    <div class="menu-section">
-      <span class="menu-label">MODE</span>
-      <div class="menu-grid">
-        <button class="menu-btn active" id="modeTeletext">TELETEXT</button>
-        <button class="menu-btn" id="modeEmoji">EMOJI</button>
-      </div>
-    </div>
-    <div class="menu-section">
-      <span class="menu-label">GRID</span>
-      <div class="menu-info">
-        <div id="gridInfo">cols: 40 · rows: 25</div>
-        <div style="margin-top:4px;color:#3a5090">Teletext50 · Ceefax v0.4</div>
-      </div>
-    </div>
-  </div>
+  <!-- Shared menu injected by uDosWidgets.Menu.init() -->
 
   <div id="ceefax">
     <div class="ttx-header">
@@ -379,11 +350,37 @@
       cascadePage(num);
     }
 
-    // ── Init ──────────────────────────────────────────────────────────────
-    window.addEventListener('resize', onResize);
-    document.getElementById('fzDown').addEventListener('click', fontSmaller);
-    document.getElementById('fzUp').addEventListener('click', fontLarger);
-    document.getElementById('fzLabel').addEventListener('click', fontReset);
+    // ── Shared Menu ────────────────────────────────────────────────────
+    var menu = uDosWidgets.Menu.init({
+      title: 'TELETEXT',
+      sections: [{
+        label: 'FONT SIZE', type: 'custom',
+        element: (function(){
+          var g = document.createElement('div'); g.className = 'menu-grid';
+          var a = document.createElement('button'); a.className = 'menu-btn'; a.textContent = 'A−';
+          a.addEventListener('click', fontSmaller);
+          var r = document.createElement('button'); r.className = 'menu-btn active'; r.id = 'fontReset'; r.textContent = '25px';
+          r.addEventListener('click', fontReset);
+          var p = document.createElement('button'); p.className = 'menu-btn'; p.textContent = 'A+';
+          p.addEventListener('click', fontLarger);
+          g.appendChild(a); g.appendChild(r); g.appendChild(p);
+          return g;
+        })()
+      },{
+        label: 'MODE', type: 'custom',
+        element: (function(){
+          var g = document.createElement('div'); g.className = 'menu-grid';
+          var tx = document.createElement('button'); tx.className = 'menu-btn active'; tx.textContent = 'TELETEXT';
+          tx.addEventListener('click', function(){ if (emojiOn) toggleEmoji(); tx.classList.add('active'); em.classList.remove('active'); });
+          var em = document.createElement('button'); em.className = 'menu-btn'; em.textContent = 'EMOJI';
+          em.addEventListener('click', function(){ if (!emojiOn) toggleEmoji(); em.classList.add('active'); tx.classList.remove('active'); });
+          g.appendChild(tx); g.appendChild(em);
+          return g;
+        })()
+      },{
+        label: 'GRID', type: 'info', lines: ['cols: 40 rows: 25', 'Teletext50 Ceefax v0.4']
+      }]
+    });
 
     currentPage = 100;
     initFontSize();
@@ -392,32 +389,9 @@
     updateClock();
     setInterval(updateClock, 1000);
 
-    // ── Menu toggle ───────────────────────────────────────────────────────
-    (function() {
-      var t = document.getElementById('menuToggle'),
-          p = document.getElementById('menuPanel'),
-          c = document.getElementById('menuClose'),
-          o = false;
-      function op() { o=true; p.classList.add('open'); t.textContent='x'; t.classList.add('active'); }
-      function cl() { o=false; p.classList.remove('open'); t.textContent='+'; t.classList.remove('active'); }
-      t.addEventListener('click', function(e){ e.stopPropagation(); o?cl():op(); });
-      c.addEventListener('click', cl);
-      document.addEventListener('click', function(e){ if(o&&!p.contains(e.target)&&e.target!==t) cl(); });
-
-      document.getElementById('fontSmall').addEventListener('click', fontSmaller);
-      document.getElementById('fontReset').addEventListener('click', fontReset);
-      document.getElementById('fontLarge').addEventListener('click', fontLarger);
-      document.getElementById('modeTeletext').addEventListener('click', function() {
-        if (emojiOn) toggleEmoji();
-        document.getElementById('modeTeletext').classList.add('active');
-        document.getElementById('modeEmoji').classList.remove('active');
-      });
-      document.getElementById('modeEmoji').addEventListener('click', function() {
-        if (!emojiOn) toggleEmoji();
-        document.getElementById('modeEmoji').classList.add('active');
-        document.getElementById('modeTeletext').classList.remove('active');
-      });
-    })();
+    document.getElementById('fzDown').addEventListener('click', fontSmaller);
+    document.getElementById('fzUp').addEventListener('click', fontLarger);
+    document.getElementById('fzLabel').addEventListener('click', fontReset);
   </script>
 </body>
 </html>
