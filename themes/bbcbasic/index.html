@@ -173,7 +173,8 @@
         var line = document.createElement('div');
         line.className = 'resp';
         line.textContent = lines[idx];
-        line.style.whiteSpace = 'pre';
+        line.style.whiteSpace = 'pre-wrap';
+        line.style.wordBreak = 'break-word';
         output.appendChild(line);
         idx++;
       }, intervalMs);
@@ -182,8 +183,6 @@
     // ── Terminal setup ──────────────────────────────────────────────────────
     (function setupTerminal() {
       var output = document.getElementById('output');
-      var PROMPT_HTML = '<span class="prompt">&gt; </span><span class="cursor" id="cursorEl"></span>';
-
       if (!output) return;
 
       // Boot messages — clean, no extra line breaks, wrapped to grid
@@ -194,9 +193,8 @@
         'local tz: AEST (UTC+10) cities: Sydney Melbourne Brisbane Auckland'
       ];
       contentBuffer = contentBuffer.concat(bootLines);
-
       applyViewport('40x24');
-      cascadeBuffer();
+      // applyViewport already calls cascadeBuffer() — no duplicate needed
 
       // Menu toggle
       (function setupMenu() {
