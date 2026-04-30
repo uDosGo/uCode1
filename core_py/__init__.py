@@ -17,6 +17,7 @@ from . import (
     mdx,  # MDX Runtime with Snack shortcode support (NEW)
     plugin,  # Plugin system (NEW)
     relic,  # Relic module implemented
+    seed,  # Seed Pod — default data & location handling (NEW)
     snack,
     text,  # Python text/md tools (NEW)
     thinui,  # ThinUI integration module (NEW)
