@@ -37,8 +37,10 @@
 .udos-surface[data-surface="ceefax"] {
   --udos-cols: 40;
   --udos-rows: 25;
-  --udos-font-base: 24px;
+  --udos-font-base: 25px;
   --udos-aspect: 0.60;
+  font-family: Teletext50, 'VT323', 'Courier New', monospace;
+  font-synthesis: none;
 }
 
 /* ── Shared Tailwind Menu (used by all surfaces) ───────────────────────── */

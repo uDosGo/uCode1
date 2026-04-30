@@ -7,26 +7,49 @@
   <link href="../display.css" rel="stylesheet">
   <script src="../udos-widgets.js"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+    @font-face{font-family:Teletext50;src:url(Teletext50.otf) format("opentype");font-stretch:normal}
+    @font-face{font-family:Teletext50;src:url(Teletext50.otf) format("opentype");font-stretch:ultra-condensed}
+    @font-face{font-family:Teletext50;src:url(Teletext50.otf) format("opentype");font-stretch:expanded}
     *{margin:0;padding:0;box-sizing:border-box}
-    body{background:#000;color:#0ff;font-family:'VT323','Courier New',monospace}
+    body{background:#000;color:#fff;font-family:Teletext50,'VT323','Courier New',monospace;overflow:hidden;font-size:25px;font-synthesis:none}
 
-    .ceefax-surface{width:calc(40ch + 4ch);margin:0 auto;padding:1ch;color:#0ff;font-size:24px}
+    .udos-surface[data-surface="ceefax"]{color:#fff;line-height:1em}
 
-    .ceefax-header{display:flex;justify-content:space-between;border-bottom:2px solid #0ff;padding-bottom:0.5em;margin-bottom:0.5em}
-    .page-num{color:#ff0}
-    .ceefax-footer{border-top:2px solid #0ff;margin-top:0.5em;padding-top:0.5em;display:flex;justify-content:space-between}
+    /* ── Teletext chrome (CEETEX-style) ───────────────────── */
+    .ttx-header{background:#00f;color:#fff;padding:0 1ch;display:flex;justify-content:space-between;height:1.2em;line-height:1.2em}
+    .ttx-page-num{color:#ff0}
+    .ttx-sub-header{background:#000;color:#0f0;padding:0 1ch;height:1em;line-height:1em;display:flex;justify-content:space-between}
+    .ttx-footer{background:#000;color:#fff;padding:0 1ch;display:flex;justify-content:space-between;height:1em;line-height:1em}
 
-    .content{white-space:pre;line-height:1}
-    .content .highlight{color:#ff0}
-    .content .flash{animation:blink 1s step-end infinite}
+    .ttx-content{white-space:pre;line-height:1em;overflow:hidden;color:#fff}
+    .ttx-content .hl{color:#ff0}
+    .ttx-content .flash{animation:blink 1s step-end infinite}
     @keyframes blink{50%{opacity:0}}
+    .ttx-content .rev{background:#fff;color:#000}
+    .ttx-content .blue-bg{background:#00f;color:#fff}
+    .ttx-content .yellow{color:#ff0}
+    .ttx-content .green{color:#0f0}
+    .ttx-content .cyan{color:#0ff}
+    .ttx-content .red{color:#f00}
+    .ttx-content .magenta{color:#f0f}
 
-    .widget-area{border:1px solid #0ff;padding:0.5em;margin-top:0.8em;font-size:0.7em}
-    .widget-area h3{color:#ff0;margin-bottom:0.3em}
-    .key{color:#ff0;background:#033;padding:0.1em 0.3em;border:1px solid #0ff;cursor:pointer}
-    .key:hover{background:#0ff;color:#000}
-    .nav-bar{display:flex;gap:0.5em;margin-top:0.8em;flex-wrap:wrap}
+    .ttx-ticker{background:#00f;color:#fff;padding:0 1ch;height:1em;line-height:1em;white-space:nowrap;overflow:hidden}
+    .ttx-fasttext{height:1em;line-height:1em;padding:0 1ch;background:#000}
+    .ttx-fasttext .red{color:#f00;font-weight:bold}
+    .ttx-fasttext .green{color:#0f0;font-weight:bold}
+    .ttx-fasttext .yellow{color:#ff0;font-weight:bold}
+    .ttx-fasttext .cyan{color:#0ff;font-weight:bold}
+
+    .ttx-widget{border:1px solid #fff;padding:0.5em;margin-top:0.5em;font-size:0.65em}
+    .ttx-widget h3{color:#ff0;margin-bottom:0.2em}
+    .ttx-nav{display:flex;gap:0.4em;margin-top:0.5em;flex-wrap:wrap}
+    .ttx-key{color:#ff0;background:#033;padding:0.1em 0.3em;border:1px solid #fff;cursor:pointer}
+    .ttx-key:hover{background:#fff;color:#000}
+
+    /* ── Emoji overlay toggle indicator ─────────────────── */
+    .emoji-indicator{position:fixed;bottom:8px;right:52px;color:#606080;font:10px system-ui,sans-serif;cursor:pointer;z-index:100;opacity:0.5}
+    .emoji-indicator:hover{opacity:1;color:#b0c8ff}
+    .emoji-indicator.on{color:#0f0;opacity:0.8}
   </style>
 </head>
 <body>
@@ -41,86 +64,361 @@
     <div class="menu-section">
       <span class="menu-label">VIEWPORT</span>
       <div class="menu-grid">
-        <button class="menu-btn active" data-size="40x25">40x25</button>
-        <button class="menu-btn" data-size="80x24">80x24</button>
-        <button class="menu-btn" data-size="20x10">20x10</button>
+        <button class="menu-btn active" data-size="40x25">40×25</button>
+        <button class="menu-btn" data-size="80x24">80×24</button>
+        <button class="menu-btn" data-size="20x10">20×10</button>
+      </div>
+    </div>
+    <div class="menu-section">
+      <span class="menu-label">MODE</span>
+      <div class="menu-grid">
+        <button class="menu-btn active" id="modeTeletext">TELETEXT</button>
+        <button class="menu-btn" id="modeEmoji">EMOJI</button>
       </div>
     </div>
     <div class="menu-section">
       <span class="menu-label">SYSTEM</span>
       <div class="menu-info">
         <div>seed: CITY-INDEX-001</div>
-        <div>cities: 83 · tz: 17</div>
-        <div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(74,106,192,0.3);color:#3a5090">VT323 · Ceefax v0.1</div>
+        <div>rows: 25 · cols: 40</div>
+        <div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(74,106,192,0.3);color:#3a5090">Teletext50 · Ceefax v0.3</div>
       </div>
     </div>
   </div>
 
-  <div class="ceefax-surface" id="ceefax">
-    <div class="ceefax-header">
+  <!-- Emoji toggle indicator -->
+  <div class="emoji-indicator" id="emojiToggle">EMOJI: OFF</div>
+
+  <div class="udos-surface" id="ceefax" data-surface="ceefax">
+    <div class="ttx-header">
       <span>uDos CEEFAX</span>
-      <span class="page-num" id="pageNum">PAGE 100</span>
-      <span id="clock">00:00</span>
+      <span class="ttx-page-num" id="pageNum">P100</span>
+      <span id="clock">00:00/00</span>
+    </div>
+    <div class="ttx-sub-header">
+      <span id="subHeader">P100  CEEFAX 1  1/1  MAIN INDEX</span>
     </div>
 
-    <div class="content" id="mainContent"></div>
+    <div class="ttx-content" id="mainContent"></div>
 
-    <div class="widget-area">
-      <h3>⚡ SYSTEM STATUS</h3>
-      <div data-udos-widget="fullDashboard" style="font-size:0.6em;"></div>
+    <div class="ttx-ticker" id="tickerTape"> LATEST: PRESS A 3-DIGIT PAGE NUMBER TO NAVIGATE</div>
+    <div class="ttx-fasttext">
+      <span class="red"> NEWS </span>
+      <span class="green"> SPORT </span>
+      <span class="yellow"> WEATHER </span>
+      <span class="cyan"> TRAVEL </span>
     </div>
 
-    <div class="nav-bar">
-      <span class="key" onclick="loadPage(100)">100</span>
-      <span class="key" onclick="loadPage(101)">101</span>
-      <span class="key" onclick="loadPage(200)">200</span>
-      <span class="key" onclick="loadPage(300)">300</span>
-      <span class="key" onclick="loadPage(888)">888</span>
-    </div>
-
-    <div class="ceefax-footer">
-      <span id="subpage">SUBPAGE 01</span>
+    <div class="ttx-footer">
+      <span>CEETEX 1</span>
       <span id="date"></span>
-      <span>Ceefax v0.1</span>
     </div>
   </div>
 
+  <div class="ttx-nav" id="navBar" style="position:fixed;bottom:40px;left:50%;transform:translateX(-50%);z-index:50"></div>
+
   <script>
-    var pages = {
-      100:['┌──────────────────────────────────────┐','│                                      │','│  uDos Ceefax — Main Menu             │','│                                      │','│  101  System Dashboard                │','│  200  Vault Notes                     │','│  300  Snack Runner                    │','│  400  Spatial Map                     │','│  888  About                           │','│                                      │','│  <span class="flash">►</span> Press a number to navigate         │','└──────────────────────────────────────┘'],
-      101:['┌──────────────────────────────────────┐','│                                      │','│  System Dashboard                     │','│                                      │','│  • uCode1 Core        ✅ ACTIVE      │','│  • uCode2 Rust        ✅ ACTIVE      │','│  • ThinUI Shell       ✅ STANDBY     │','│  • MCP Socket         ✅ LISTENING   │','│                                      │','│  Widget panel below for live stats   │','└──────────────────────────────────────┘'],
-      200:['┌──────────────────────────────────────┐','│                                      │','│  Vault Notes                          │','│                                      │','│  ucode vault list /                   │','│  ucode vault read <path>              │','│  ucode vault search <query>           │','│                                      │','│  Browse in notionish surface          │','└──────────────────────────────────────┘'],
-      300:['┌──────────────────────────────────────┐','│                                      │','│  Snack Runner                         │','│                                      │','│  • snack:hello — Hello World          │','│  • snack:bash — Bash script           │','│  • snack:python — Python script       │','│                                      │','│  ucode snack list                     │','│  ucode snack run <id>                 │','└──────────────────────────────────────┘'],
-      888:['┌──────────────────────────────────────┐','│                                      │','│  About uDos Ceefax                    │','│                                      │','│  Version: 0.1.0                       │','│  Engine: uCode1 + uCode2             │','│  Font: VT323 / Teletext              │','│  Grid: 40×25 characters              │','│                                      │','│  <span class="flash">© 2026 uDos</span>                          │','└──────────────────────────────────────┘']
+    // ═══════════════════════════════════════════════════════════════
+    //  Teletext Spec: Slots 0-31 = CP437 block characters
+    //  uCode1 128-char spec — complete teletext block set
+    // ═══════════════════════════════════════════════════════════════
+    var TELETEXT_BLOCKS = [
+      ' ',      //  0  NULL
+      '\u263A', //  1  ☺  Smile
+      '\u263B', //  2  ☻  Inverse smile
+      '\u2665', //  3  ♥  Heart
+      '\u2666', //  4  ♦  Diamond
+      '\u2663', //  5  ♣  Club
+      '\u2660', //  6  ♠  Spade
+      '\u2022', //  7  •  Bullet
+      '\u25D8', //  8  ◘  Inverse bullet
+      '\u25CB', //  9  ○  Circle
+      '\u25D9', // 10  ◙  Inverse circle
+      '\u2642', // 11  ♂  Male
+      '\u2640', // 12  ♀  Female
+      '\u266A', // 13  ♪  Music note
+      '\u266B', // 14  ♫  Double note
+      '\u263C', // 15  ☼  Sun
+      '\u25BA', // 16  ►  Right arrow
+      '\u25C4', // 17  ◄  Left arrow
+      '\u2195', // 18  ↕  Up/down arrow
+      '\u203C', // 19  ‼  Double exclamation
+      '\u00B6', // 20  ¶  Paragraph
+      '\u00A7', // 21  §  Section
+      '\u2588', // 22  █  Full block
+      '\u2584', // 23  ▄  Lower half block
+      '\u2580', // 24  ▀  Upper half block
+      '\u258C', // 25  ▌  Left half block
+      '\u2590', // 26  ▐  Right half block
+      '\u2591', // 27  ░  Quarter block (light shade)
+      '\u2592', // 28  ▒  Mid block (medium shade)
+      '\u2593', // 29  ▓  Dark block (dark shade)
+      '\u2588', // 30  █  Light block (same as full block)
+      ' '       // 31     Custom/reserved
+    ];
+
+    // ═══════════════════════════════════════════════════════════════
+    //  Emoji Overlays — per spec: one per slot (0-127)
+    //  Rendering priority: emoji → word_alias → teletext → ansi
+    // ═══════════════════════════════════════════════════════════════
+    var EMOJI_OVERLAYS = {
+      0:'⬛',1:'😀',2:'😎',3:'❤️',4:'🔷',5:'🍀',6:'♠️',7:'🔘',
+      8:'◘',9:'○',10:'◙',11:'♂️',12:'♀️',13:'🎵',14:'🎶',15:'☀️',
+      16:'▶️',17:'◀️',18:'↕️',19:'‼️',20:'¶',21:'§',22:'⬛',23:'▄',
+      24:'▀',25:'▌',26:'▐',27:'░',28:'▒',29:'▓',30:'⬛',31:' ',
+      32:'⬜',33:'❗',34:'"',35:'#️⃣',36:'💵',37:'%',38:'&',39:"'",
+      40:'(',41:')',42:'*️⃣',43:'➕',44:',',45:'➖',46:'.',47:'/',
+      48:'0️⃣',49:'1️⃣',50:'2️⃣',51:'3️⃣',52:'4️⃣',53:'5️⃣',54:'6️⃣',55:'7️⃣',
+      56:'8️⃣',57:'9️⃣',58:':',59:';',60:'<',61:'=',62:'>',63:'❓',
+      64:'🐘',65:'🐊',66:'🐻',67:'🐈',68:'🐕',69:'🦅',70:'🐟',71:'🐐',
+      72:'🐴',73:'🦎',74:'🐆',75:'🦘',76:'🦁',77:'🐒',78:'🐃',79:'🦉',
+      80:'🐧',81:'🦆',82:'🐇',83:'🐍',84:'🐅',85:'🐙',86:'🦩',87:'🐋',
+      88:'❌',89:'🦬',90:'🦓',91:'[',92:'\\',93:']',94:'^',95:'_',
+      96:'`',97:'🐜',98:'🍌',99:'🐪',100:'🐉',101:'🥚',102:'🌿',103:'🍇',
+      104:'🍯',105:'🍦',106:'🥤',107:'🥝',108:'🍋',109:'🍄',110:'🥜',111:'🍊',
+      112:'🍐',113:'🤔',114:'🌈',115:'🌞',116:'🍅',117:'☂️',118:'🌋',119:'🌊',
+      120:'❌',121:'💛',122:'🦓',123:'{',124:'|',125:'}',126:'~',127:'␡'
     };
 
-    function loadPage(num){
-      document.getElementById('pageNum').textContent='PAGE '+num;
-      document.getElementById('mainContent').innerHTML=(pages[num]||pages[100]).join('\n');
+    // ═══════════════════════════════════════════════════════════════
+    //  UDO-style pages — data-driven, blocks-based layout
+    //  Per UDO Format Spec: blocks with type/content/style
+    // ═══════════════════════════════════════════════════════════════
+    var pageData = {
+      100:{title:'MAIN INDEX',subtitle:'CEEFAX 1',lines:[
+        '                                        ',
+        '   ██╗░░░░░░░██╗██████╗░░█████╗░░██████╗',
+        '   ██║░░██╗░░██║██╔══██╗██╔══██╗██╔════╝',
+        '   ╚██╗████╗██╔╝██║░░██║██║░░██║╚█████╗░',
+        '   ░████╔═████║░██║░░██║██║░░██║░╚═══██╗',
+        '   ░╚██╔╝░╚██╔╝░██████╔╝╚█████╔╝██████╔╝',
+        '   ░░╚═╝░░░╚═╝░░╚═════╝░░╚════╝░╚═════╝░',
+        '                                        ',
+        ' █ DIRECTORY                           █',
+        '                                        ',
+        '  System Dashboard    101  Vault        200',
+        '  Snack Runner        300  Spatial Map   400',
+        '  About               888                  ',
+        '                                        ',
+        '    <span class="flash">▌</span> Press a 3-digit page number <span class="flash">▌</span>   ',
+        '                                        ',
+        ' █ FINANCE: GET THE FACTS ON PAGE 200 █',
+      ]},
+      101:{title:'SYSTEM DASHBOARD',subtitle:'CEEFAX 1',lines:[
+        '                                        ',
+        ' ╔══════════════════════════════════╗  ',
+        ' ║  System Status ──── Telemetry    ║  ',
+        ' ╠══════════════════════════════════╣  ',
+        ' ║  ▓ uCode1 Core     ▓▓▓▓▓▓░░ ACT ║  ',
+        ' ║  ░ uCode2 Rust     ▓▓▓▓▓▓▓▓ ACT ║  ',
+        ' ║  ▒ ThinUI Shell    ▓▓▓░░░░░ STB ║  ',
+        ' ║  █ MCP Socket      ▓▓▓▓▓▓▓▓ LIS ║  ',
+        ' ╠══════════════════════════════════╣  ',
+        ' ║  129 tests · 0.17s · all pass   ║  ',
+        ' ╚══════════════════════════════════╝  ',
+        '                                        ',
+        '  System status: <span class="green">ALL SYSTEMS NOMINAL</span>  ',
+        '                                        ',
+        '  Dashboard widgets below for live data ',
+      ]},
+      200:{title:'VAULT NOTES',subtitle:'CEEFAX 1',lines:[
+        '                                        ',
+        ' ╔══════════════════════════════════╗  ',
+        ' ║         VAULT NOTES              ║  ',
+        ' ╠══════════════════════════════════╣  ',
+        ' ║  ▸ ucode vault list /            ║  ',
+        ' ║  ▸ ucode vault read <path>       ║  ',
+        ' ║  ▸ ucode vault search <query>    ║  ',
+        ' ║  ▸ vault-bridge sync             ║  ',
+        ' ║  ▸ .udo docs in ~/Vault/.udo/   ║  ',
+        ' ╠══════════════════════════════════╣  ',
+        ' ║  UDO Format: block-based layout  ║  ',
+        ' ║  grid-12 · teletext theme        ║  ',
+        ' ╚══════════════════════════════════╝  ',
+        '                                        ',
+        '  <span class="green">▸ 247 notes in vault</span>                ',
+        '  <span class="yellow">▸ 42 snacks available</span>                ',
+      ]},
+      300:{title:'SNACK RUNNER',subtitle:'CEEFAX 1',lines:[
+        '                                        ',
+        ' ╔══════════════════════════════════╗  ',
+        ' ║         SNACK RUNNER             ║  ',
+        ' ╠══════════════════════════════════╣  ',
+        ' ║  ▸ snack:hello  — Hello World    ║  ',
+        ' ║  ▸ snack:bash   — Bash script    ║  ',
+        ' ║  ▸ snack:python — Python script  ║  ',
+        ' ║  ▸ snack:grid   — Grid demo      ║  ',
+        ' ║  ▸ snack:udev   — uDev workflow  ║  ',
+        ' ╠══════════════════════════════════╣  ',
+        ' ║  ucode snack list                ║  ',
+        ' ║  ucode snack run <id>            ║  ',
+        ' ╚══════════════════════════════════╝  ',
+        '                                        ',
+        '  <span class="flash">▌</span> Use <span class="yellow">ucode snack run</span> to execute <span class="flash">▌</span>',
+      ]},
+      400:{title:'SPATIAL MAP',subtitle:'CEEFAX 1',lines:[
+        '                                        ',
+        ' ╔══════════════════════════════════╗  ',
+        ' ║    ░░▒▒▓▓ SPATIAL MAP ▓▓▒▒░░    ║  ',
+        ' ║                                  ║  ',
+        ' ║  ┌──────┬──────────┐             ║  ',
+        ' ║  │ VAULT│  GRID    │             ║  ',
+        ' ║  ├──────┼──────────┤             ║  ',
+        ' ║  │ CELLS│  SNACKS  │             ║  ',
+        ' ║  └──────┴──────────┘             ║  ',
+        ' ║                                  ║  ',
+        ' ║  Layer: 0  ·  Zoom: 1×           ║  ',
+        ' ╚══════════════════════════════════╝  ',
+        '                                        ',
+        '  <span class="cyan">Navigate: arrows · Select: Enter</span>     ',
+      ]},
+      888:{title:'ABOUT uDos Ceefax',subtitle:'CEEFAX 1',lines:[
+        '                                        ',
+        ' ╔══════════════════════════════════╗  ',
+        ' ║       uDos Ceefax v0.3           ║  ',
+        ' ╠══════════════════════════════════╣  ',
+        ' ║  Font:   Teletext50              ║  ',
+        ' ║  Engine: uCode1 + uCode2         ║  ',
+        ' ║  Grid:   40×25 characters        ║  ',
+        ' ║  Slots:  128 (ASCII + CP437)     ║  ',
+        ' ║  Emoji:  128 overlays 0-127      ║  ',
+        ' ║  Render: ANSI→Teletext→Emoji     ║  ',
+        ' ╠══════════════════════════════════╣  ',
+        ' ║  UDO:    grid-12 blocks          ║  ',
+        ' ║  USXD:   component mapping       ║  ',
+        ' ║  MCP:    vault-bridge + plugins  ║  ',
+        ' ╚══════════════════════════════════╝  ',
+        '                                        ',
+        '  <span class="flash">▌ © 2026 uDos ▌</span>                    ',
+      ]}
+    };
+
+    var pageKeys = Object.keys(pageData).map(Number).sort(function(a,b){return a-b});
+    var emojiOn = false;
+
+    function renderAsGrid(line, emojiMode) {
+      if (!emojiMode) return line;
+      var out = '';
+      for (var i = 0; i < line.length; i++) {
+        var code = line.charCodeAt(i);
+        var repl = EMOJI_OVERLAYS[code];
+        out += repl !== undefined ? repl : line[i];
+      }
+      return out;
     }
 
-    var buf='';
-    document.addEventListener('keydown',function(e){
-      if(e.key>='0'&&e.key<='9'){buf+=e.key;if(buf.length>=3){var p=parseInt(buf);if(pages[p])loadPage(p);buf=''}}
-      else buf='';
+    function loadPage(num) {
+      var data = pageData[num] || pageData[100];
+      document.getElementById('pageNum').textContent = 'P' + num;
+      document.getElementById('subHeader').textContent =
+        'P' + num + '  ' + (data.subtitle || 'CEEFAX 1') + '  1/1  ' + (data.title || '');
+
+      var lines = data.lines;
+      var html = '';
+      for (var i = 0; i < lines.length; i++) {
+        html += renderAsGrid(lines[i], emojiOn) + '\n';
+      }
+      document.getElementById('mainContent').innerHTML = html;
+      document.getElementById('tickerTape').textContent =
+        ' LATEST: PAGE ' + num + ' — ' + (data.title || '');
+
+      // Build nav keys
+      var nav = document.getElementById('navBar');
+      nav.innerHTML = '';
+      pageKeys.forEach(function(k) {
+        var btn = document.createElement('span');
+        btn.className = 'ttx-key';
+        btn.textContent = k;
+        btn.onclick = function(){loadPage(k)};
+        if (k === num) { btn.style.background = '#0ff'; btn.style.color = '#000'; }
+        nav.appendChild(btn);
+      });
+
+      if (typeof uDosWidgets !== 'undefined') uDosWidgets.refreshAll();
+    }
+
+    function toggleEmoji() {
+      emojiOn = !emojiOn;
+      var el = document.getElementById('emojiToggle');
+      el.textContent = 'EMOJI: ' + (emojiOn ? 'ON' : 'OFF');
+      el.className = 'emoji-indicator' + (emojiOn ? ' on' : '');
+      var cur = document.getElementById('pageNum').textContent;
+      var n = parseInt(cur.replace('P','')) || 100;
+      loadPage(n);
+    }
+
+    // ── Keyboard page entry (3-digit) ─────────────────────────────────────
+    var buf = '';
+    document.addEventListener('keydown', function(e) {
+      if (e.key >= '0' && e.key <= '9') {
+        buf += e.key;
+        if (buf.length >= 3) {
+          var p = parseInt(buf);
+          if (pageData[p]) loadPage(p);
+          buf = '';
+        }
+      } else {
+        buf = '';
+      }
     });
 
-    function updateClock(){
-      var n=new Date();
-      document.getElementById('clock').textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
-      document.getElementById('date').textContent=n.toLocaleDateString('en-GB');
+    // ── Clock ─────────────────────────────────────────────────────────────
+    function updateClock() {
+      var n = new Date();
+      var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      document.getElementById('clock').textContent =
+        days[n.getDay()] + ' ' + n.getDate() + ' ' + months[n.getMonth()] + ' ' +
+        String(n.getHours()).padStart(2,'0') + ':' +
+        String(n.getMinutes()).padStart(2,'0') + '/' +
+        String(n.getSeconds()).padStart(2,'0');
+      document.getElementById('date').textContent =
+        n.toLocaleDateString('en-GB');
     }
 
-    loadPage(100);updateClock();setInterval(updateClock,10000);
+    // ── Init ──────────────────────────────────────────────────────────────
+    loadPage(100);
+    updateClock();
+    setInterval(updateClock, 1000);
+    document.getElementById('emojiToggle').addEventListener('click', toggleEmoji);
 
-    // Menu toggle
-    (function(){
-      var t=document.getElementById('menuToggle'),p=document.getElementById('menuPanel'),c=document.getElementById('menuClose'),o=false;
-      function op(){o=true;p.classList.add('open');t.textContent='x';t.classList.add('active')}
-      function cl(){o=false;p.classList.remove('open');t.textContent='+';t.classList.remove('active')}
-      t.addEventListener('click',function(e){e.stopPropagation();o?cl():op()});
-      c.addEventListener('click',cl);
-      document.addEventListener('click',function(e){if(o&&!p.contains(e.target)&&e.target!==t)cl()});
+    // ── Menu toggle ───────────────────────────────────────────────────────
+    (function() {
+      var t = document.getElementById('menuToggle'),
+          p = document.getElementById('menuPanel'),
+          c = document.getElementById('menuClose'),
+          o = false;
+      function op() { o=true; p.classList.add('open'); t.textContent='x'; t.classList.add('active'); }
+      function cl() { o=false; p.classList.remove('open'); t.textContent='+'; t.classList.remove('active'); }
+      t.addEventListener('click', function(e){ e.stopPropagation(); o?cl():op(); });
+      c.addEventListener('click', cl);
+      document.addEventListener('click', function(e){ if(o&&!p.contains(e.target)&&e.target!==t) cl(); });
+
+      p.querySelectorAll('[data-size]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          p.querySelectorAll('[data-size]').forEach(function(b){ b.classList.remove('active'); });
+          btn.classList.add('active');
+          var parts = btn.getAttribute('data-size').split('x');
+          var cols = parseInt(parts[0]), rows = parseInt(parts[1]);
+          var el = document.getElementById('ceefax');
+          el.style.setProperty('--udos-cols', cols);
+          el.style.setProperty('--udos-rows', rows);
+          if (typeof uDosWidgets !== 'undefined' && uDosWidgets.Display) {
+            uDosWidgets.Display.resize(el, cols, rows);
+          }
+        });
+      });
+
+      document.getElementById('modeTeletext').addEventListener('click', function() {
+        if (emojiOn) toggleEmoji();
+        document.getElementById('modeTeletext').classList.add('active');
+        document.getElementById('modeEmoji').classList.remove('active');
+      });
+      document.getElementById('modeEmoji').addEventListener('click', function() {
+        if (!emojiOn) toggleEmoji();
+        document.getElementById('modeEmoji').classList.add('active');
+        document.getElementById('modeTeletext').classList.remove('active');
+      });
     })();
   </script>
 </body>
