@@ -30,14 +30,14 @@
         <button class="menu-btn" data-size="20x10">20x10</button>
         <button class="menu-btn" data-size="32x16">32x16</button>
         <button class="menu-btn" data-size="40x24">40x24</button>
-        <button class="menu-btn" data-size="80x24">80x24</button>
+        <button class="menu-btn" data-size="80x30">80x30</button>
         <button class="menu-btn" data-size="48x48">48x48</button>
       </div>
     </div>
 
     <div class="menu-section">
       <span class="menu-label">SIZE</span>
-      <span class="menu-value" id="ratioDisplay">80x24</span>
+      <span class="menu-value" id="ratioDisplay">40x24</span>
     </div>
 
     <div class="menu-section">
@@ -69,10 +69,10 @@
       '20x10': { cols: 20, rows: 10, label: '20x10 TINY' },
       '32x16': { cols: 32, rows: 16, label: '32x16 NANO' },
       '40x24': { cols: 40, rows: 24, label: '40x24 COMPACT' },
-      '80x24': { cols: 80, rows: 24, label: '80x24 CLASSIC' },
+      '80x30': { cols: 80, rows: 30, label: '80x30 CLASSIC' },
       '48x48': { cols: 48, rows: 48, label: '48x48 SQUARE' },
     };
-    var currentViewport = '80x24';
+    var currentViewport = '40x24';
 
 
 
@@ -85,13 +85,20 @@
       document.getElementById('ratioDisplay').textContent = vp.cols + 'x' + vp.rows;
       document.querySelectorAll('.toolbar-btn[data-size]').forEach(function(b) {
         b.classList.toggle('active', b.dataset.size === key);
-      });
+      });      // Flash loader bars briefly
+      flashLoader();
     }
+
+    function flashLoader() {
+      var bs = document.querySelector('.bluescreen');
+      if (!bs) return;
+      bs.classList.add('flash');
+      setTimeout(function() { bs.classList.remove('flash'); }, 600);    }
 
 
     // ── Initialize display scaling ──────────────────────────────────────────
     uDosWidgets.Display.init(document.getElementById('terminal'), {
-      cols: 80, rows: 24, aspect: 0.55
+      cols: 40, rows: 24, aspect: 0.55
     });
 
     // ── Terminal setup ──────────────────────────────────────────────────────
@@ -108,14 +115,14 @@
 
       // Boot report — includes viewport size
       bootDetail.innerHTML =
-        'display: 80x24 classic terminal &mdash; font: 24px C64 mono<br/>' +
+        'display: 40x24 compact terminal &mdash; font: 24px C64 mono<br/>' +
         'seed pod: CITY-INDEX-001 &mdash; ' +
         '83 cities &middot; 17 timezones loaded<br/>' +
         'local tz: AEST (UTC+10) &middot; ' +
         'cities: Sydney, Melbourne, Brisbane, Auckland';
 
-      applyViewport('80x24');
-      document.getElementById('ratioDisplay').textContent = '80x24';
+      applyViewport('40x24');
+      document.getElementById('ratioDisplay').textContent = '40x24';
 
       // Menu toggle — + always visible, toggles panel
       (function setupMenu() {
@@ -193,7 +200,7 @@
                 resp.textContent = 'VIEWPORT: ' + VIEWPORTS[parts[1]].label;
               } else {
                 resp.textContent = 'VIEWPORT: ' + currentViewport;
-                resp.innerHTML += '<br/>SIZE 20x10 | SIZE 32x16 | SIZE 40x24 | SIZE 80x24 | SIZE 48x48';
+                resp.innerHTML += '<br/>SIZE 20x10 | SIZE 32x16 | SIZE 40x24 | SIZE 80x30 | SIZE 48x48';
               }
             }
             else if (cmd) { resp.className = 'error'; resp.textContent = '?UNKNOWN COMMAND'; }

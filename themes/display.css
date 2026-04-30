@@ -14,7 +14,7 @@
 
 :root {
   --udos-cols: 80;
-  --udos-rows: 24;
+  --udos-rows: 30;
   --udos-font-base: 24px;
   --udos-aspect: 0.55;
   --udos-font-size: 24px;
@@ -30,7 +30,7 @@
 
 /* Surface-specific overrides */
 .udos-surface[data-surface="bbcbasic"] {
-  --udos-cols: 80;
+  --udos-cols: 40;
   --udos-rows: 24;
   --udos-font-base: 24px;
 }

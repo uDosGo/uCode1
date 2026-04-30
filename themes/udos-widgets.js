@@ -215,7 +215,7 @@
     _updateToolbarButtons: function(vw, vh) {
       var presets = [
         { cols: 20, rows: 10, label: '20x10' }, { cols: 32, rows: 16, label: '32x16' },
-        { cols: 40, rows: 24, label: '40x24' }, { cols: 80, rows: 24, label: '80x24' },
+        { cols: 40, rows: 24, label: '40x24' }, { cols: 80, rows: 30, label: '80x30' },
         { cols: 48, rows: 48, label: '48x48' },
       ];
       var targetW = vw * 0.8, targetH = vh * 0.8;
