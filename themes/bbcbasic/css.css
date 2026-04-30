@@ -74,16 +74,21 @@ html, body {
   100% { opacity: 0; pointer-events: none; }
 }
 
-/* Terminal viewport — lighter blue, appears after scramble */
+/* Terminal viewport — lighter blue, appears after scramble, max 80x30 */
 .terminal-viewport {
   position: fixed;
-  top: 24px; left: 24px; right: 24px; bottom: 24px;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80ch;
+  max-width: calc(100vw - 48px);
+  height: 30em;
+  max-height: calc(100vh - 48px);
   background: #152a6b;
   border: 2px solid #4a6ac0;
   border-radius: 4px;
-  padding: 18px 22px;
+  padding: 16px 20px;
   color: #b0c8ff;
-  font: normal 15px "C64 User Mono";
+  font: normal 15px/1.5 "C64 User Mono";
   text-transform: uppercase;
   white-space: pre-wrap;
   overflow-y: auto;
@@ -93,8 +98,8 @@ html, body {
 }
 
 @keyframes viewportAppear {
-  from { opacity: 0; transform: scale(0.96); }
-  to   { opacity: 1; transform: scale(1); }
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
 
 .boot-msg { color: #8af; margin-bottom: 6px; line-height: 1.5; }
