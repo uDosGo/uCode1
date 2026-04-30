@@ -97,8 +97,9 @@
 
 
     // ── Initialize display scaling ──────────────────────────────────────────
+    document.getElementById('terminal').setAttribute('data-aspect', '0.55');
     uDosWidgets.Display.init(document.getElementById('terminal'), {
-      cols: 40, rows: 24, aspect: 0.55
+      cols: 40, rows: 24
     });
 
     // ── Terminal setup ──────────────────────────────────────────────────────

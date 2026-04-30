@@ -226,8 +226,10 @@
       el.style.setProperty('--ttx-size', fontSize + 'px');
       document.getElementById('fzLabel').textContent = fontSize;
       document.getElementById('fontReset').textContent = fontSize + 'px';
+      // Sync to shared font scale (base: 25px Teletext50)
+      document.documentElement.style.setProperty('--udos-font-scale', (fontSize / 25).toFixed(2));
       updateGridInfo();
-      fillPage();  // refill content with new grid
+      cascadePage(currentPage);
     }
 
     function updateGridInfo() {
@@ -254,44 +256,14 @@
     }
 
     function fillPage() {
-      // We don't dynamically reflow page data — just render current page
-      // at the new font size. The content area clips overflow.
+      // Legacy — no-op, cascadePage handles rendering
     }
 
     var currentPage = 100;
 
-    function loadPage(num) {
-      currentPage = num;
-      var data = pageData[num] || pageData[100];
-      document.getElementById('pageNum').textContent = 'P' + num;
-      document.getElementById('subHeader').textContent =
-        'P' + num + '  ' + (data.subtitle || 'CEEFAX 1') + '  1/1  ' + (data.title || '');
-
-      var html = '';
-      for (var i = 0; i < data.lines.length; i++) {
-        html += renderAsGrid(data.lines[i], emojiOn) + '\n';
-      }
-      document.getElementById('mainContent').innerHTML = html;
-      document.getElementById('tickerTape').textContent =
-        ' LATEST: PAGE ' + num + ' — ' + (data.title || '');
-
-      // Build nav bar
-      var nav = document.getElementById('navBar');
-      nav.innerHTML = '';
-      pageKeys.forEach(function(k) {
-        var span = document.createElement('span');
-        span.className = 'pn' + (k === num ? ' cur' : '');
-        span.textContent = k;
-        span.onclick = function(){loadPage(k)};
-        nav.appendChild(span);
-      });
-
-      updateGridInfo();
-    }
-
     function toggleEmoji() {
       emojiOn = !emojiOn;
-      loadPage(currentPage);
+      cascadePage(currentPage);
     }
 
     // ── Keyboard page entry (3-digit) ─────────────────────────────────────
@@ -301,7 +273,7 @@
         buf += e.key;
         if (buf.length >= 3) {
           var p = parseInt(buf);
-          if (pageData[p]) loadPage(p);
+          if (pageData[p]) cascadePage(p);
           buf = '';
         }
       } else { buf = ''; }
@@ -320,27 +292,82 @@
       document.getElementById('date').textContent = n.toLocaleDateString('en-GB');
     }
 
-    // ── Resize ────────────────────────────────────────────────────────────
+    // ── Resize: debounce + cascade ────────────────────────────────────────
     var resizeTimer = null;
     function onResize() {
       if (resizeTimer) clearTimeout(resizeTimer);
+      updateGridInfo();  // update badge immediately
       resizeTimer = setTimeout(function() {
-        updateGridInfo();
-      }, 150);
+        cascadePage(currentPage);
+      }, 1500);  // 1.5s wait — analogue teletext feel
+    }
+
+    // ── Cascade: render rows top-down with teletext sweep ────────────────
+    var cascadeTimer = null;
+
+    function cascadePage(num) {
+      if (cascadeTimer) { clearInterval(cascadeTimer); cascadeTimer = null; }
+
+      var data = pageData[num] || pageData[100];
+      var allLines = [];
+      for (var i = 0; i < data.lines.length; i++) {
+        allLines.push(renderAsGrid(data.lines[i], emojiOn));
+      }
+
+      var el = document.getElementById('mainContent');
+      el.innerHTML = '';                 // clear — blank screen
+      el.textContent = '';               // ensure truly blank
+
+      var idx = 0;
+      var total = allLines.length;
+      // ~250ms per row → 16 rows × 250ms = 4s cascade
+      var intervalMs = total > 0 ? Math.min(350, Math.floor(4000 / total)) : 250;
+
+      cascadeTimer = setInterval(function() {
+        if (idx >= total) {
+          clearInterval(cascadeTimer);
+          cascadeTimer = null;
+          return;
+        }
+        // Append one row at a time (top-down cascade)
+        el.innerHTML += allLines[idx] + '\n';
+        idx++;
+      }, intervalMs);
+
+      // Update chrome immediately (header, ticker, nav)
+      document.getElementById('pageNum').textContent = 'P' + num;
+      document.getElementById('subHeader').textContent =
+        'P' + num + '  ' + (data.subtitle || 'CEEFAX 1') + '  1/1  ' + (data.title || '');
+      document.getElementById('tickerTape').textContent =
+        ' LATEST: PAGE ' + num + ' — ' + (data.title || '');
+
+      var nav = document.getElementById('navBar');
+      nav.innerHTML = '';
+      pageKeys.forEach(function(k) {
+        var span = document.createElement('span');
+        span.className = 'pn' + (k === num ? ' cur' : '');
+        span.textContent = k;
+        span.onclick = function(){cascadePage(k)};
+        nav.appendChild(span);
+      });
+    }
+
+    function loadPage(num) {
+      currentPage = num;
+      cascadePage(num);
     }
 
     // ── Init ──────────────────────────────────────────────────────────────
-    loadPage(100);
-    applyFont();
-    updateClock();
-    setInterval(updateClock, 1000);
-
     window.addEventListener('resize', onResize);
-
-    // ── Event bindings ────────────────────────────────────────────────────
     document.getElementById('fzDown').addEventListener('click', fontSmaller);
     document.getElementById('fzUp').addEventListener('click', fontLarger);
     document.getElementById('fzLabel').addEventListener('click', fontReset);
+
+    currentPage = 100;
+    applyFont();
+    cascadePage(100);
+    updateClock();
+    setInterval(updateClock, 1000);
 
     // ── Menu toggle ───────────────────────────────────────────────────────
     (function() {

@@ -295,16 +295,22 @@
       document.addEventListener('click', function(e) { if (isOpen && !panel.contains(e.target) && e.target !== toggle) closePanel(); });
 
       // Font size
-      document.getElementById('fontDown').addEventListener('click', function() {
-        currentFontSize = Math.max(6, currentFontSize - 1);
+      function applyNesFont() {
         document.body.style.fontSize = currentFontSize + 'px';
         document.getElementById('fontDisplay').textContent = currentFontSize + 'px';
+        // Sync to shared font scale (base: 10px Press Start 2P)
+        document.documentElement.style.setProperty('--udos-font-scale', (currentFontSize / 10).toFixed(2));
+      }
+      document.getElementById('fontDown').addEventListener('click', function() {
+        currentFontSize = Math.max(6, currentFontSize - 1);
+        applyNesFont();
       });
       document.getElementById('fontUp').addEventListener('click', function() {
         currentFontSize = Math.min(20, currentFontSize + 1);
-        document.body.style.fontSize = currentFontSize + 'px';
-        document.getElementById('fontDisplay').textContent = currentFontSize + 'px';
+        applyNesFont();
       });
+      // Init: set shared scale on load
+      document.documentElement.style.setProperty('--udos-font-scale', '1.0');
     })();
   </script>
 

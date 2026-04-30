@@ -170,24 +170,32 @@
       var vw = window.innerWidth;
       var vh = window.innerHeight;
 
+      // Read shared font scale
+      var scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--udos-font-scale')) || 1.0;
+
       for (var i = 0; i < this._surfaces.length; i++) {
         var s = this._surfaces[i];
         var el = s.el;
 
-        // 80% of viewport, no padding
+        // 80% of viewport (== 10% gap each side)
         var targetW = vw * 0.8;
         var targetH = vh * 0.8;
 
-        // ch width ≈ fontSize * 0.55 for this monospace font
-        var fontFromW = targetW / (s.cols * 0.55);
+        // Apply shared font scale to base
+        var aspect = parseFloat(el.getAttribute('data-aspect')) || 0.55;
+        var fontFromW = targetW / (s.cols * aspect);
         var fontFromH = targetH / s.rows;
-        var fontSize = Math.min(fontFromW, fontFromH);
+        var fontSize = Math.min(fontFromW, fontFromH) * scale;
         fontSize = Math.max(fontSize, 5);
 
+        // Use explicit px for width/height (min 10% gap enforced by 0.8 factor)
+        var gridW = fontSize * s.cols * aspect;
+        var gridH = fontSize * s.rows;
         el.style.fontSize = fontSize + 'px';
-        el.style.width = 'calc(' + s.cols + 'ch)';
-        el.style.height = 'calc(' + s.rows + 'em)';
+        el.style.width = gridW + 'px';
+        el.style.height = gridH + 'px';
         el.style.setProperty('--udos-font-size', fontSize + 'px');
+        el.style.setProperty('--udos-font-scale', scale);
       }
 
       // Update toolbar buttons — disable presets that don't fit
