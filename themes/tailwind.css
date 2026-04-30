@@ -1,81 +1,101 @@
 /*
- * uDos Flowbite-style Sidebar — right-aligned +/x menu for all surfaces
+ * uDos Flowbite-style Sidebar — all surfaces share exact same style
  *
- * Toggle: fixed top-right, + to open, x to close
- * Panel: right-aligned, slides in from RHS
- * Scaled via --menu-scale
+ * Toggle: fixed top-right, + to open / x to close
+ * Panel: right-aligned, slides from RHS with Flowbite color tokens
  */
 
-/* ── Toggle button (+/x) — top-right ───────────────────── */
+/* ── Toggle +/x — top-right, rounded ───────────────────── */
 .menu-toggle{
   position:fixed;top:0;right:16px;z-index:130;
   width:calc(32px * var(--menu-scale, 1));height:calc(32px * var(--menu-scale, 1));
-  background:rgba(74,106,192,0.85);border:1px solid rgba(74,106,192,0.5);
+  background:rgba(74,106,192,0.85);border:1px solid rgba(74,106,192,0.4);
   border-radius:0 0 4px 4px;color:#b0c8ff;cursor:pointer;
   font:calc(18px * var(--menu-scale, 1))/1 system-ui,sans-serif;
   display:flex;align-items:center;justify-content:center;
-  user-select:none;transition:background 0.2s
+  user-select:none;transition:all 0.15s
 }
 .menu-toggle:hover{background:rgba(74,106,192,1);color:#fff}
 .menu-toggle.active{background:rgba(200,60,60,0.85);border-color:rgba(200,60,60,0.5);color:#fff}
 
-/* ── Flowbite-style sidebar panel — right-aligned ──────── */
+/* ── Flowbite sidebar panel — right side ───────────────── */
 .menu-panel{
   position:fixed;top:0;right:0;z-index:120;
   width:calc(240px * var(--menu-scale, 1));height:100vh;
-  background:rgba(10,10,46,0.97);backdrop-filter:blur(10px);
-  border-left:1px solid rgba(74,106,192,0.3);
-  transform:translateX(100%);transition:transform 0.3s ease;
-  display:flex;flex-direction:column;
-  overflow-y:auto
+  background:rgba(15,15,35,0.98);backdrop-filter:blur(12px);
+  border-left:1px solid rgba(74,106,192,0.2);
+  transform:translateX(100%);transition:transform 0.25s ease;
+  display:flex;flex-direction:column;overflow-y:auto
 }
 .menu-panel.open{transform:translateX(0)}
 
 .menu-inner{
   padding:calc(16px * var(--menu-scale, 1));
-  display:flex;flex-direction:column;gap:calc(10px * var(--menu-scale, 1));
+  display:flex;flex-direction:column;gap:calc(8px * var(--menu-scale, 1));
   font-family:system-ui,sans-serif
 }
 
+/* ── Header — with close button ──────────────────────────── */
 .menu-header{
   display:flex;align-items:center;justify-content:space-between;
-  padding-bottom:calc(10px * var(--menu-scale, 1));
-  border-bottom:1px solid rgba(74,106,192,0.25);
-  margin-bottom:calc(4px * var(--menu-scale, 1))
+  padding:0 0 calc(12px * var(--menu-scale, 1)) 0;
+  border-bottom:1px solid rgba(74,106,192,0.15);
+  margin-bottom:calc(6px * var(--menu-scale, 1))
 }
 .menu-title{
-  color:#4a6ac0;
-  font-size:calc(13px * var(--menu-scale, 1));
-  text-transform:uppercase;letter-spacing:1px;font-weight:600
+  color:#5a7ad0;font-weight:600;
+  font-size:calc(12px * var(--menu-scale, 1));
+  text-transform:uppercase;letter-spacing:0.8px
 }
 .menu-close{
-  background:none;border:none;color:#b0c8ff;cursor:pointer;
-  font:calc(16px * var(--menu-scale, 1))/1 system-ui,sans-serif;
-  padding:calc(4px * var(--menu-scale, 1));
-  border-radius:4px
+  background:rgba(74,106,192,0.1);border:none;color:#8aa0d0;cursor:pointer;
+  font:calc(14px * var(--menu-scale, 1))/1 system-ui,sans-serif;
+  width:calc(26px * var(--menu-scale, 1));height:calc(26px * var(--menu-scale, 1));
+  display:flex;align-items:center;justify-content:center;
+  border-radius:4px;transition:all 0.15s
 }
-.menu-close:hover{background:rgba(74,106,192,0.2);color:#fff}
+.menu-close:hover{background:rgba(74,106,192,0.25);color:#fff}
 
+/* ── Section — Flowbite list-item style ──────────────────── */
 .menu-section{
-  display:flex;flex-direction:column;gap:calc(6px * var(--menu-scale, 1));
-  list-style:none;padding:0;margin:0
+  list-style:none;padding:0;margin:0;
+  display:flex;flex-direction:column;gap:calc(4px * var(--menu-scale, 1))
 }
 .menu-label{
-  color:#4a6ac0;
-  font-size:calc(10px * var(--menu-scale, 1));
-  text-transform:uppercase;letter-spacing:1px;font-weight:500
+  color:#4a6ac0;font-weight:500;
+  font-size:calc(9px * var(--menu-scale, 1));
+  text-transform:uppercase;letter-spacing:0.6px;
+  padding:calc(6px * var(--menu-scale, 1)) calc(6px * var(--menu-scale, 1)) calc(2px * var(--menu-scale, 1))
 }
-.menu-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:calc(4px * var(--menu-scale, 1))}
+
+/* ── Grid buttons (Flowbite flat style) ──────────────────── */
+.menu-grid{
+  display:grid;grid-template-columns:1fr 1fr 1fr;
+  gap:calc(3px * var(--menu-scale, 1));
+  padding:0 calc(6px * var(--menu-scale, 1))
+}
 .menu-btn{
-  background:rgba(74,106,192,0.12);color:#b0c8ff;
-  border:1px solid rgba(74,106,192,0.2);
+  background:rgba(74,106,192,0.08);color:#8aa0d0;
+  border:1px solid rgba(74,106,192,0.12);
   border-radius:4px;padding:calc(5px * var(--menu-scale, 1)) calc(2px * var(--menu-scale, 1));
   cursor:pointer;
-  font:calc(11px * var(--menu-scale, 1)) system-ui,sans-serif;text-align:center;
-  transition:background 0.15s
+  font:calc(10px * var(--menu-scale, 1)) system-ui,sans-serif;
+  text-align:center;transition:all 0.12s
 }
-.menu-btn:hover{background:rgba(74,106,192,0.3);color:#fff}
-.menu-btn.active{background:#4a6ac0;color:#fff;border-color:#6a8ae0}
-.menu-btn:disabled{opacity:0.3;cursor:not-allowed}
-.menu-value{color:#7b96e0;font-size:calc(11px * var(--menu-scale, 1))}
-.menu-info{color:#506090;font-size:calc(10px * var(--menu-scale, 1));line-height:1.7}
+.menu-btn:hover{background:rgba(74,106,192,0.2);color:#b0c8ff}
+.menu-btn.active{background:#4a6ac0;color:#fff;border-color:#5a7ad0}
+
+/* ── Info text ───────────────────────────────────────────── */
+.menu-info{
+  padding:0 calc(6px * var(--menu-scale, 1));
+  color:#506090;
+  font-size:calc(10px * var(--menu-scale, 1));
+  line-height:1.6
+}
+
+/* ── Value display ───────────────────────────────────────── */
+.menu-value{
+  color:#7b96e0;
+  font-size:calc(11px * var(--menu-scale, 1));
+  padding:0 calc(6px * var(--menu-scale, 1))
+}
