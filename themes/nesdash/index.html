@@ -6,6 +6,7 @@
   <title>uCode1 — NES Dashboard</title>
   <link rel="stylesheet" href="nes.css">
   <link rel="stylesheet" href="../display.css">
+  <script src="../udos-widgets.js"></script>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{
@@ -220,6 +221,8 @@
 
   <script>
     var currentFontSize = 10;
+    document.documentElement.style.setProperty('--udos-font-scale', '1.0');
+    applyNesFont();
 
     function applyPalette(bg, fg, accent) {
       document.body.style.background = bg;

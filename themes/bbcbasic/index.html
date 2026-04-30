@@ -179,9 +179,31 @@
       applyViewport('40x24');
 
       // ── Shared Menu ────────────────────────────────────────────────────
+      var bbcFontScale = 1.0;
+      function applyBbcScale() {
+        document.documentElement.style.setProperty('--udos-font-scale', bbcFontScale.toFixed(2));
+        // Trigger re-render by resizing the display
+        var vp = VIEWPORTS[currentViewport];
+        if (vp) uDosWidgets.Display.resize(document.getElementById('terminal'), vp.cols, vp.rows);
+      }
       uDosWidgets.Menu.init({
         title: 'VIEWPORT',
         sections: [{
+          label: 'FONT SCALE', type: 'custom',
+          element: (function(){
+            var d = document.createElement('div'); d.style.cssText = 'display:flex;align-items:center;gap:8px';
+            var dn = document.createElement('button'); dn.className = 'menu-btn'; dn.textContent = 'A−'; dn.style.padding = '4px 10px';
+            dn.addEventListener('click', function(){ bbcFontScale = Math.max(0.5, bbcFontScale - 0.1); applyBbcScale(); });
+            var ds = document.createElement('span'); ds.className = 'menu-value'; ds.textContent = '1.0x'; ds.style.minWidth = '36px'; ds.style.textAlign = 'center';
+            var up = document.createElement('button'); up.className = 'menu-btn'; up.textContent = 'A+'; up.style.padding = '4px 10px';
+            up.addEventListener('click', function(){ bbcFontScale = Math.min(2.5, bbcFontScale + 0.1); applyBbcScale(); });
+            // Wrap applyBbcScale to update display
+            var orig = applyBbcScale;
+            applyBbcScale = function() { orig(); ds.textContent = bbcFontScale.toFixed(1) + 'x'; };
+            d.appendChild(dn); d.appendChild(ds); d.appendChild(up);
+            return d;
+          })()
+        },{
           label: 'SIZE', type: 'grid', buttons: [
             { label:'20x10', value:'20x10', onclick: function(){applyViewport('20x10')} },
             { label:'32x16', value:'32x16', onclick: function(){applyViewport('32x16')} },
@@ -199,10 +221,10 @@
           ]
         }]
       });
+      applyBbcScale();
 
       // Menu is now handled by uDosWidgets.Menu.init() above
-      
-      // Enable input after viewport appears
+      applyBbcScale();
 
       // Enable input after viewport appears
       setTimeout(function() { ready = true; }, 3800);
