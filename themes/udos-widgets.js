@@ -193,13 +193,10 @@
         fontSize = Math.min(fontSize, s.baseFont);
         fontSize = Math.max(fontSize, 4);
 
-        var padding = 40; // 20px each side
-        var surfW = s.cols * fontSize * s.aspect + padding;
-        var surfH = s.rows * fontSize * 1.5 + padding;
-
         el.style.fontSize = fontSize + 'px';
-        el.style.width = surfW + 'px';
-        el.style.height = surfH + 'px';
+        // Use ch/em units so exactly s.cols characters × s.rows lines fit
+        el.style.width = 'calc(' + s.cols + 'ch + 40px)';
+        el.style.height = 'calc(' + (s.rows * 1.5) + 'em + 40px)';
         el.style.setProperty('--udos-font-size', fontSize + 'px');
       }
 
@@ -209,6 +206,7 @@
 
     /** Disable viewport buttons whose preset doesn't fit the current window */
     _updateToolbarButtons: function(vw, vh) {
+      var margin = 0.08;
       var presets = [
         { cols: 20, rows: 10, label: '20x10' },
         { cols: 32, rows: 16, label: '32x16' },
@@ -220,18 +218,17 @@
         { cols: 80, rows: 20, label: '80x20' },
         { cols: 48, rows: 48, label: '48x48' },
       ];
-      var margin = 0.08;
-      var minFont = 5;
-      document.querySelectorAll('.toolbar-btn[data-size]').forEach(function(btn) {
+      document.querySelectorAll('.menu-btn[data-size]').forEach(function(btn) {
         var key = btn.getAttribute('data-size');
         var preset = null;
         for (var p = 0; p < presets.length; p++) {
           if (presets[p].label === key) { preset = presets[p]; break; }
         }
         if (!preset) return;
-        // Minimum window size needed for this preset at minFont
-        var needW = (preset.cols * minFont * 0.55 + 40) / (1 - 2 * margin);
-        var needH = (preset.rows * minFont * 1.5 + 40) / (1 - 2 * margin);
+        // Minimum window size needed for this preset at minFont (5px)
+        // Width: cols * 5px * aspect + 40px padding, then / (1 - 2*margin)
+        var needW = (preset.cols * 5 * 0.55 + 40) / (1 - 2 * margin);
+        var needH = (preset.rows * 5 * 1.5 + 40) / (1 - 2 * margin);
         var fits = (vw >= needW && vh >= needH);
         btn.disabled = !fits;
         btn.style.opacity = fits ? '1' : '0.35';

@@ -154,41 +154,105 @@ html, body {
 .credits:hover { color: #668; }
 @keyframes fadeIn { to { opacity: 1; } }
 
-/* ── Auto-hide toolbar (Tailwind-style) ─────────────────────────────────── */
-.toolbar {
+/* ── + toggle icon (top-right, slides down on hover) ────────────────────── */
+.menu-toggle {
   position: fixed;
-  top: 0; left: 0; right: 0;
-  height: 36px;
-  background: rgba(10, 10, 46, 0.92);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid rgba(74, 106, 192, 0.4);
+  top: -28px; right: 16px;
+  width: 32px; height: 32px;
+  background: rgba(74, 106, 192, 0.85);
+  border: 1px solid rgba(74, 106, 192, 0.5);
+  border-radius: 0 0 6px 6px;
+  color: #b0c8ff;
+  font-family: system-ui, sans-serif;
+  font-size: 18px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  z-index: 60;
+  transition: all 0.25s ease;
+  user-select: none;
+}
+.menu-toggle.visible {
+  top: 0;
+}
+.menu-toggle.active {
+  top: 0;
+  background: rgba(200, 60, 60, 0.85);
+  border-color: rgba(200, 60, 60, 0.5);
+  color: #fff;
+}
+.menu-toggle:hover { background: rgba(74, 106, 192, 1); }
+.menu-toggle.active:hover { background: rgba(200, 60, 60, 1); }
+
+/* ── Slide-out left panel ───────────────────────────────────────────────── */
+.menu-panel {
+  position: fixed;
+  top: 0; left: 0;
+  width: 240px;
+  height: 100vh;
+  background: rgba(10, 10, 46, 0.95);
+  backdrop-filter: blur(10px);
+  border-right: 1px solid rgba(74, 106, 192, 0.4);
+  z-index: 55;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 12px;
+  overflow-y: auto;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+.menu-panel.open { transform: translateX(0); }
+
+.menu-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 16px;
-  z-index: 50;
-  transform: translateY(-100%);
-  transition: transform 0.25s ease;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(74, 106, 192, 0.3);
+}
+.menu-title { color: #4a6ac0; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+.menu-close {
+  background: none; border: none; color: #b0c8ff;
+  font-size: 16px; cursor: pointer; padding: 0 4px;
+  font-family: system-ui, sans-serif;
+}
+.menu-close:hover { color: #fff; }
+
+.menu-section { display: flex; flex-direction: column; gap: 6px; }
+.menu-label { color: #4a6ac0; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4px;
+}
+.menu-btn {
+  background: rgba(74, 106, 192, 0.15);
+  color: #b0c8ff;
+  border: 1px solid rgba(74, 106, 192, 0.25);
+  border-radius: 4px;
+  padding: 4px 2px;
+  cursor: pointer;
+  font-size: 11px;
   font-family: system-ui, -apple-system, sans-serif;
-  font-size: 12px;
+  text-align: center;
+  transition: all 0.15s ease;
 }
-.toolbar.visible { transform: translateY(0); }
-.toolbar-group { display: flex; align-items: center; gap: 4px; }
-.toolbar-label {
-  color: #4a6ac0; font-size: 10px; text-transform: uppercase;
-  letter-spacing: 1px; margin-right: 4px;
-}
-.toolbar-btn {
+.menu-btn:hover { background: rgba(74, 106, 192, 0.35); color: #fff; }
+.menu-btn.active { background: #4a6ac0; color: #fff; border-color: #6a8ae0; }
+.menu-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.menu-btn:disabled:hover { background: rgba(74, 106, 192, 0.15); color: #b0c8ff; }
+
+.menu-row { display: flex; align-items: center; gap: 8px; }
+.menu-btn-sm {
   background: rgba(74, 106, 192, 0.2); color: #b0c8ff;
   border: 1px solid rgba(74, 106, 192, 0.3); border-radius: 4px;
   padding: 2px 8px; cursor: pointer; font-size: 11px;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: system-ui, sans-serif;
   transition: all 0.15s ease;
 }
-.toolbar-btn:hover { background: rgba(74, 106, 192, 0.4); color: #fff; }
-.toolbar-btn.active { background: #4a6ac0; color: #fff; border-color: #6a8ae0; }
-.toolbar-value { color: #7b96e0; font-size: 11px; min-width: 32px; text-align: center; }
-.toolbar-divider {
-  width: 1px; height: 18px;
-  background: rgba(74, 106, 192, 0.3); margin: 0 4px;
-}
+.menu-btn-sm:hover { background: rgba(74, 106, 192, 0.4); color: #fff; }
+.menu-value { color: #7b96e0; font-size: 12px; min-width: 32px; }
+
+.menu-info { color: #506090; font-size: 10px; line-height: 1.6; }
