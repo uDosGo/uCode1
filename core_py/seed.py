@@ -298,7 +298,7 @@ def generate_seed_binder() -> dict:
     Returns:
         Binder dict ready for serialization.
     """
-    from .binder.models import Binder, BinderMetadata, BinderEntry, BinderResource
+    from .binder.models import Binder, BinderEntry, BinderMetadata, BinderResource
 
     root_children = []
     for tz_name, cities in sorted(CITIES_BY_TZ.items()):

@@ -74,14 +74,16 @@ html, body {
   100% { opacity: 0; pointer-events: none; }
 }
 
-/* Terminal viewport — lighter blue, appears after scramble, max 80x30 */
+/* Terminal viewport — lighter blue, appears after scramble, size via CSS vars */
 .terminal-viewport {
   position: fixed;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  width: 80ch;
+  --vp-cols: 80;
+  --vp-rows: 30;
+  width: calc(var(--vp-cols) * 1ch + 40px);
+  height: calc(var(--vp-rows) * 1.5em + 40px);
   max-width: calc(100vw - 48px);
-  height: 30em;
   max-height: calc(100vh - 48px);
   background: #152a6b;
   border: 2px solid #4a6ac0;
@@ -95,6 +97,7 @@ html, body {
   z-index: 5;
   opacity: 0;
   animation: viewportAppear 0.4s ease-out 3.3s forwards;
+  transition: width 0.3s ease, height 0.3s ease, font-size 0.2s ease;
 }
 
 @keyframes viewportAppear {
@@ -133,3 +136,42 @@ html, body {
 }
 .credits:hover { color: #668; }
 @keyframes fadeIn { to { opacity: 1; } }
+
+/* ── Auto-hide toolbar (Tailwind-style) ─────────────────────────────────── */
+.toolbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 36px;
+  background: rgba(10, 10, 46, 0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(74, 106, 192, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  z-index: 50;
+  transform: translateY(-100%);
+  transition: transform 0.25s ease;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 12px;
+}
+.toolbar.visible { transform: translateY(0); }
+.toolbar-group { display: flex; align-items: center; gap: 4px; }
+.toolbar-label {
+  color: #4a6ac0; font-size: 10px; text-transform: uppercase;
+  letter-spacing: 1px; margin-right: 4px;
+}
+.toolbar-btn {
+  background: rgba(74, 106, 192, 0.2); color: #b0c8ff;
+  border: 1px solid rgba(74, 106, 192, 0.3); border-radius: 4px;
+  padding: 2px 8px; cursor: pointer; font-size: 11px;
+  font-family: system-ui, -apple-system, sans-serif;
+  transition: all 0.15s ease;
+}
+.toolbar-btn:hover { background: rgba(74, 106, 192, 0.4); color: #fff; }
+.toolbar-btn.active { background: #4a6ac0; color: #fff; border-color: #6a8ae0; }
+.toolbar-value { color: #7b96e0; font-size: 11px; min-width: 32px; text-align: center; }
+.toolbar-divider {
+  width: 1px; height: 18px;
+  background: rgba(74, 106, 192, 0.3); margin: 0 4px;
+}

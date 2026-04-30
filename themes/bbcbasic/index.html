@@ -16,6 +16,28 @@
     <div class="scramble-text" id="scrambleText"></div>
   </div>
 
+  <!-- Auto-hide toolbar (appears on hover at top edge) -->
+  <div class="toolbar" id="toolbar">
+    <div class="toolbar-group">
+      <span class="toolbar-label">VIEW</span>
+      <button class="toolbar-btn" data-size="80x30">80×30</button>
+      <button class="toolbar-btn" data-size="40x25">40×25</button>
+      <button class="toolbar-btn" data-size="80x24">80×24</button>
+    </div>
+    <div class="toolbar-divider"></div>
+    <div class="toolbar-group">
+      <span class="toolbar-label">FONT</span>
+      <button class="toolbar-btn" id="fontDown">A−</button>
+      <span class="toolbar-value" id="fontDisplay">15px</span>
+      <button class="toolbar-btn" id="fontUp">A+</button>
+    </div>
+    <div class="toolbar-divider"></div>
+    <div class="toolbar-group">
+      <span class="toolbar-label">RATIO</span>
+      <span class="toolbar-value" id="ratioDisplay">80x30</span>
+    </div>
+  </div>
+
   <!-- Terminal viewport — appears after scramble -->
   <div class="terminal-viewport" id="terminal">
     <div class="boot-msg" id="bootMsg">
@@ -31,37 +53,66 @@
   <a href="https://pixelambacht.nl/2013/css3-c64/" class="credits">CSS3 C64 | uCode1 BBC BASIC</a>
 
   <script>
+    // ── Viewport presets ────────────────────────────────────────────────────
+    var VIEWPORTS = {
+      '80x30': { cols: 80, rows: 30, label: '80x30 TERMINAL' },
+      '40x25': { cols: 40, rows: 25, label: '40x25 TELETEXT' },
+      '80x24': { cols: 80, rows: 24, label: '80x24 STANDARD' },
+    };
+    var currentViewport = '80x30';
+    var currentFontSize = 15;
+
     // ── Generate scramble text ──────────────────────────────────────────────
     (function generateScramble() {
-      const chars = '@#$%&?*+=<>~^:;ABCDEF0123456789';
-      const el = document.getElementById('scrambleText');
+      var chars = '@#$%&?*+=<>~^:;ABCDEF0123456789';
+      var el = document.getElementById('scrambleText');
       if (!el) return;
-      const lines = 20;
-      const cols = 60;
-      let buf = '';
-      for (let y = 0; y < lines; y++) {
-        for (let x = 0; x < cols; x++) {
+      var lines = 20;
+      var cols = 60;
+      var buf = '';
+      for (var y = 0; y < lines; y++) {
+        for (var x = 0; x < cols; x++) {
           buf += chars[Math.floor(Math.random() * chars.length)];
         }
         buf += '\n';
       }
       el.textContent = buf;
 
-      // Rapidly mutate scramble characters
-      const interval = setInterval(() => {
-        const arr = el.textContent.split('');
-        for (let i = 0; i < 30; i++) {
-          const idx = Math.floor(Math.random() * arr.length);
+      var interval = setInterval(function() {
+        var arr = el.textContent.split('');
+        for (var i = 0; i < 30; i++) {
+          var idx = Math.floor(Math.random() * arr.length);
           arr[idx] = chars[Math.floor(Math.random() * chars.length)];
         }
         el.textContent = arr.join('');
       }, 80);
 
-      // Stop scramble after 3 seconds
-      setTimeout(() => {
-        clearInterval(interval);
-      }, 3000);
+      setTimeout(function() { clearInterval(interval); }, 3000);
     })();
+
+    // ── Toolbar helpers ─────────────────────────────────────────────────────
+    function applyViewport(key) {
+      var vp = VIEWPORTS[key];
+      if (!vp) return;
+      currentViewport = key;
+      var term = document.getElementById('terminal');
+      term.style.setProperty('--vp-cols', vp.cols);
+      term.style.setProperty('--vp-rows', vp.rows);
+      term.style.width = 'calc(var(--vp-cols) * 1ch + 40px)';
+      term.style.height = 'calc(var(--vp-rows) * 1.5em + 40px)';
+      document.getElementById('ratioDisplay').textContent = vp.cols + '×' + vp.rows;
+      // Highlight active button
+      document.querySelectorAll('.toolbar-btn[data-size]').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.size === key);
+      });
+    }
+
+    function applyFontSize(delta) {
+      var term = document.getElementById('terminal');
+      currentFontSize = Math.max(10, Math.min(24, currentFontSize + delta));
+      term.style.fontSize = currentFontSize + 'px';
+      document.getElementById('fontDisplay').textContent = currentFontSize + 'px';
+    }
 
     // ── Terminal setup ──────────────────────────────────────────────────────
     (function setupTerminal() {
@@ -75,12 +126,35 @@
       var buf = '';
       var ready = false;
 
-      // Boot report (set immediately, visible when viewport appears)
+      // Boot report — includes viewport size
       bootDetail.innerHTML =
+        'display: 80x30 terminal &mdash; font: 15px C64 mono<br/>' +
         'seed pod: CITY-INDEX-001 &mdash; ' +
         '83 cities &middot; 17 timezones loaded<br/>' +
         'local tz: AEST (UTC+10) &middot; ' +
         'cities: Sydney, Melbourne, Brisbane, Auckland';
+
+      // Apply initial viewport
+      applyViewport('80x30');
+      applyFontSize(0);
+      document.getElementById('ratioDisplay').textContent = '80×30';
+
+      // Toolbar auto-hide — show on hover near top
+      (function setupToolbar() {
+        var tb = document.getElementById('toolbar');
+        var hideTimer = null;
+        function showToolbar() { tb.classList.add('visible'); clearTimeout(hideTimer); }
+        function hideToolbar() { hideTimer = setTimeout(function() { tb.classList.remove('visible'); }, 1500); }
+        document.addEventListener('mousemove', function(e) {
+          if (e.clientY < 60) showToolbar(); else hideToolbar();
+        });
+        // Viewport buttons
+        document.querySelectorAll('.toolbar-btn[data-size]').forEach(function(btn) {
+          btn.addEventListener('click', function() { applyViewport(btn.dataset.size); });
+        });
+        document.getElementById('fontDown').addEventListener('click', function() { applyFontSize(-1); });
+        document.getElementById('fontUp').addEventListener('click', function() { applyFontSize(1); });
+      })();
 
       // Enable input after scramble + viewport transition
       setTimeout(function() { ready = true; }, 3800);
@@ -102,9 +176,19 @@
             else if (cmd === 'RUN') resp.textContent = 'RUNNING...\nOK';
             else if (cmd === 'LIST') resp.textContent = ' 10 PRINT "HELLO"\n 20 GOTO 10';
             else if (cmd === 'NEW') resp.textContent = 'NEW PROGRAM CLEARED';
-            else if (cmd === 'HELP') resp.textContent = 'COMMANDS: LOAD RUN LIST NEW HELP CLS CITIES';
+            else if (cmd === 'HELP') resp.textContent = 'COMMANDS: LOAD RUN LIST NEW HELP CLS CITIES SIZE';
             else if (cmd === 'CLS') { output.innerHTML = ''; resp = null; }
             else if (cmd === 'CITIES') resp.textContent = 'SEED POD: CITY-INDEX-001\n83 CITIES, 17 TIMEZONES\nLOCAL: SYDNEY, MELBOURNE, BRISBANE';
+            else if (cmd.indexOf('SIZE') === 0) {
+              var parts = cmd.split(' ');
+              if (parts.length === 2 && VIEWPORTS[parts[1]]) {
+                applyViewport(parts[1]);
+                resp.textContent = 'VIEWPORT: ' + VIEWPORTS[parts[1]].label;
+              } else {
+                resp.textContent = 'VIEWPORT: ' + currentViewport + ' (' + currentFontSize + 'px)';
+                resp.innerHTML += '<br/>SIZE 80x30 | SIZE 40x25 | SIZE 80x24';
+              }
+            }
             else if (cmd) { resp.className = 'error'; resp.textContent = '?UNKNOWN COMMAND'; }
             else resp = null;
             if (resp) output.appendChild(resp);
