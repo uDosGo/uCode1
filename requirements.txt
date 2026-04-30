@@ -1,0 +1,14 @@
+# uCode1 Python Core Dependencies
+# Core runtime (minimal)
+pyyaml>=6.0
+
+# Development & Testing
+pytest>=8.0
+pytest-cov>=4.0
+
+# Linting & Formatting
+ruff>=0.3
+mypy>=1.8
+
+# Optional: ThinUI API server
+flask>=3.0

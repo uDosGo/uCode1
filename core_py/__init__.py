@@ -78,7 +78,6 @@ from .relic.models import (
     RelicResource,
 )
 from .snack.dependency import (
-    CircularDependencyError,
     DependencyResolver,
     resolve_snack_dependencies,
 )
