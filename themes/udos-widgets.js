@@ -193,7 +193,7 @@
         // cell_size = terminalW / cols  — THIS is the fundamental unit
         var cellSize = terminalW / s.cols;
         // font = 75% of cell size (readable text within CELL)
-        var fontSize = cellSize * 0.75;
+        var fontSize = cellSize * 0.9;
         // Clamp: min 5px readable, max baseFont
         fontSize = Math.min(fontSize, s.baseFont || 24);
         fontSize = Math.max(fontSize, 5);
