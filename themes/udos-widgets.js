@@ -225,11 +225,6 @@
     }
   };
 
-      this._initialized = true;
-      return { toggle: toggle, panel: panel, open: openP, close: closeP };
-    }
-  };
-
   /**
    * uDosDisplay — BBC/C64-style proportional grid scaling.
    *
