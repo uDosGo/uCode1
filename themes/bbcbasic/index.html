@@ -12,10 +12,7 @@
   <!-- Full-bleed dark blue background -->
   <section class="bluescreen"></section>
 
-  <!-- Pulsing scramble overlay — 3 seconds then fades -->
-  <div class="scramble-overlay" id="scramble">
-    <div class="scramble-text" id="scrambleText"></div>
-  </div>
+
 
   <!-- + toggle icon — slides down from top-right on hover -->
   <div class="menu-toggle" id="menuToggle">+</div>
@@ -54,7 +51,7 @@
     </div>
   </div>
 
-  <!-- Terminal viewport — appears after scramble -->
+  <!-- Terminal viewport -->
   <div class="terminal-viewport" id="terminal" data-surface="bbcbasic">
     <div class="boot-msg" id="bootMsg">
       uCode1 <span class="highlight">***</span> bbc basic version 1.0
@@ -77,20 +74,7 @@
     };
     var currentViewport = '80x24';
 
-    // ── uCode1 ASCII block logo (replaces scramble) ────────────────────────
-    (function showLogo() {
-      var el = document.getElementById('scrambleText');
-      if (!el) return;
-      var logo = [
-        '<span class="line0">  ██   ██  ██████  ██████  ███████ </span>',
-        '<span class="line1">  ██   ██ ██      ██      ██      </span>',
-        '<span class="line2">  ███████ ██      ██      █████   </span>',
-        '<span class="line3">  ██   ██ ██      ██      ██      </span>',
-        '<span class="line4">  ██   ██  ██████  ██████  ███████ </span>',
-        '<span class="line5">           VERSION 1.0              </span>',
-      ];
-      el.innerHTML = logo.join('\n');
-    })();
+
 
     // ── Toolbar helpers ─────────────────────────────────────────────────────
     function applyViewport(key) {
@@ -179,7 +163,7 @@
         });
       })();
 
-      // Enable input after scramble + viewport transition
+      // Enable input after viewport appears
       setTimeout(function() { ready = true; }, 3800);
 
       document.addEventListener('keydown', function(e) {

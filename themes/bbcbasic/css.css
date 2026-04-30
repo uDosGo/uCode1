@@ -1,4 +1,4 @@
-/* uDosGo BBC BASIC Terminal — Full-bleed terminal with pulsing boot scramble */
+/* uDosGo BBC BASIC Terminal */
 /* Based on CSS3 C64 by Pixelambacht (Roel Nieskens) — adapted for uCode1 */
 
 *, *:before, *:after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -73,40 +73,6 @@ html, body {
   100% { background-position: 0 100%; }
 }
 
-/* Pulsing scramble overlay — uCode1 ASCII block logo + fade */
-.scramble-overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: #20398d;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  opacity: 1;
-  animation: scrambleFade 3.5s ease-out forwards;
-}
-
-.scramble-text {
-  font: normal 20px/1.1 "C64 User Mono";
-  color: #7b96e0;
-  white-space: pre;
-  text-align: center;
-  opacity: 0.7;
-  max-width: 90vw;
-  max-height: 90vh;
-  overflow: hidden;
-}
-
-/* Color cycling for each line of the ASCII logo */
-.scramble-text .line0 { color: #e94560; }
-.scramble-text .line1 { color: #ffeb3b; }
-.scramble-text .line2 { color: #4caf50; }
-.scramble-text .line3 { color: #00bcd4; }
-.scramble-text .line4 { color: #e94560; }
-.scramble-text .line5 { color: #ff9800; }
-
-@keyframes scrambleFade {
   0%   { opacity: 1; }
   65%  { opacity: 1; }
   80%  { opacity: 0.5; }
