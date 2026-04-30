@@ -32,12 +32,8 @@
       <div class="menu-grid" id="sizeGrid">
         <button class="menu-btn" data-size="20x10">20x10</button>
         <button class="menu-btn" data-size="32x16">32x16</button>
-        <button class="menu-btn" data-size="40x16">40x16</button>
         <button class="menu-btn" data-size="40x24">40x24</button>
-        <button class="menu-btn" data-size="64x16">64x16</button>
-        <button class="menu-btn" data-size="64x24">64x24</button>
         <button class="menu-btn" data-size="80x24">80x24</button>
-        <button class="menu-btn" data-size="80x20">80x20</button>
         <button class="menu-btn" data-size="48x48">48x48</button>
       </div>
     </div>
@@ -75,12 +71,8 @@
     var VIEWPORTS = {
       '20x10': { cols: 20, rows: 10, label: '20x10 TINY' },
       '32x16': { cols: 32, rows: 16, label: '32x16 NANO' },
-      '40x16': { cols: 40, rows: 16, label: '40x16 MICRO' },
       '40x24': { cols: 40, rows: 24, label: '40x24 COMPACT' },
-      '64x16': { cols: 64, rows: 16, label: '64x16 SMALL' },
-      '64x24': { cols: 64, rows: 24, label: '64x24 STANDARD' },
       '80x24': { cols: 80, rows: 24, label: '80x24 CLASSIC' },
-      '80x20': { cols: 80, rows: 20, label: '80x20 WIDE' },
       '48x48': { cols: 48, rows: 48, label: '48x48 SQUARE' },
     };
     var currentViewport = '80x24';
@@ -217,7 +209,7 @@
                 resp.textContent = 'VIEWPORT: ' + VIEWPORTS[parts[1]].label;
               } else {
                 resp.textContent = 'VIEWPORT: ' + currentViewport;
-                resp.innerHTML += '<br/>SIZE 20x10 | SIZE 32x16 | SIZE 40x16 | SIZE 40x24<br/>SIZE 64x16 | SIZE 64x24 | SIZE 80x24 | SIZE 80x20 | SIZE 48x48';
+                resp.innerHTML += '<br/>SIZE 20x10 | SIZE 32x16 | SIZE 40x24 | SIZE 80x24 | SIZE 48x48';
               }
             }
             else if (cmd) { resp.className = 'error'; resp.textContent = '?UNKNOWN COMMAND'; }
