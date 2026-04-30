@@ -34,32 +34,38 @@ html, body {
   z-index: 1;
 }
 
-/* Horizontal color bar decrunch — pulses behind scramble during boot */
+/* Horizontal color bar decrunch — C64 loader style */
 .bluescreen::before {
   content: '';
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
   z-index: 2;
-  animation: decrunch 0.8s steps(1) 6 both;
+  background:
+    /* 8 horizontal bars with independent cycling */
+    repeating-linear-gradient(
+      0deg,
+      #b8b8b8 0%, #b8b8b8 12.5%,
+      #5090d0 12.5%, #5090d0 25%,
+      #98ff98 25%, #98ff98 37.5%,
+      #808080 37.5%, #808080 50%,
+      #484848 50%, #484848 62.5%,
+      #c87870 62.5%, #c87870 75%,
+      #472b1b 75%, #472b1b 87.5%,
+      #f0e858 87.5%, #f0e858 100%
+    );
+  background-size: 100% 100%;
+  animation: c64Loader 1.2s steps(1) 4 both;
 }
 
-@keyframes decrunch {
-  0%   { background: #20398d; }
-  8%   { background: #b8b8b8; }
-  16%  { background: #5090d0; }
-  24%  { background: #98ff98; }
-  32%  { background: #808080; }
-  40%  { background: #484848; }
-  48%  { background: #c87870; }
-  56%  { background: #472b1b; }
-  64%  { background: #a04800; }
-  72%  { background: #f0e858; }
-  80%  { background: #181090; }
-  88%  { background: #20398d; }
-  100% { background: #20398d; }
+@keyframes c64Loader {
+  0%   { background-position: 0 0; }
+  25%  { background-position: 0 25%; }
+  50%  { background-position: 0 50%; }
+  75%  { background-position: 0 75%; }
+  100% { background-position: 0 100%; }
 }
 
-/* Pulsing scramble overlay — 3 seconds then fades */
+/* Pulsing scramble overlay — uCode1 ASCII block logo + fade */
 .scramble-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -74,23 +80,23 @@ html, body {
 }
 
 .scramble-text {
-  font-size: 14px;
-  line-height: 1.2;
+  font: normal 20px/1.1 "C64 User Mono";
   color: #7b96e0;
   white-space: pre;
   text-align: center;
-  opacity: 0.6;
-  animation: scramblePulse 0.12s infinite alternate;
+  opacity: 0.7;
   max-width: 90vw;
   max-height: 90vh;
   overflow: hidden;
 }
 
-@keyframes scramblePulse {
-  0%   { opacity: 0.2; color: #7b96e0; }
-  40%  { opacity: 0.9; color: #b0c8ff; }
-  100% { opacity: 0.3; color: #4a6ac0; }
-}
+/* Color cycling for each line of the ASCII logo */
+.scramble-text .line0 { color: #e94560; }
+.scramble-text .line1 { color: #ffeb3b; }
+.scramble-text .line2 { color: #4caf50; }
+.scramble-text .line3 { color: #00bcd4; }
+.scramble-text .line4 { color: #e94560; }
+.scramble-text .line5 { color: #ff9800; }
 
 @keyframes scrambleFade {
   0%   { opacity: 1; }
@@ -99,18 +105,15 @@ html, body {
   100% { opacity: 0; pointer-events: none; }
 }
 
-/* Terminal viewport — scaled by display system */
+/* Terminal viewport — no border, 1ch padding, tight line-height */
 .terminal-viewport {
-  /* udos-surface class handles positioning + sizing via display.js */
   background: #152a6b;
-  border: 2px solid #4a6ac0;
-  border-radius: 4px;
-  padding: 16px 20px;
+  padding: 1ch;
   color: #b0c8ff;
-  font: normal 15px/1.5 "C64 User Mono";
+  font: normal 15px/1 "C64 User Mono", monospace;
   text-transform: uppercase;
-  white-space: pre-wrap;
-  overflow-y: auto;
+  white-space: pre;
+  overflow: auto;
   z-index: 5;
   opacity: 0;
   animation: viewportAppear 0.4s ease-out 3.3s forwards;

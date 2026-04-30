@@ -96,32 +96,19 @@
     var currentViewport = '80x24';
     var currentFontSize = 15;
 
-    // ── Generate scramble text ──────────────────────────────────────────────
-    (function generateScramble() {
-      var chars = '@#$%&?*+=<>~^:;ABCDEF0123456789';
+    // ── uCode1 ASCII block logo (replaces scramble) ────────────────────────
+    (function showLogo() {
       var el = document.getElementById('scrambleText');
       if (!el) return;
-      var lines = 20;
-      var cols = 60;
-      var buf = '';
-      for (var y = 0; y < lines; y++) {
-        for (var x = 0; x < cols; x++) {
-          buf += chars[Math.floor(Math.random() * chars.length)];
-        }
-        buf += '\n';
-      }
-      el.textContent = buf;
-
-      var interval = setInterval(function() {
-        var arr = el.textContent.split('');
-        for (var i = 0; i < 30; i++) {
-          var idx = Math.floor(Math.random() * arr.length);
-          arr[idx] = chars[Math.floor(Math.random() * chars.length)];
-        }
-        el.textContent = arr.join('');
-      }, 80);
-
-      setTimeout(function() { clearInterval(interval); }, 3000);
+      var logo = [
+        '<span class="line0">  ██   ██  ██████  ██████  ███████ </span>',
+        '<span class="line1">  ██   ██ ██      ██      ██      </span>',
+        '<span class="line2">  ███████ ██      ██      █████   </span>',
+        '<span class="line3">  ██   ██ ██      ██      ██      </span>',
+        '<span class="line4">  ██   ██  ██████  ██████  ███████ </span>',
+        '<span class="line5">           VERSION 1.0              </span>',
+      ];
+      el.innerHTML = logo.join('\n');
     })();
 
     // ── Toolbar helpers ─────────────────────────────────────────────────────

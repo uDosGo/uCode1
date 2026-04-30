@@ -194,9 +194,9 @@
         fontSize = Math.max(fontSize, 4);
 
         el.style.fontSize = fontSize + 'px';
-        // Use ch/em units so exactly s.cols characters × s.rows lines fit
-        el.style.width = 'calc(' + s.cols + 'ch + 40px)';
-        el.style.height = 'calc(' + (s.rows * 1.5) + 'em + 40px)';
+        // ch/em + 1ch padding all around (no border)
+        el.style.width = 'calc(' + (s.cols + 2) + 'ch)';
+        el.style.height = 'calc(' + (s.rows + 2) + 'em)';
         el.style.setProperty('--udos-font-size', fontSize + 'px');
       }
 
