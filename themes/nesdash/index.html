@@ -220,7 +220,7 @@
   </div>
 
   <script>
-    var currentFontSize = 10;
+    var currentFontSize = 14;
     document.documentElement.style.setProperty('--udos-font-scale', '1.0');
     applyNesFont();
 
@@ -246,10 +246,10 @@
         element: (function(){
           var d = document.createElement('div'); d.style.cssText = 'display:flex;align-items:center;gap:8px';
           var dn = document.createElement('button'); dn.className = 'menu-btn'; dn.textContent = 'A−'; dn.style.padding = '4px 10px';
-          dn.addEventListener('click', function(){ currentFontSize = Math.max(6, currentFontSize - 1); applyNesFont(); });
+          dn.addEventListener('click', function(){ currentFontSize = Math.max(8, currentFontSize - 2); applyNesFont(); });
           var disp = document.createElement('span'); disp.className = 'menu-value'; disp.textContent = currentFontSize + 'px'; disp.style.minWidth = '36px'; disp.style.textAlign = 'center';
           var up = document.createElement('button'); up.className = 'menu-btn'; up.textContent = 'A+'; up.style.padding = '4px 10px';
-          up.addEventListener('click', function(){ currentFontSize = Math.min(20, currentFontSize + 1); applyNesFont(); });
+          up.addEventListener('click', function(){ currentFontSize = Math.min(28, currentFontSize + 2); applyNesFont(); });
           // Update display on font change
           var orig = applyNesFont;
           applyNesFont = function() { orig(); disp.textContent = currentFontSize + 'px'; };

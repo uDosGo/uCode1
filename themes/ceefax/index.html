@@ -222,8 +222,8 @@
 
     function updateGridInfo() {
       var g = calcGrid();
-      document.getElementById('gridInfo').textContent = 'cols: ' + g.cols + ' · rows: ' + g.rows;
-      document.getElementById('gridDims').textContent = g.cols + '×' + g.rows;
+      var dims = document.getElementById('gridDims');
+      if (dims) dims.textContent = g.cols + '×' + g.rows;
     }
 
     function applyFont() {
@@ -390,9 +390,13 @@
     updateClock();
     setInterval(updateClock, 1000);
 
-    document.getElementById('fzDown').addEventListener('click', fontSmaller);
-    document.getElementById('fzUp').addEventListener('click', fontLarger);
-    document.getElementById('fzLabel').addEventListener('click', fontReset);
+    var fzD = document.getElementById('fzDown');
+    if (fzD) fzD.addEventListener('click', fontSmaller);
+    var fzU = document.getElementById('fzUp');
+    if (fzU) fzU.addEventListener('click', fontLarger);
+    var fzL = document.getElementById('fzLabel');
+    if (fzL) fzL.addEventListener('click', fontReset);
+    window.addEventListener('resize', onResize);
   </script>
 </body>
 </html>
