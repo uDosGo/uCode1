@@ -20,15 +20,11 @@
   --udos-font-size: 24px;
 }
 
-/* Base surface class — center in viewport via flexbox */
+/* Base surface class — center in viewport */
 .udos-surface {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100vw;
-  height: 100vh;
   position: fixed;
-  top: 0; left: 0;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
   overflow: hidden;
 }
 
