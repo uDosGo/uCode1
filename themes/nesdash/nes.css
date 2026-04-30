@@ -3,13 +3,8 @@
  * Based on the official NES.css framework
  */
 
-@font-face {
-    font-family: 'Press Start 2P';
-    src: url('fonts/press-start-2p.woff2') format('woff2');
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
-}
+/* Press Start 2P loaded via Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
 :root {
     --nes-red: #D74B35;
