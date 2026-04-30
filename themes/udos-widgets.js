@@ -182,7 +182,6 @@
         var fontFromW = targetW / (s.cols * 0.55);
         var fontFromH = targetH / s.rows;
         var fontSize = Math.min(fontFromW, fontFromH);
-        fontSize = Math.min(fontSize, s.baseFont || 24);
         fontSize = Math.max(fontSize, 5);
 
         el.style.fontSize = fontSize + 'px';
