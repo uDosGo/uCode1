@@ -115,7 +115,7 @@
     });
   };
 
-  // ── Shared Flowbite-style Sidebar (injected by all surfaces) ────────────
+  // ── Shared Flowbite-style Sidebar ──────────────────────────────────────
 
   uDosWidgets.Menu = {
     _initialized: false,
@@ -131,18 +131,14 @@
       var root = document.createElement('div');
       root.id = 'udosMenuRoot';
 
-      // ── Hamburger toggle ──────────────────────────────────────────────
-      var toggle = document.createElement('button');
+      // ── Toggle button (+/x, top-right) ────────────────────────────────
+      var toggle = document.createElement('div');
       toggle.className = 'menu-toggle';
       toggle.id = 'menuToggle';
       toggle.setAttribute('aria-controls', 'udosSidebar');
-      toggle.innerHTML =
-        '<span class="sr-only">Open sidebar</span>' +
-        '<svg class="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">' +
-        '<path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M5 7h14M5 12h14M5 17h10"/>' +
-        '</svg>';
+      toggle.textContent = '+';
 
-      // ── Flowbite-style sidebar ────────────────────────────────────────
+      // ── Flowbite-style sidebar (right-aligned) ────────────────────────
       var aside = document.createElement('aside');
       aside.id = 'udosSidebar';
       aside.className = 'menu-panel';
@@ -151,15 +147,12 @@
       var inner = document.createElement('div');
       inner.className = 'menu-inner';
 
-      // Title/header
+      // Header with close (x) button
       var hdr = document.createElement('div');
       hdr.className = 'menu-header';
       hdr.innerHTML =
         '<span class="menu-title">' + title + '</span>' +
-        '<button class="menu-close" id="menuClose">' +
-        '<svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">' +
-        '<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 17.94 6M18 18 6.06 6"/>' +
-        '</svg></button>';
+        '<button class="menu-close" id="menuClose">x</button>';
       inner.appendChild(hdr);
 
       // Sections as list items
@@ -210,11 +203,13 @@
       function openP() {
         isOpen = true;
         aside.classList.add('open');
+        toggle.textContent = 'x';
         toggle.classList.add('active');
       }
       function closeP() {
         isOpen = false;
         aside.classList.remove('open');
+        toggle.textContent = '+';
         toggle.classList.remove('active');
       }
 
