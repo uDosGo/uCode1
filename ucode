@@ -12,6 +12,7 @@ Commands:
   ok          OK Agent — local AI assistant
   narrator    Narrator — story generation from events
   lexicon     Lexicon — term mapping across dev/story/student lanes
+  character   Character system — 128-slot ANSI set, emoji, aliases
   snack       Snack management (create, validate, run, list)
   binder      Binder management (create, validate, extract, tree)
   relic       Relic management (create, validate, pack, unpack)
@@ -58,6 +59,7 @@ def main():
         "ok":       lambda: dispatch_cli("ok_agent.cli"),
         "narrator": lambda: dispatch_cli("narrator.cli"),
         "lexicon":  lambda: dispatch_with_prefix("narrator.cli", "lexicon"),
+        "character": lambda: dispatch_with_prefix("narrator.cli", "character"),
         "snack":    lambda: dispatch("snack_cli"),
         "binder":   lambda: dispatch("binder_cli"),
         "relic":    lambda: dispatch("relic_cli"),
