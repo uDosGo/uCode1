@@ -6,6 +6,7 @@
   <title>uCode1 — NES Dashboard</title>
   <link rel="stylesheet" href="nes.css">
   <link rel="stylesheet" href="../display.css">
+  <link rel="stylesheet" href="../tailwind.css">
   <script src="../udos-widgets.js"></script>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
@@ -220,6 +221,11 @@
   </div>
 
   <script>
+    function applyNesFont() {
+      document.body.style.fontSize = currentFontSize + 'px';
+      document.documentElement.style.setProperty('--udos-font-scale', (currentFontSize / 10).toFixed(2));
+    }
+
     var currentFontSize = 14;
     document.documentElement.style.setProperty('--udos-font-scale', '1.0');
     applyNesFont();
@@ -234,11 +240,6 @@
     }
 
     // ── Shared Menu ────────────────────────────────────────────────────
-    function applyNesFont() {
-      document.body.style.fontSize = currentFontSize + 'px';
-      // Sync to shared font scale (base: 10px Press Start 2P)
-      document.documentElement.style.setProperty('--udos-font-scale', (currentFontSize / 10).toFixed(2));
-    }
     uDosWidgets.Menu.init({
       title: 'NES DASH',
       sections: [{
