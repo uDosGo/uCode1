@@ -173,9 +173,9 @@
       // Read shared font scale
       var scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--udos-font-scale')) || 1.0;
 
-      // Responsive menu scale: 25% smaller at half-viewport, 50% bigger at full
-      // formula: vw/960 * 0.75 → at 960px=0.75, at 1920px=1.5
-      var menuScale = Math.max(0.6, Math.min(1.6, vw / 960 * 0.75));
+      // Responsive menu scale: 25% smaller at half-viewport, 100% bigger at full
+      // formula: 0.75 + (vw-960)*(1.25/960) → at 960px=0.75, at 1920px=2.0
+      var menuScale = Math.max(0.6, Math.min(2.5, 0.75 + (vw - 960) * 0.001302));
       document.documentElement.style.setProperty('--menu-scale', menuScale.toFixed(3));
 
       for (var i = 0; i < this._surfaces.length; i++) {
@@ -201,6 +201,8 @@
         el.style.height = gridH + 'px';
         el.style.setProperty('--udos-font-size', fontSize + 'px');
         el.style.setProperty('--udos-font-scale', scale);
+        // Also set on root so pseudo-elements (loader bars) can reference it
+        document.documentElement.style.setProperty('--udos-font-size', fontSize + 'px');
       }
 
       // Update toolbar buttons — disable presets that don't fit

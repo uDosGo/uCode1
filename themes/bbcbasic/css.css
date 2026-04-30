@@ -12,24 +12,24 @@ html,body{height:100%;width:100%;overflow:hidden;background:#20398d}
 
 .bluescreen{position:fixed;top:0;left:0;right:0;bottom:0;background:#20398d;z-index:0}
 
-/* C64 loader — 8 colors, each stripe = 1 cell high, relative */
+/* C64 loader — 8 colors, each stripe = 1 row high (matches terminal em) */
 .bluescreen::before{
-  content:'';position:fixed;top:0;left:0;right:0;bottom:0;z-index:1;
+  content:'';position:fixed;top:0;left:0;right:0;bottom:0;z-index:1;font-size:var(--udos-font-size,24px);
   background:repeating-linear-gradient(0deg,
-    #b8b8b8 0,#b8b8b8 1ch,#5090d0 1ch,#5090d0 2ch,
-    #98ff98 2ch,#98ff98 3ch,#808080 3ch,#808080 4ch,
-    #484848 4ch,#484848 5ch,#c87870 5ch,#c87870 6ch,
-    #472b1b 6ch,#472b1b 7ch,#f0e858 7ch,#f0e858 8ch);
+    #b8b8b8 0,#b8b8b8 1em,#5090d0 1em,#5090d0 2em,
+    #98ff98 2em,#98ff98 3em,#808080 3em,#808080 4em,
+    #484848 4em,#484848 5em,#c87870 5em,#c87870 6em,
+    #472b1b 6em,#472b1b 7em,#f0e858 7em,#f0e858 8em);
   background-size:100%;
   animation:c64Loader 0.6s steps(1) 5
 }
-@keyframes c64Loader{0%{transform:translateY(0)}20%{transform:translateY(-1ch)}40%{transform:translateY(-2ch)}60%{transform:translateY(-3ch)}80%{transform:translateY(-4ch)}100%{transform:translateY(-5ch)}}
+@keyframes c64Loader{0%{transform:translateY(0)}20%{transform:translateY(-1em)}40%{transform:translateY(-2em)}60%{transform:translateY(-3em)}80%{transform:translateY(-4em)}100%{transform:translateY(-5em)}}
 
 /* Dark blue overlay — covers bars after 3s, no fade */
 .bluescreen::after{
   content:'';position:fixed;top:0;left:0;right:0;bottom:0;z-index:2;
   background:#20398d;opacity:0;
-  animation:c64Cover 0s 3s forwards
+  animation:c64Cover 0s 3s forwards;font-size:var(--udos-font-size,24px)
 }
 @keyframes c64Cover{to{opacity:1}}
 
