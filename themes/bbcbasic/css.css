@@ -110,9 +110,13 @@ html, body {
   background: #152a6b;
   padding: 1ch;
   color: #b0c8ff;
-  font: normal 15px/1 "C64 User Mono", monospace;
+  font-family: "C64 User Mono", monospace;
+  font-size: 15px;
+  line-height: 1;
   text-transform: uppercase;
-  white-space: pre;
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-wrap: break-word;
   overflow: auto;
   z-index: 5;
   opacity: 0;
