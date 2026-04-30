@@ -5,240 +5,308 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>uCode1 — NES Dashboard</title>
   <link rel="stylesheet" href="nes.css">
+  <link rel="stylesheet" href="../display.css">
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{
-      background:#5A281E;color:#F8F8F8;
+      background:#fff;color:#111;
       font-family:'Press Start 2P',cursive;font-size:10px;
-      line-height:1.6;padding:16px;min-height:100vh
+      line-height:1.6;padding:20px;min-height:100vh
     }
     .container{max-width:960px;margin:0 auto}
-    a{color:#F8F8F8;text-decoration:none}
-    a:hover{color:#ffe0a0}
 
     /* Header */
     .nes-header{
-      background:#D74B35;border:4px solid #F8F8F8;
-      padding:12px 16px;margin-bottom:16px;
+      background:#222;color:#fff;border:4px solid #111;
+      padding:14px 18px;margin-bottom:16px;
       display:flex;align-items:center;justify-content:space-between
     }
-    .nes-header h1{font-size:14px;text-shadow:2px 2px #5A281E}
-    .nes-header .sub{font-size:7px;color:#ffe0a0;margin-top:4px}
+    .nes-header h1{font-size:14px;color:#fff}
+    .nes-header .sub{font-size:7px;color:#888;margin-top:4px}
+    .status-dot{display:inline-block;width:8px;height:8px;border-radius:0;margin-right:4px}
+    .status-dot.green{background:#50b818}
+    .status-dot.blue{background:#4169E1}
 
-    /* NES container cards */
+    /* Cards */
     .nes-card{
-      background:#D74B35;border:4px solid #F8F8F8;
+      background:#f0f0f0;border:4px solid #222;
       padding:12px;margin-bottom:12px;position:relative
     }
-    .nes-card.dark{background:#5A281E;border-color:#D74B35}
     .nes-card .title{
-      position:absolute;top:-10px;left:8px;
-      background:#D74B35;padding:0 6px;font-size:8px;
+      position:absolute;top:-11px;left:8px;
+      background:#fff;padding:0 6px;font-size:8px;
       text-transform:uppercase;letter-spacing:1px
     }
-    .nes-card.dark .title{background:#5A281E}
+    .nes-card.dark{background:#ddd;border-color:#111}
+    .nes-card.blue{background:#4169E1;border-color:#222;color:#fff}
+    .nes-card.blue .title{background:#4169E1;color:#fff}
 
     /* Grid */
     .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
     .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+    .grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
 
     /* Stat card */
     .stat-card{text-align:center;padding:10px}
-    .stat-card .icon{font-size:24px;margin-bottom:6px}
-    .stat-card .value{font-size:16px;color:#ffe0a0}
-    .stat-card .label{font-size:7px;color:#d4a080;margin-top:4px}
+    .stat-card .icon{font-size:22px;margin-bottom:6px}
+    .stat-card .value{font-size:14px;color:#4169E1}
+    .stat-card .label{font-size:7px;color:#666;margin-top:4px}
 
     /* Buttons */
     .nes-btn{
-      font-family:'Press Start 2P',cursive;font-size:9px;
-      background:#F8F8F8;color:#5A281E;
-      border:3px solid #5A281E;padding:8px 16px;
+      font-family:'Press Start 2P',cursive;font-size:8px;
+      background:#fff;color:#222;
+      border:3px solid #222;padding:7px 14px;
       cursor:pointer;text-align:center;display:inline-block;
-      box-shadow:inset -3px -3px #d0d0d0;text-transform:uppercase
+      box-shadow:inset -3px -3px #ccc;text-transform:uppercase
     }
-    .nes-btn:hover{background:#ffe0a0}
-    .nes-btn.primary{background:#D74B35;color:#F8F8F8;box-shadow:inset -3px -3px #8B3A2A}
-    .nes-btn.primary:hover{background:#e06050}
-    .nes-btn.success{background:#50b818;color:#F8F8F8;box-shadow:inset -3px -3px #308010}
-    .nes-btn.warning{background:#f0e858;color:#5A281E;box-shadow:inset -3px -3px #b0a840}
+    .nes-btn:hover{background:#e0e0ff}
+    .nes-btn.primary{background:#4169E1;color:#fff;box-shadow:inset -3px -3px #1e3a8a}
+    .nes-btn.primary:hover{background:#5a7ff0}
+    .nes-btn.success{background:#50b818;color:#fff;box-shadow:inset -3px -3px #308010}
+    .nes-btn.warning{background:#f0e858;color:#222;box-shadow:inset -3px -3px #b0a840}
 
-    /* Lists */
+    /* List */
     .nes-list{list-style:none;padding:0}
-    .nes-list li{padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.15)}
+    .nes-list li{padding:5px 0;border-bottom:1px solid #ddd}
     .nes-list li:last-child{border-bottom:none}
-    .nes-list li::before{content:'▸ ';color:#ffe0a0}
+    .nes-list li::before{content:'\25B8 ';color:#4169E1}
 
     /* Badge */
     .nes-badge{
-      display:inline-block;background:#50b818;color:#fff;
-      font-size:7px;padding:2px 6px;border:2px solid #fff
+      display:inline-block;background:#222;color:#fff;
+      font-size:7px;padding:2px 5px;border:2px solid #111
     }
-    .nes-badge.warning{background:#f0e858;color:#5A281E}
-    .nes-badge.error{background:#D74B35;color:#fff}
+    .nes-badge.green{background:#50b818;border-color:#308010}
+    .nes-badge.blue{background:#4169E1;border-color:#1e3a8a}
+    .nes-badge.yellow{background:#f0e858;color:#222;border-color:#b0a840}
+    .nes-badge.white{background:#fff;color:#222;border-color:#222}
 
-    /* Progress bar */
+    /* Progress */
     .nes-progress{
-      height:12px;background:#5A281E;border:2px solid #F8F8F8;
-      margin:6px 0;position:relative
+      height:10px;background:#ddd;border:2px solid #222;margin:5px 0
     }
-    .nes-progress .fill{
-      height:100%;background:#50b818;transition:width 0.3s
+    .nes-progress .fill{height:100%;background:#50b818}
+    .nes-progress .fill.blue{background:#4169E1}
+
+    /* 8-bit color palette */
+    .color-swatch{
+      display:inline-block;width:28px;height:28px;
+      border:2px solid #222;cursor:pointer
     }
-    .nes-progress .fill.warning{background:#f0e858}
-    .nes-progress .fill.error{background:#D74B35}
+    .color-swatch:hover{border-color:#4169E1;transform:scale(1.1)}
 
     /* Footer */
     .nes-footer{
       text-align:center;padding:16px;margin-top:16px;
-      border-top:2px solid rgba(255,255,255,0.15);
-      font-size:7px;color:#d4a080
-    }
-
-    /* Octocat / decoration */
-    .nes-octocat{
-      display:inline-block;width:48px;height:48px;
-      background:linear-gradient(135deg,#F8F8F8 50%,#D74B35 50%);
-      border:2px solid #F8F8F8;border-radius:50%;
-      text-align:center;line-height:44px;font-size:20px
+      border-top:2px solid #ddd;font-size:7px;color:#888
     }
 
     @media(max-width:640px){
-      .grid-2,.grid-3{grid-template-columns:1fr}
+      .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
     }
   </style>
 </head>
 <body>
-<div class="container">
 
-  <!-- Header -->
-  <header class="nes-header">
-    <div>
-      <h1>▸ uCODE1</h1>
-      <div class="sub">NES‑style Dashboard · v1.0</div>
-    </div>
-    <div style="text-align:right;font-size:7px">
-      <div>MCP: <span style="color:#50b818">● ONLINE</span></div>
-      <div style="margin-top:2px">VAULT: SYNCED</div>
-    </div>
-  </header>
+  <!-- + Menu toggle -->
+  <div class="menu-toggle" id="menuToggle">+</div>
 
-  <!-- Quick Actions -->
-  <div class="grid-2" style="margin-bottom:12px">
-    <div class="nes-card dark" style="text-align:center">
-      <span class="title">quick actions</span>
-      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:4px">
-        <button class="nes-btn primary" onclick="alert('NEW PROJECT')">+ NEW</button>
-        <button class="nes-btn" onclick="alert('IMPORT')">📂 IMPORT</button>
-        <button class="nes-btn warning" onclick="alert('SEARCH')">🔍 SEARCH</button>
+  <!-- Slide-out menu panel -->
+  <div class="menu-panel" id="menuPanel">
+    <div class="menu-header">
+      <span class="menu-title">NES DASH</span>
+      <button class="menu-close" id="menuClose">x</button>
+    </div>
+
+    <div class="menu-section">
+      <span class="menu-label">FONT SIZE</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="menu-btn" id="fontDown" style="padding:4px 10px">A−</button>
+        <span class="menu-value" id="fontDisplay" style="min-width:36px;text-align:center">10px</span>
+        <button class="menu-btn" id="fontUp" style="padding:4px 10px">A+</button>
       </div>
     </div>
-    <div class="nes-card dark" style="text-align:center">
-      <span class="title">system</span>
-      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:4px">
-        <button class="nes-btn success" onclick="alert('DOCTOR')">🔧 DOCTOR</button>
-        <button class="nes-btn primary" onclick="alert('DOCS')">📖 DOCS</button>
-        <button class="nes-btn" onclick="alert('SETTINGS')">⚙️ SETTINGS</button>
+
+    <div class="menu-section">
+      <span class="menu-label">8‑BIT PALETTE</span>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:4px">
+        <div class="color-swatch" style="background:#fff" onclick="applyPalette('#fff','#222','#4169E1')"></div>
+        <div class="color-swatch" style="background:#222" onclick="applyPalette('#222','#fff','#e94560')"></div>
+        <div class="color-swatch" style="background:#D74B35" onclick="applyPalette('#D74B35','#F8F8F8','#5A281E')"></div>
+        <div class="color-swatch" style="background:#20398d" onclick="applyPalette('#20398d','#6076c5','#152060')"></div>
+        <div class="color-swatch" style="background:#4169E1" onclick="applyPalette('#4169E1','#fff','#1e3a8a')"></div>
+        <div class="color-swatch" style="background:#50b818" onclick="applyPalette('#50b818','#fff','#308010')"></div>
+        <div class="color-swatch" style="background:#f0e858" onclick="applyPalette('#f0e858','#222','#b0a840')"></div>
+        <div class="color-swatch" style="background:#e94560" onclick="applyPalette('#e94560','#fff','#8b1a2b')"></div>
+      </div>
+    </div>
+
+    <div class="menu-section">
+      <span class="menu-label">VIEWPORT</span>
+      <div class="menu-grid">
+        <button class="menu-btn active" data-size="80x24">80x24</button>
+        <button class="menu-btn" data-size="40x24">40x24</button>
+        <button class="menu-btn" data-size="20x10">20x10</button>
+      </div>
+    </div>
+
+    <div class="menu-section">
+      <span class="menu-label">SYSTEM</span>
+      <div class="menu-info">
+        <div>seed: CITY-INDEX-001</div>
+        <div>cities: 83 · tz: 17</div>
+        <div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(74,106,192,0.3);color:#3a5090">CSS3 C64 | uCode1</div>
       </div>
     </div>
   </div>
 
-  <!-- Stats Row -->
-  <div class="grid-3" style="margin-bottom:12px">
-    <div class="nes-card stat-card">
-      <div class="icon">💾</div>
-      <div class="value">248</div>
-      <div class="label">VAULT NOTES</div>
-    </div>
-    <div class="nes-card stat-card">
-      <div class="icon">⚡</div>
-      <div class="value">12</div>
-      <div class="label">SNACKS</div>
-    </div>
-    <div class="nes-card stat-card">
-      <div class="icon">📦</div>
-      <div class="value">5</div>
-      <div class="label">REBIND</div>
-    </div>
-  </div>
+  <div class="container">
 
-  <div class="grid-3" style="margin-bottom:12px">
-    <div class="nes-card stat-card">
-      <div class="icon">🧩</div>
-      <div class="value">36</div>
-      <div class="label">CELLS</div>
-    </div>
-    <div class="nes-card stat-card">
-      <div class="icon">🗺️</div>
-      <div class="value">17</div>
-      <div class="label">TIMEZONES</div>
-    </div>
-    <div class="nes-card stat-card">
-      <div class="icon">⏱️</div>
-      <div class="value">2d</div>
-      <div class="label">UPTIME</div>
-    </div>
-  </div>
+    <!-- Header -->
+    <header class="nes-header">
+      <div>
+        <h1>▸ uCODE1</h1>
+        <div class="sub">NES‑style Dashboard · v1.0</div>
+      </div>
+      <div style="text-align:right;font-size:7px">
+        <div><span class="status-dot green"></span>MCP: ONLINE</div>
+        <div style="margin-top:3px"><span class="status-dot blue"></span>VAULT: SYNCED</div>
+      </div>
+    </header>
 
-  <!-- CPU + MCP -->
-  <div class="grid-2" style="margin-bottom:12px">
-    <div class="nes-card">
-      <span class="title">system load</span>
-      <div style="font-size:7px;margin-bottom:4px;margin-top:4px">CPU</div>
-      <div class="nes-progress"><div class="fill" style="width:34%"></div></div>
-      <div style="font-size:7px;margin-top:6px;display:flex;justify-content:space-between">
-        <span>MEM: 1.2/4GB</span>
-        <span>TEMP: 42°C</span>
-        <span>PROC: 6</span>
+    <!-- Quick Actions -->
+    <div class="grid-2" style="margin-bottom:12px">
+      <div class="nes-card" style="text-align:center">
+        <span class="title">quick actions</span>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:4px">
+          <button class="nes-btn primary">+ NEW</button>
+          <button class="nes-btn">📂 IMPORT</button>
+          <button class="nes-btn warning">🔍 SEARCH</button>
+        </div>
+      </div>
+      <div class="nes-card" style="text-align:center">
+        <span class="title">system</span>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:4px">
+          <button class="nes-btn success">🔧 DOCTOR</button>
+          <button class="nes-btn primary">📖 DOCS</button>
+          <button class="nes-btn">⚙️ SETTINGS</button>
+        </div>
       </div>
     </div>
-    <div class="nes-card">
-      <span class="title">services</span>
-      <ul class="nes-list" style="margin-top:4px">
-        <li>MCP Server <span class="nes-badge" style="float:right">ONLINE</span></li>
-        <li>ThinUI <span class="nes-badge" style="float:right">ACTIVE</span></li>
-        <li>Vault Bridge <span class="nes-badge" style="float:right">SYNCED</span></li>
-        <li>OK Agent <span class="nes-badge" style="float:right">STANDBY</span></li>
-      </ul>
+
+    <!-- Stats -->
+    <div class="grid-4" style="margin-bottom:12px">
+      <div class="nes-card blue stat-card">
+        <div class="icon">💾</div>
+        <div class="value" style="color:#fff">248</div>
+        <div class="label" style="color:#ccc">VAULT</div>
+      </div>
+      <div class="nes-card stat-card">
+        <div class="icon">⚡</div>
+        <div class="value">12</div>
+        <div class="label">SNACKS</div>
+      </div>
+      <div class="nes-card stat-card">
+        <div class="icon">🧩</div>
+        <div class="value">36</div>
+        <div class="label">CELLS</div>
+      </div>
+      <div class="nes-card blue stat-card">
+        <div class="icon">🗺️</div>
+        <div class="value" style="color:#fff">17</div>
+        <div class="label" style="color:#ccc">TZs</div>
+      </div>
     </div>
+
+    <!-- System Load + Services -->
+    <div class="grid-2" style="margin-bottom:12px">
+      <div class="nes-card">
+        <span class="title">system load</span>
+        <div style="font-size:7px;margin-top:4px">CPU · 34%</div>
+        <div class="nes-progress"><div class="fill blue" style="width:34%"></div></div>
+        <div style="font-size:7px;margin-top:6px;display:flex;justify-content:space-between">
+          <span>MEM: 1.2/4GB</span><span>TEMP: 42°C</span><span>PROC: 6</span>
+        </div>
+      </div>
+      <div class="nes-card">
+        <span class="title">services</span>
+        <ul class="nes-list" style="margin-top:4px">
+          <li>MCP Server <span class="nes-badge green" style="float:right">ONLINE</span></li>
+          <li>ThinUI <span class="nes-badge blue" style="float:right">ACTIVE</span></li>
+          <li>Vault Bridge <span class="nes-badge white" style="float:right">SYNCED</span></li>
+          <li>OK Agent <span class="nes-badge yellow" style="float:right">STANDBY</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Recent Activity + Seed -->
+    <div class="grid-2" style="margin-bottom:12px">
+      <div class="nes-card">
+        <span class="title">recent activity</span>
+        <ul class="nes-list" style="margin-top:4px">
+          <li>note_create: Meeting — 2min</li>
+          <li>snack_run: greet — 15min</li>
+          <li>feed_archive: 5 entries — 1h</li>
+          <li>cell_write: L100-AA00 — 2h</li>
+        </ul>
+      </div>
+      <div class="nes-card" style="text-align:center">
+        <span class="title">seed pod</span>
+        <div style="font-size:18px;margin:8px 0">🌱</div>
+        <div style="font-size:11px;margin:4px 0;color:#4169E1">CITY‑INDEX‑001</div>
+        <div style="font-size:7px;color:#888">83 cities · 17 timezones</div>
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid #ddd;font-size:7px;color:#888">
+          Platform: uCode1 v1.0 · 80x24 CLASSIC
+        </div>
+      </div>
+    </div>
+
+    <footer class="nes-footer">
+      <p>uCode1 — NES.css Surface · Based on NES.css by B.C.Rikko</p>
+      <p style="margin-top:4px">© 2026 uDos</p>
+    </footer>
   </div>
 
-  <!-- Recent Activity -->
-  <div class="nes-card dark">
-    <span class="title">recent activity</span>
-    <ul class="nes-list" style="margin-top:4px">
-      <li>note_create: Meeting Notes — 2min ago</li>
-      <li>snack_run: greet — 15min ago</li>
-      <li>feed_archive: 5 entries — 1h ago</li>
-      <li>cell_write: L100-AA00 — 2h ago</li>
-      <li>vault_sync: completed — 3h ago</li>
-    </ul>
-  </div>
+  <script>
+    var currentFontSize = 10;
 
-  <!-- Seed Info -->
-  <div class="grid-2" style="margin-bottom:12px;margin-top:12px">
-    <div class="nes-card dark" style="text-align:center">
-      <span class="title">seed pod</span>
-      <div style="margin-top:4px"><span class="nes-octocat">🌱</span></div>
-      <div style="font-size:12px;margin:4px 0">CITY‑INDEX‑001</div>
-      <div style="font-size:7px;color:#d4a080">83 cities · 17 timezones</div>
-    </div>
-    <div class="nes-card dark">
-      <span class="title">uDos info</span>
-      <ul class="nes-list" style="margin-top:4px">
-        <li>Platform: uCode1 v1.0</li>
-        <li>Display: 80×24 CLASSIC</li>
-        <li>Font: C64 User Mono</li>
-        <li>Surface: NES Dashboard</li>
-      </ul>
-    </div>
-  </div>
+    function applyPalette(bg, fg, accent) {
+      document.body.style.background = bg;
+      document.body.style.color = fg;
+      // Update accent-colored elements
+      document.querySelectorAll('.stat-card .value, .nes-card.blue, .nes-list li::before').forEach(function(el) {
+        el.style.color = accent;
+      });
+    }
 
-  <!-- Footer -->
-  <footer class="nes-footer">
-    <p>uCode1 — NES.css Surface · Based on NES.css by B.C.Rikko</p>
-    <p style="margin-top:4px">© 2026 uDos · All systems nominal</p>
-  </footer>
+    // Menu toggle
+    (function() {
+      var toggle = document.getElementById('menuToggle');
+      var panel = document.getElementById('menuPanel');
+      var closeBtn = document.getElementById('menuClose');
+      var isOpen = false;
 
-</div>
+      function openPanel() { isOpen = true; panel.classList.add('open'); toggle.textContent = 'x'; toggle.classList.add('active'); }
+      function closePanel() { isOpen = false; panel.classList.remove('open'); toggle.textContent = '+'; toggle.classList.remove('active'); }
+
+      toggle.addEventListener('click', function(e) { e.stopPropagation(); isOpen ? closePanel() : openPanel(); });
+      closeBtn.addEventListener('click', closePanel);
+      document.addEventListener('click', function(e) { if (isOpen && !panel.contains(e.target) && e.target !== toggle) closePanel(); });
+
+      // Font size
+      document.getElementById('fontDown').addEventListener('click', function() {
+        currentFontSize = Math.max(6, currentFontSize - 1);
+        document.body.style.fontSize = currentFontSize + 'px';
+        document.getElementById('fontDisplay').textContent = currentFontSize + 'px';
+      });
+      document.getElementById('fontUp').addEventListener('click', function() {
+        currentFontSize = Math.min(20, currentFontSize + 1);
+        document.body.style.fontSize = currentFontSize + 'px';
+        document.getElementById('fontDisplay').textContent = currentFontSize + 'px';
+      });
+    })();
+  </script>
+
 </body>
 </html>
