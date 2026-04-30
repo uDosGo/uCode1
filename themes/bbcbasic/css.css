@@ -26,11 +26,6 @@ html, body {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
   background: #20398d;
-  color: #6076c5;
-  font: normal 16px "C64 User Mono";
-  text-transform: uppercase;
-  display: flex;
-  flex-direction: column;
   z-index: 0;
 }
 
@@ -122,6 +117,7 @@ html, body {
   overflow-wrap: break-word;
   overflow: auto;
   z-index: 100;
+  position: relative;
   opacity: 0;
   animation: viewportAppear 0.4s ease-out 3.3s forwards;
 }
