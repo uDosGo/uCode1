@@ -124,9 +124,10 @@
       return lines;
     }
 
-    // Add text to buffer and cascade
+    // Add text to buffer and render immediately (no cascade — that's for resize)
     function addOutput(text) {
-      // Remove leading/trailing whitespace, collapse multiple newlines
+      var vp = document.getElementById('terminal');
+      var output = document.getElementById('output');
       text = text.replace(/^\s+/, '').replace(/\s+$/, '');
       var cols = (VIEWPORTS[currentViewport] || VIEWPORTS['40x24']).cols;
       var rawLines = text.split('\n');
@@ -136,9 +137,13 @@
         var wrapped = wrapText(trimmed, cols);
         for (var w = 0; w < wrapped.length; w++) {
           contentBuffer.push(wrapped[w]);
+          var div = document.createElement('div');
+          div.className = 'resp';
+          div.textContent = wrapped[w];
+          output.appendChild(div);
         }
       }
-      cascadeBuffer();
+      if (vp) vp.scrollTop = vp.scrollHeight;
     }
 
     // Cascade: clear output, redraw buffered lines top-down
@@ -273,6 +278,14 @@
         if (e.key === 'Enter') {
           var cmd = buf.trim().toUpperCase();
           contentBuffer.push('> ' + buf);
+          // Render command line immediately
+          var output = document.getElementById('output');
+          var vp = document.getElementById('terminal');
+          var cmdLine = document.createElement('div');
+          cmdLine.className = 'resp';
+          cmdLine.textContent = '> ' + buf;
+          output.appendChild(cmdLine);
+          if (vp) vp.scrollTop = vp.scrollHeight;
 
           if (cmd === 'LOAD')        addOutput('SEARCHING... LOADING');
           else if (cmd === 'RUN')    addOutput('RUNNING... OK');

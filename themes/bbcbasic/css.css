@@ -43,7 +43,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:#20398d}
   white-space:pre-wrap;word-break:break-all;overflow:auto;
   z-index:100;position:relative}
 
-.terminal-output{line-height:1.5}
+.terminal-output{line-height:1}
 .terminal-output .prompt{color:#6076c5}
 .terminal-output .resp{color:#6076c5}
 .terminal-output .error{color:#f66}
