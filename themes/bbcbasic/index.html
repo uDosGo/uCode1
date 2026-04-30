@@ -53,6 +53,7 @@
         <div>seed: CITY-INDEX-001</div>
         <div>cities: 83</div>
         <div>tz: 17</div>
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid #050;color:#030">CSS3 C64 | uCode1 BBC BASIC</div>
       </div>
     </div>
   </div>
@@ -68,8 +69,6 @@
       <span class="prompt">&gt; </span><span class="cursor" id="cursorEl"></span>
     </div>
   </div>
-
-  <a href="https://pixelambacht.nl/2013/css3-c64/" class="credits">CSS3 C64 | uCode1 BBC BASIC</a>
 
   <script>
     // ── Viewport presets ────────────────────────────────────────────────────
@@ -142,43 +141,43 @@
       applyViewport('80x24');
       document.getElementById('ratioDisplay').textContent = '80x24';
 
-      // Menu toggle — + icon slides down on top-right hover, opens panel
+      // Menu toggle — + always visible, toggles panel
       (function setupMenu() {
         var toggle = document.getElementById('menuToggle');
         var panel = document.getElementById('menuPanel');
         var closeBtn = document.getElementById('menuClose');
         var isOpen = false;
-        var showTimer = null;
 
-        // Show + on hover near top-right corner (within 120px of right edge, top 60px)
-        document.addEventListener('mousemove', function(e) {
-          if (isOpen) return;
-          var nearTopRight = (e.clientX > window.innerWidth - 120 && e.clientY < 60);
-          if (nearTopRight) {
-            toggle.classList.add('visible');
-            clearTimeout(showTimer);
-          } else {
-            showTimer = setTimeout(function() { toggle.classList.remove('visible'); }, 800);
-          }
-        });
-
-        // Click + to open panel
-        toggle.addEventListener('click', function() {
+        function openPanel() {
           isOpen = true;
           panel.classList.add('open');
           toggle.textContent = 'x';
           toggle.classList.add('active');
-        });
+        }
 
-        // Click x to close panel
         function closePanel() {
           isOpen = false;
           panel.classList.remove('open');
           toggle.textContent = '+';
           toggle.classList.remove('active');
-          toggle.classList.remove('visible');
         }
+
+        // Click + to open panel
+        toggle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          if (isOpen) { closePanel(); }
+          else { openPanel(); }
+        });
+
+        // Click x to close panel
         closeBtn.addEventListener('click', closePanel);
+
+        // Click outside panel to close
+        document.addEventListener('click', function(e) {
+          if (isOpen && !panel.contains(e.target) && e.target !== toggle) {
+            closePanel();
+          }
+        });
 
         // Size buttons
         document.querySelectorAll('.menu-btn[data-size]').forEach(function(btn) {
