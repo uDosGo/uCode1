@@ -170,7 +170,12 @@ class CharacterSystem:
     def load_defaults(self):
         """Load default slot mappings from DEFAULT_SLOTS."""
         for slot, entry in DEFAULT_SLOTS.items():
-            self._slots[slot] = entry
+            # Deep-copy to avoid mutation across instances
+            self._slots[slot] = SlotEntry(
+                slot=entry.slot, term_id=entry.term_id, label=entry.label,
+                ansi_char=entry.ansi_char, emoji=entry.emoji,
+                word_alias=entry.word_alias, description=entry.description,
+            )
             if entry.term_id:
                 self._term_map[entry.term_id] = slot
 

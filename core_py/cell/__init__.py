@@ -12,10 +12,10 @@ Address format:  L100-BB45-1010-2
   <version>      Cell version/revision
 """
 
+import hashlib
 import json
 import os
 import re
-import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
