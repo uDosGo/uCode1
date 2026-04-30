@@ -1,28 +1,23 @@
 /*
  * uDos Display System — shared viewport-aware scaling for all surfaces
  *
- * Each surface defines its grid (cols × rows) and base font.
- * The display system auto-scales font-size so the grid fills the viewport
- * proportionally at any window size.
+ * The display system (udos-widgets.js) auto-scales font-size so the
+ * character grid (cols x rows) fills the available viewport. This file
+ * provides centering and CSS custom property defaults.
  *
  * Usage:
  *   <link href="../display.css" rel="stylesheet">
  *   <div class="udos-surface" data-surface="bbcbasic">
  *
- * CSS Custom Properties (set via JS Display.init()):
- *   --udos-cols: 80          — character columns
- *   --udos-rows: 30          — character rows
- *   --udos-font-base: 15px   — base font size at 1:1 scale
- *   --udos-aspect: 0.55      — font width/height ratio
- *   --udos-font-size: 15px   — computed dynamic font size
+ * Base font: 24px (C64 User Mono at native size)
  */
 
 :root {
   --udos-cols: 80;
-  --udos-rows: 30;
-  --udos-font-base: 15px;
+  --udos-rows: 24;
+  --udos-font-base: 24px;
   --udos-aspect: 0.55;
-  --udos-font-size: 15px;
+  --udos-font-size: 24px;
 }
 
 /* Base surface class — center in viewport */
@@ -32,29 +27,19 @@
   transform: translate(-50%, -50%);
   font-size: var(--udos-font-size);
   box-sizing: border-box;
-  transition: font-size 0.25s ease, width 0.25s ease, height 0.25s ease;
-  overflow-y: auto;
+  transition: width 0.25s ease, height 0.25s ease;
+  overflow: auto;
 }
 
 /* Surface-specific overrides */
 .udos-surface[data-surface="bbcbasic"] {
   --udos-cols: 80;
   --udos-rows: 24;
-  --udos-font-base: 15px;
+  --udos-font-base: 24px;
 }
 .udos-surface[data-surface="ceefax"] {
   --udos-cols: 40;
   --udos-rows: 25;
-  --udos-font-base: 16px;
-  --udos-aspect: 0.60;
-}
-  --udos-cols: 80;
-  --udos-rows: 30;
-  --udos-font-base: 15px;
-}
-.udos-surface[data-surface="ceefax"] {
-  --udos-cols: 40;
-  --udos-rows: 25;
-  --udos-font-base: 16px;
+  --udos-font-base: 24px;
   --udos-aspect: 0.60;
 }

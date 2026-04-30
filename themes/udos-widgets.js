@@ -139,7 +139,7 @@
       opts = opts || {};
       var cols = opts.cols || 80;
       var rows = opts.rows || 30;
-      var baseFont = opts.baseFont || 15;
+      var baseFont = opts.baseFont || 24;
       var aspect = opts.aspect || 0.55;
       // Fixed 20px padding around viewport (dark blue background visible)
       var padding = 20;
@@ -190,7 +190,7 @@
         var fontSize = Math.min(fontSizeW, fontSizeH);
 
         // Clamp: min 4px (readable at tiny), max = baseFont
-        fontSize = Math.min(fontSize, s.baseFont);
+        fontSize = Math.min(fontSize, s.baseFont || 24);
         fontSize = Math.max(fontSize, 4);
 
         el.style.fontSize = fontSize + 'px';
