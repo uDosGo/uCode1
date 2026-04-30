@@ -7,14 +7,14 @@ import tempfile
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from core_py.feed import (
-    archive_feed_file,
-    archive_feed_entries,
-    search_feed_cells,
-    generate_feed_report,
-    FEED_BAND,
-)
 from core_py.cell import CellStore
+from core_py.feed import (
+    FEED_BAND,
+    archive_feed_entries,
+    archive_feed_file,
+    generate_feed_report,
+    search_feed_cells,
+)
 
 
 class TestFeedArchiver:
