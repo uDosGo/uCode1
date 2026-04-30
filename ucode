@@ -13,6 +13,7 @@ Commands:
   narrator    Narrator — story generation from events
   lexicon     Lexicon — term mapping across dev/story/student lanes
   character   Character system — 128-slot ANSI set, emoji, aliases
+  cell        Cell storage — UDX-addressed atomic units + Cubes
   snack       Snack management (create, validate, run, list)
   binder      Binder management (create, validate, extract, tree)
   relic       Relic management (create, validate, pack, unpack)
@@ -67,6 +68,7 @@ def main():
         "grid":     lambda: dispatch("grid_cli"),
         "thinui":   lambda: dispatch_cli("thinui_cli"),
         "mdx":      lambda: dispatch("mdx_cli"),
+        "cell":     lambda: dispatch("cell_cli"),
         "vault":    lambda: dispatch_cli("vault_cli"),
         "plugin":   lambda: dispatch_cli("plugin_cli"),
         "help":     lambda: show_help(),

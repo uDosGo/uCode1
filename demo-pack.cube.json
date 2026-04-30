@@ -1,0 +1,39 @@
+{
+  "id": "demo-pack",
+  "cells": [
+    {
+      "address": "L100-AA00-0000-0",
+      "data": {
+        "name": "Hello Cell"
+      },
+      "checksum": "21cefe17df875050",
+      "created": "2026-04-30T13:20:10.902154",
+      "updated": "2026-04-30T13:20:10.902154"
+    },
+    {
+      "address": "L100-BB01-1001-0",
+      "data": {
+        "snack": "greet",
+        "status": "done"
+      },
+      "checksum": "b3c392b5d85ea2d4",
+      "created": "2026-04-30T13:21:02.172209",
+      "updated": "2026-04-30T13:21:02.172209"
+    },
+    {
+      "address": "L200-HH05-4650-0",
+      "data": {
+        "note": "demo note",
+        "tags": [
+          "test",
+          "cell"
+        ]
+      },
+      "checksum": "a3acb0a6e84e914a",
+      "created": "2026-04-30T13:22:57.421505",
+      "updated": "2026-04-30T13:22:57.421505"
+    }
+  ],
+  "created": "2026-04-30T13:22:58.284405",
+  "metadata": {}
+}

@@ -17,31 +17,45 @@ Usage:
   ucode character emoji <slot> <emoji>
 """
 
-import sys
-import json
 import argparse
+import json
+import sys
 from pathlib import Path
 
 # Add parent dir for direct execution
 if __name__ == "__main__" and __package__ is None:
     sys.path.insert(0, str(Path(__file__).parent.parent))
-    from narrator.narrator import NarratorEngine
-    from narrator.lexicon import Lexicon, LANE_DEV, LANE_STORY, LANE_STUDENT
     from narrator.character import (
-        CharacterSystem, SlotEntry, ansi_char, slot_range_name,
-        SLOT_COMMAND_START, SLOT_COMMAND_END,
-        SLOT_SNACK_START, SLOT_SNACK_END,
-        SLOT_ALIAS_START, SLOT_ALIAS_END, SLOT_TOTAL,
+        SLOT_ALIAS_END,
+        SLOT_ALIAS_START,
+        SLOT_COMMAND_END,
+        SLOT_COMMAND_START,
+        SLOT_SNACK_END,
+        SLOT_SNACK_START,
+        SLOT_TOTAL,
+        CharacterSystem,
+        SlotEntry,
+        ansi_char,
+        slot_range_name,
     )
+    from narrator.lexicon import LANE_DEV, LANE_STORY, LANE_STUDENT, Lexicon
+    from narrator.narrator import NarratorEngine
 else:
-    from .narrator import NarratorEngine
-    from .lexicon import Lexicon, LANE_DEV, LANE_STORY, LANE_STUDENT
     from .character import (
-        CharacterSystem, SlotEntry, ansi_char, slot_range_name,
-        SLOT_COMMAND_START, SLOT_COMMAND_END,
-        SLOT_SNACK_START, SLOT_SNACK_END,
-        SLOT_ALIAS_START, SLOT_ALIAS_END, SLOT_TOTAL,
+        SLOT_ALIAS_END,
+        SLOT_ALIAS_START,
+        SLOT_COMMAND_END,
+        SLOT_COMMAND_START,
+        SLOT_SNACK_END,
+        SLOT_SNACK_START,
+        SLOT_TOTAL,
+        CharacterSystem,
+        SlotEntry,
+        ansi_char,
+        slot_range_name,
     )
+    from .lexicon import LANE_DEV, LANE_STORY, LANE_STUDENT, Lexicon
+    from .narrator import NarratorEngine
 
 
 def build_parser() -> argparse.ArgumentParser:

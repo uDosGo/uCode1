@@ -16,7 +16,6 @@ Rendering Priority (highest wins):
 from dataclasses import dataclass, field
 from typing import Optional
 
-
 # ── Slot Ranges ─────────────────────────────────────────────────────────────
 
 SLOT_COMMAND_START = 0

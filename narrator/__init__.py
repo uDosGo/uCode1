@@ -11,24 +11,24 @@ Character System: 128-slot character mapping with ANSI set, emoji
 overlays, word aliases, and rendering priority (emoji > word > teletext > ANSI).
 """
 
-from .narrator import NarratorEngine
-from .lexicon import Lexicon, LexiconEntry, LANE_DEV, LANE_STORY, LANE_STUDENT
 from .character import (
-    CharacterSystem,
-    SlotEntry,
     ANSI_CHAR_SET,
     DEFAULT_SLOTS,
+    SLOT_ALIAS_END,
+    SLOT_ALIAS_START,
+    SLOT_COMMAND_END,
+    SLOT_COMMAND_START,
+    SLOT_SNACK_END,
+    SLOT_SNACK_START,
+    SLOT_TOTAL,
+    CharacterSystem,
+    SlotEntry,
     ansi_char,
     slot_range_name,
-    SLOT_COMMAND_START,
-    SLOT_COMMAND_END,
-    SLOT_SNACK_START,
-    SLOT_SNACK_END,
-    SLOT_ALIAS_START,
-    SLOT_ALIAS_END,
-    SLOT_TOTAL,
 )
 from .cli import main as cli_main
+from .lexicon import LANE_DEV, LANE_STORY, LANE_STUDENT, Lexicon, LexiconEntry
+from .narrator import NarratorEngine
 
 __all__ = [
     "NarratorEngine", "Lexicon", "LexiconEntry",
