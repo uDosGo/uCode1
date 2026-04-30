@@ -305,6 +305,10 @@
         // Use explicit px for width/height (min 10% gap enforced by 0.8 factor)
         var gridW = fontSize * s.cols * aspect;
         var gridH = fontSize * s.rows;
+        // Square grids (cols == rows) should appear square visually
+        if (s.cols === s.rows) {
+          gridW = gridH; // match width to height so 48x48 looks square
+        }
         el.style.fontSize = fontSize + 'px';
         el.style.width = gridW + 'px';
         el.style.height = gridH + 'px';
