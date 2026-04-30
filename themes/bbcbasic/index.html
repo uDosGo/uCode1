@@ -43,16 +43,7 @@
     </div>
 
     <div class="menu-section">
-      <span class="menu-label">FONT</span>
-      <div class="menu-row">
-        <button class="menu-btn-sm" id="fontDown">A−</button>
-        <span class="menu-value" id="fontDisplay">15px</span>
-        <button class="menu-btn-sm" id="fontUp">A+</button>
-      </div>
-    </div>
-
-    <div class="menu-section">
-      <span class="menu-label">RATIO</span>
+      <span class="menu-label">SIZE</span>
       <span class="menu-value" id="ratioDisplay">80x24</span>
     </div>
 
@@ -94,7 +85,6 @@
       '48x48': { cols: 48, rows: 48, label: '48x48 SQUARE' },
     };
     var currentViewport = '80x24';
-    var currentFontSize = 15;
 
     // ── uCode1 ASCII block logo (replaces scramble) ────────────────────────
     (function showLogo() {
@@ -123,26 +113,10 @@
       });
     }
 
-    function applyFontSize(delta) {
-      currentFontSize = Math.max(10, Math.min(24, currentFontSize + delta));
-      var term = document.getElementById('terminal');
-      for (var i = 0; i < uDosWidgets.Display._surfaces.length; i++) {
-        if (uDosWidgets.Display._surfaces[i].el === term) {
-          uDosWidgets.Display._surfaces[i].baseFont = currentFontSize;
-          break;
-        }
-      }
-      uDosWidgets.Display.refresh();
-      // Update display after recalc
-      setTimeout(function() {
-        var sz = parseFloat(term.style.fontSize) || currentFontSize;
-        document.getElementById('fontDisplay').textContent = Math.round(sz) + 'px';
-      }, 50);
-    }
 
     // ── Initialize display scaling ──────────────────────────────────────────
     uDosWidgets.Display.init(document.getElementById('terminal'), {
-      cols: 80, rows: 30, baseFont: 15, aspect: 0.55, margin: 0.08
+      cols: 80, rows: 24, aspect: 0.55
     });
 
     // ── Terminal setup ──────────────────────────────────────────────────────
@@ -165,9 +139,7 @@
         'local tz: AEST (UTC+10) &middot; ' +
         'cities: Sydney, Melbourne, Brisbane, Auckland';
 
-      // Apply initial viewport
       applyViewport('80x24');
-      applyFontSize(0);
       document.getElementById('ratioDisplay').textContent = '80x24';
 
       // Menu toggle — + icon slides down on top-right hover, opens panel
@@ -214,9 +186,6 @@
             applyViewport(btn.getAttribute('data-size'));
           });
         });
-
-        document.getElementById('fontDown').addEventListener('click', function() { applyFontSize(-1); });
-        document.getElementById('fontUp').addEventListener('click', function() { applyFontSize(1); });
       })();
 
       // Enable input after scramble + viewport transition
@@ -248,7 +217,7 @@
                 applyViewport(parts[1]);
                 resp.textContent = 'VIEWPORT: ' + VIEWPORTS[parts[1]].label;
               } else {
-                resp.textContent = 'VIEWPORT: ' + currentViewport + ' (' + currentFontSize + 'px)';
+                resp.textContent = 'VIEWPORT: ' + currentViewport;
                 resp.innerHTML += '<br/>SIZE 20x10 | SIZE 32x16 | SIZE 40x16 | SIZE 40x24<br/>SIZE 64x16 | SIZE 64x24 | SIZE 80x24 | SIZE 80x20 | SIZE 48x48';
               }
             }

@@ -126,7 +126,7 @@
    *
    * Usage:
    *   uDosWidgets.Display.init(document.getElementById('terminal'), {
-   *     cols: 80, rows: 30, baseFont: 15, aspect: 0.55, margin: 0.08
+   *     cols: 80, rows: 24, baseFont: 15
    *   });
    */
   uDosWidgets.Display = {
@@ -141,10 +141,10 @@
       var rows = opts.rows || 30;
       var baseFont = opts.baseFont || 15;
       var aspect = opts.aspect || 0.55;
-      var margin = opts.margin !== undefined ? opts.margin : 0.08;
-
+      // Fixed 20px padding around viewport (dark blue background visible)
+      var padding = 20;
       el.classList.add('udos-surface');
-      this._surfaces.push({ el: el, cols: cols, rows: rows, baseFont: baseFont, aspect: aspect, margin: margin });
+      this._surfaces.push({ el: el, cols: cols, rows: rows, baseFont: baseFont, aspect: aspect, padding: padding });
       this._recalc();
 
       // Throttled resize listener (once)
@@ -179,15 +179,15 @@
         var s = this._surfaces[i];
         var el = s.el;
 
-        // Available space after margin
-        var margin = s.margin;
-        var availW = vw * (1 - 2 * margin);
-        var availH = vh * (1 - 2 * margin);
+        // Available space: fixed 20px padding on each side
+        var padding = s.padding || 20;
+        var availW = vw - padding * 2;
+        var availH = vh - padding * 2;
 
-        // Font size from width and height constraints
-        var fontFromW = availW / s.cols / s.aspect;
-        var fontFromH = availH / (s.rows * 1.5);
-        var fontSize = Math.min(fontFromW, fontFromH);
+        // Font size to fill available space with cols×rows grid + 1ch padding
+        var fontSizeW = availW / (s.cols * s.aspect + 2 * s.aspect);
+        var fontSizeH = availH / (s.rows * 1.5 + 2);
+        var fontSize = Math.min(fontSizeW, fontSizeH);
 
         // Clamp: min 4px (readable at tiny), max = baseFont
         fontSize = Math.min(fontSize, s.baseFont);
@@ -206,7 +206,7 @@
 
     /** Disable viewport buttons whose preset doesn't fit the current window */
     _updateToolbarButtons: function(vw, vh) {
-      var margin = 0.08;
+      var pad = 20;
       var presets = [
         { cols: 20, rows: 10, label: '20x10' },
         { cols: 32, rows: 16, label: '32x16' },
@@ -226,9 +226,8 @@
         }
         if (!preset) return;
         // Minimum window size needed for this preset at minFont (5px)
-        // Width: cols * 5px * aspect + 40px padding, then / (1 - 2*margin)
-        var needW = (preset.cols * 5 * 0.55 + 40) / (1 - 2 * margin);
-        var needH = (preset.rows * 5 * 1.5 + 40) / (1 - 2 * margin);
+        var needW = preset.cols * 5 * 0.55 + pad * 2 + 2 * 5 * 0.55;
+        var needH = preset.rows * 5 * 1.5 + pad * 2 + 2 * 5 * 1.5;
         var fits = (vw >= needW && vh >= needH);
         btn.disabled = !fits;
         btn.style.opacity = fits ? '1' : '0.35';
