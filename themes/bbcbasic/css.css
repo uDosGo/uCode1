@@ -38,7 +38,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:#20398d}
 
 /* Terminal viewport — solid, no borders, 1ch padding */
 .terminal-viewport{
-  background:#20398d;padding:1ch;color:#6076c5;
+  background:#152060;padding:1ch;color:#6076c5;
   font-family:"C64 User Mono",monospace;font-size:24px;
   line-height:1;text-transform:uppercase;
   white-space:pre-wrap;word-break:break-all;overflow:auto;
@@ -64,7 +64,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:#20398d}
   border-radius:0 0 4px 4px;color:#6076c5;
   font:18px/1 "C64 User Mono",monospace;
   display:flex;align-items:center;justify-content:center;
-  cursor:pointer;z-index:60;user-select:none
+  cursor:pointer;z-index:120;user-select:none
 }
 .menu-toggle:hover{background:#253fa0}
 .menu-toggle.active{background:#602020;border-color:#f66;color:#f66}
@@ -72,7 +72,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:#20398d}
 .menu-panel{
   position:fixed;top:0;right:0;width:240px;height:100vh;
   background:#152060;border-left:1px solid #6076c5;
-  z-index:55;transform:translateX(100%);transition:transform 0.3s;
+  z-index:110;transform:translateX(100%);transition:transform 0.3s;
   display:flex;flex-direction:column;padding:16px;gap:12px;
   overflow-y:auto;font:12px system-ui,sans-serif
 }
