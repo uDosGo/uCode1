@@ -40,6 +40,17 @@ from .grid_renderer import (
     TerminalUI,
 )
 
+# Import cell mapping
+from .cell_mapping import (
+    section_to_cell,
+    section_to_cell_address,
+    cell_to_section,
+    archive_document_sections,
+    add_cell_references_to_doc,
+    restore_sections_from_cells,
+    link_doc_to_cell_address,
+)
+
 __all__ = [
     # USXD Models
     "USXDDocument",
@@ -68,4 +79,12 @@ __all__ = [
     "KeyboardInput",
     "RenderConfig",
     "TerminalUI",
+    # Cell Mapping
+    "section_to_cell",
+    "section_to_cell_address",
+    "cell_to_section",
+    "archive_document_sections",
+    "add_cell_references_to_doc",
+    "restore_sections_from_cells",
+    "link_doc_to_cell_address",
 ]

@@ -19,6 +19,7 @@ Commands:
   export      Export USXD to other formats
   import      Import content into USXD
   grid        Grid-specific commands
+  cell        Cell archiving and linking for USXD documents
   help        Show help for a command
 
 Grid Subcommands (usxd grid):
@@ -119,6 +120,8 @@ class USXDCLI:
                 return self._command_import(args[1:])
             elif command == "grid":
                 return self._command_grid(args[1:])
+            elif command == "cell":
+                return self._command_cell(args[1:])
             elif command == "help" or command == "--help" or command == "-h":
                 self._print_help()
                 return 0
@@ -624,6 +627,111 @@ class USXDCLI:
         
         return 0
     
+    def _command_cell(self, args):
+        """Convert USXD sections to/from Cells for archiving."""
+        parser = argparse.ArgumentParser(description='Cell mapping for USXD documents')
+        sub = parser.add_subparsers(dest="cell_cmd")
+
+        ap = sub.add_parser("archive", help="Archive all sections as Cells")
+        ap.add_argument("doc_id", help="Document ID or .usxd file path")
+        ap.add_argument("--band", type=int, default=100, help="Layer band (default: 100)")
+
+        rp = sub.add_parser("restore", help="Restore sections from Cell references")
+        rp.add_argument("doc_id", help="Document ID or .usxd file path")
+
+        lp = sub.add_parser("link", help="Link document metadata as a Cell")
+        lp.add_argument("doc_id", help="Document ID or .usxd file path")
+
+        sp = sub.add_parser("show", help="Show cell-referenced sections in a document")
+        sp.add_argument("doc_id", help="Document ID or .usxd file path")
+
+        parsed = parser.parse_args(args)
+
+        if not CORE_PY_AVAILABLE:
+            print("Error: core_py not available")
+            return 1
+
+        # Load document
+        try:
+            doc = self.registry.load_document(parsed.doc_id)
+        except (FileNotFoundError, Exception):
+            try:
+                doc = USXDDocument.load_from_file(Path(parsed.doc_id))
+            except Exception as e:
+                print(f"Error: cannot load document '{parsed.doc_id}'")
+                return 1
+
+        from core_py.usxd.cell_mapping import (
+            archive_document_sections,
+            add_cell_references_to_doc,
+            restore_sections_from_cells,
+            link_doc_to_cell_address,
+        )
+        from core_py.cell import CellStore
+
+        store = CellStore()
+
+        if parsed.cell_cmd == "archive":
+            mapping = archive_document_sections(doc, store, band=parsed.band)
+            add_cell_references_to_doc(doc, mapping)
+
+            # Save updated document with cell refs
+            filepath = self.registry.save_document(doc)
+            print(f"✅ Archived {len(mapping)} sections as Cells")
+            print(f"   Updated document: {filepath}")
+            for sid, addr in mapping.items():
+                print(f"     {sid:30s} → {addr}")
+
+        elif parsed.cell_cmd == "restore":
+            cell_ref_section = None
+            for s in doc.sections:
+                if s.section_type == "cell-reference":
+                    cell_ref_section = s
+                    break
+            if not cell_ref_section:
+                print("❌ No cell-reference section found in document.")
+                print("   Use 'usxd cell archive' first.")
+                return 1
+
+            refs = cell_ref_section.content if isinstance(cell_ref_section.content, list) else []
+            if not refs:
+                print("No cell references to restore.")
+                return 1
+
+            restored = restore_sections_from_cells(refs, store)
+            for s in restored:
+                doc.add_section(s)
+                print(f"   Restored: {s.name} ({s.section_type})")
+
+            filepath = self.registry.save_document(doc)
+            print(f"✅ Restored {len(restored)} sections from Cells")
+            print(f"   Updated document: {filepath}")
+
+        elif parsed.cell_cmd == "link":
+            addr = link_doc_to_cell_address(doc, store, band=100)
+            print(f"✅ Document linked to Cell: {addr}")
+            print(f"   ucode cell read {addr}")
+
+        elif parsed.cell_cmd == "show":
+            cell_count = 0
+            for s in doc.sections:
+                if s.section_type == "cell-reference":
+                    refs = s.content if isinstance(s.content, list) else []
+                    cell_count = len(refs)
+                    print(f"📎 Cell references ({cell_count}):")
+                    for ref in refs:
+                        cell = store.read(ref.get("cell_address", ""))
+                        status = "✅" if cell else "❌"
+                        print(f"   {status} {ref.get('section_id','?'):30s} → {ref.get('cell_address','?')}")
+            if cell_count == 0:
+                print("No cell references found in this document.")
+            doc_addr = link_doc_to_cell_address.__doc__  # not actually linking
+            print(f"\nDocument sections: {len(doc.sections)}")
+
+        else:
+            parser.print_help()
+        return 0
+
     def _command_grid(self, args):
         """Grid-specific commands"""
         if len(args) < 1:
