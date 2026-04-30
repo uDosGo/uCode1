@@ -8,75 +8,34 @@ __author__ = "uDos Development Team"
 __license__ = "MIT"
 
 # Core modules
-from . import snack
-from . import relic  # Relic module implemented
-from . import binder  # Binder module implemented
-from . import usxd    # USXD module implemented
-from . import thinui  # ThinUI integration module (NEW)
-from . import plugin  # Plugin system (NEW)
-from . import grid    # Python grid-core (NEW)
-from . import text    # Python text/md tools (NEW)
-from . import mcp_client  # MCP client for uCode2 communication (NEW)
+from . import (
+    binder,  # Binder module implemented
+    grid,  # Python grid-core (NEW)
+    mcp_client,  # MCP client for uCode2 communication (NEW)
+    mdx,  # MDX Runtime with Snack shortcode support (NEW)
+    plugin,  # Plugin system (NEW)
+    relic,  # Relic module implemented
+    snack,
+    text,  # Python text/md tools (NEW)
+    thinui,  # ThinUI integration module (NEW)
+    usxd,  # USXD module implemented
+)
+from .binder.models import (
+    Binder,
+    BinderEntry,
+    BinderMetadata,
+    BinderRegistry,
+    BinderResource,
+)
 
-# Export main types for convenience
-from .snack.models import Snack, SnackInput, SnackOutput
-from .snack.engine import SnackEngine, execute_snack
-from .snack.dependency import DependencyResolver, resolve_snack_dependencies, CircularDependencyError
-from .snack.validator import validate_snack, validate_snack_file, validate_snack_resources
-from .snack.schema import validate_snack_schema
-from .snack.exceptions import SnackExecutionError, CircularDependencyError
-from .relic.models import Relic, RelicMetadata, RelicResource, RelicBinaryFormat, RelicRegistry
-from .binder.models import Binder, BinderMetadata, BinderEntry, BinderResource, BinderRegistry
-from .usxd.models import USXDDocument, USXDMetadata, USXDSection, USXDRegistry, USXDFormat
-from .usxd.grid_parser import ASCIIGridParser, ParsedGrid, GridCell, GridComponent, GridFormat
-from .usxd.component_mapper import ComponentMapper, ComponentMapping, ComponentType, ThinUIProperties
-from .usxd.grid_renderer import GridRenderer, Style, ColorMode, TerminalUI
-# ThinUI Integration
-from .thinui import ThinUIGridBridge, ThinUIGridData
-from .thinui.formats import ThinUILayout, ThinUIComponent, ThinUIColor, ThinUIFormat
-from .thinui import ThinUIComponentType
-from .thinui import API_AVAILABLE, create_api_server, run_api_server
-# Plugin System
-from .plugin import (
-    PluginDiscovery,
-    PluginRegistry,
-    PluginLoader,
-    PluginWrapper,
-    PluginMetadata,
-    PluginManifest,
-)
-from .plugin.exceptions import (
-    PluginError,
-    PluginNotFoundError,
-    PluginLoadError,
-    PluginCompatibilityError,
-    PluginDisabledError,
-)
 # Grid System
 from .grid import (
+    Coordinate,
+    CoordSystem,
     Grid,
     GridCell,
     GridRegion,
     GridSize,
-    Coordinate,
-    CoordSystem,
-)
-
-# Text System
-from .text import (
-    TextInjector,
-    TemplateEngine,
-    TextFormatter,
-    WrapMode,
-    Alignment,
-    ANSIColor,
-    ANSIStyle,
-)
-from .text.exceptions import (
-    TextProcessingError,
-    InjectionError,
-    MarkdownError,
-    FormattingError,
 )
 
 # MCP Client
@@ -84,13 +43,102 @@ from .mcp_client import (
     McpClient,
     McpClientError,
     McpConnectionError,
-    McpTimeoutError,
     McpRequest,
     McpRequestType,
     McpResponse,
+    McpTimeoutError,
     get_default_socket_path,
     socket_exists,
     test_connection,
+)
+
+# Plugin System
+from .plugin import (
+    PluginDiscovery,
+    PluginLoader,
+    PluginManifest,
+    PluginMetadata,
+    PluginRegistry,
+    PluginWrapper,
+)
+from .plugin.exceptions import (
+    PluginCompatibilityError,
+    PluginDisabledError,
+    PluginError,
+    PluginLoadError,
+    PluginNotFoundError,
+)
+from .relic.models import (
+    Relic,
+    RelicBinaryFormat,
+    RelicMetadata,
+    RelicRegistry,
+    RelicResource,
+)
+from .snack.dependency import (
+    CircularDependencyError,
+    DependencyResolver,
+    resolve_snack_dependencies,
+)
+from .snack.engine import SnackEngine, execute_snack
+from .snack.exceptions import CircularDependencyError, SnackExecutionError
+
+# Export main types for convenience
+from .snack.models import Snack, SnackInput, SnackOutput
+from .snack.schema import validate_snack_schema
+from .snack.validator import (
+    validate_snack,
+    validate_snack_file,
+    validate_snack_resources,
+)
+
+# Text System
+from .text import (
+    Alignment,
+    ANSIColor,
+    ANSIStyle,
+    TemplateEngine,
+    TextFormatter,
+    TextInjector,
+    WrapMode,
+)
+from .text.exceptions import (
+    FormattingError,
+    InjectionError,
+    MarkdownError,
+    TextProcessingError,
+)
+
+# ThinUI Integration
+from .thinui import (
+    API_AVAILABLE,
+    ThinUIComponentType,
+    ThinUIGridBridge,
+    ThinUIGridData,
+    create_api_server,
+    run_api_server,
+)
+from .thinui.formats import ThinUIColor, ThinUIComponent, ThinUIFormat, ThinUILayout
+from .usxd.component_mapper import (
+    ComponentMapper,
+    ComponentMapping,
+    ComponentType,
+    ThinUIProperties,
+)
+from .usxd.grid_parser import (
+    ASCIIGridParser,
+    GridCell,
+    GridComponent,
+    GridFormat,
+    ParsedGrid,
+)
+from .usxd.grid_renderer import ColorMode, GridRenderer, Style, TerminalUI
+from .usxd.models import (
+    USXDDocument,
+    USXDFormat,
+    USXDMetadata,
+    USXDRegistry,
+    USXDSection,
 )
 
 __all__ = [

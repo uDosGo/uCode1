@@ -16,8 +16,9 @@ Commands:
   binder      Binder management (create, validate, extract, tree)
   relic       Relic management (create, validate, pack, unpack)
   usxd        USXD document management (parse, render, map, export)
-  grid        ASCII grid operations (parse, render, interactive)
+  grid        ASCII grid operations (parse, render, interactive, edit)
   thinui      ThinUI bridge (parse, render, api, themes)
+  mdx         MDX document processing with Snack shortcodes
   vault       Vault operations (read, write, list, search)
   plugin      Plugin management (list, enable, disable)
   help        Show help for a command
@@ -63,6 +64,7 @@ def main():
         "usxd":     lambda: dispatch("usxd_cli"),
         "grid":     lambda: dispatch("grid_cli"),
         "thinui":   lambda: dispatch_cli("thinui_cli"),
+        "mdx":      lambda: dispatch("mdx_cli"),
         "vault":    lambda: dispatch_cli("vault_cli"),
         "plugin":   lambda: dispatch_cli("plugin_cli"),
         "help":     lambda: show_help(),
