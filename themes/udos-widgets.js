@@ -294,10 +294,11 @@
         var targetW = vw * 0.8;
         var targetH = vh * 0.8;
 
-        // Apply shared font scale to base
+        // Account for 1em padding on each side (total 2em)
+        var pad = el.classList.contains('terminal-viewport') ? 2 : 0;
         var aspect = parseFloat(el.getAttribute('data-aspect')) || 0.55;
-        var fontFromW = targetW / (s.cols * aspect);
-        var fontFromH = targetH / s.rows;
+        var fontFromW = targetW / (s.cols * aspect + pad);
+        var fontFromH = targetH / (s.rows + pad);
         var fontSize = Math.min(fontFromW, fontFromH) * scale;
         fontSize = Math.max(fontSize, 5);
 
