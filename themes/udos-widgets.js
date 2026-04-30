@@ -118,36 +118,33 @@
   // ── Display Scaling ─────────────────────────────────────────────────────
 
   /**
-   * uDosDisplay — viewport-aware font scaling for all surfaces.
+   * uDosDisplay — BBC/C64-style proportional grid scaling.
    *
-   * Auto-scales font-size so the character grid (cols × rows) fills the
-   * available viewport. Recalculates on resize. Buttons for viewport sizes
-   * that don't fit at current window size are auto-disabled.
+   * Formula (per spec):
+   *   Terminal occupies 80% of the smaller viewport dimension.
+   *   cell_size = terminal_width / cols
+   *   font_size = cell_size × 0.75
    *
    * Usage:
    *   uDosWidgets.Display.init(document.getElementById('terminal'), {
-   *     cols: 80, rows: 24, baseFont: 15
+   *     cols: 80, rows: 24, baseFont: 24
    *   });
    */
   uDosWidgets.Display = {
     _surfaces: [],
     _rafId: null,
 
-    /** Register a surface for auto-scaling */
     init: function(el, opts) {
       if (!el) return;
       opts = opts || {};
       var cols = opts.cols || 80;
-      var rows = opts.rows || 30;
+      var rows = opts.rows || 24;
       var baseFont = opts.baseFont || 24;
-      var aspect = opts.aspect || 0.55;
-      // Fixed 20px padding around viewport (dark blue background visible)
-      var padding = 20;
+
       el.classList.add('udos-surface');
-      this._surfaces.push({ el: el, cols: cols, rows: rows, baseFont: baseFont, aspect: aspect, padding: padding });
+      this._surfaces.push({ el: el, cols: cols, rows: rows, baseFont: baseFont });
       this._recalc();
 
-      // Throttled resize listener (once)
       if (this._surfaces.length === 1) {
         var self = this;
         window.addEventListener('resize', function() {
@@ -158,7 +155,6 @@
       return this;
     },
 
-    /** Resize a surface to new dimensions (called by toolbar buttons) */
     resize: function(el, cols, rows) {
       for (var i = 0; i < this._surfaces.length; i++) {
         if (this._surfaces[i].el === el) {
@@ -170,7 +166,6 @@
       this._recalc();
     },
 
-    /** Recalculate font size for all registered surfaces */
     _recalc: function() {
       var vw = window.innerWidth;
       var vh = window.innerHeight;
@@ -179,25 +174,37 @@
         var s = this._surfaces[i];
         var el = s.el;
 
-        // Available space: fixed 20px padding on each side
-        var padding = s.padding || 20;
-        var availW = vw - padding * 2;
-        var availH = vh - padding * 2;
+        // 80% of each dimension
+        var targetW = vw * 0.8;
+        var targetH = vh * 0.8;
+        var terminalAspect = s.cols / s.rows;
 
-        // Font size to fill available space with cols×rows grid + 1ch padding
-        var fontSizeW = availW / (s.cols * s.aspect + 2 * s.aspect);
-        var fontSizeH = availH / (s.rows * 1.5 + 2);
-        var fontSize = Math.min(fontSizeW, fontSizeH);
+        var terminalW, terminalH;
+        if (targetW / targetH > terminalAspect) {
+          // Height constrained
+          terminalH = targetH;
+          terminalW = terminalH * terminalAspect;
+        } else {
+          // Width constrained
+          terminalW = targetW;
+          terminalH = terminalW / terminalAspect;
+        }
 
-        // Clamp: min 4px (readable at tiny), max = baseFont
+        // cell_size = terminalW / cols  — THIS is the fundamental unit
+        var cellSize = terminalW / s.cols;
+        // font = 75% of cell size (readable text within CELL)
+        var fontSize = cellSize * 0.75;
+        // Clamp: min 5px readable, max baseFont
         fontSize = Math.min(fontSize, s.baseFont || 24);
-        fontSize = Math.max(fontSize, 4);
+        fontSize = Math.max(fontSize, 5);
 
+        el.style.width = terminalW + 'px';
+        el.style.height = terminalH + 'px';
         el.style.fontSize = fontSize + 'px';
-        // ch/em + 1ch padding all around (no border)
-        el.style.width = 'calc(' + (s.cols + 2) + 'ch)';
-        el.style.height = 'calc(' + (s.rows + 2) + 'em)';
+        el.style.setProperty('--udos-cell-size', cellSize + 'px');
         el.style.setProperty('--udos-font-size', fontSize + 'px');
+        el.style.setProperty('--udos-term-w', terminalW + 'px');
+        el.style.setProperty('--udos-term-h', terminalH + 'px');
       }
 
       // Update toolbar buttons — disable presets that don't fit
@@ -206,18 +213,14 @@
 
     /** Disable viewport buttons whose preset doesn't fit the current window */
     _updateToolbarButtons: function(vw, vh) {
-      var pad = 20;
       var presets = [
-        { cols: 20, rows: 10, label: '20x10' },
-        { cols: 32, rows: 16, label: '32x16' },
-        { cols: 40, rows: 16, label: '40x16' },
-        { cols: 40, rows: 24, label: '40x24' },
-        { cols: 64, rows: 16, label: '64x16' },
-        { cols: 64, rows: 24, label: '64x24' },
-        { cols: 80, rows: 24, label: '80x24' },
-        { cols: 80, rows: 20, label: '80x20' },
+        { cols: 20, rows: 10, label: '20x10' }, { cols: 32, rows: 16, label: '32x16' },
+        { cols: 40, rows: 16, label: '40x16' }, { cols: 40, rows: 24, label: '40x24' },
+        { cols: 64, rows: 16, label: '64x16' }, { cols: 64, rows: 24, label: '64x24' },
+        { cols: 80, rows: 24, label: '80x24' }, { cols: 80, rows: 20, label: '80x20' },
         { cols: 48, rows: 48, label: '48x48' },
       ];
+      var targetW = vw * 0.8, targetH = vh * 0.8;
       document.querySelectorAll('.menu-btn[data-size]').forEach(function(btn) {
         var key = btn.getAttribute('data-size');
         var preset = null;
@@ -225,19 +228,19 @@
           if (presets[p].label === key) { preset = presets[p]; break; }
         }
         if (!preset) return;
-        // Minimum window size needed for this preset at minFont (5px)
-        var needW = preset.cols * 5 * 0.55 + pad * 2 + 2 * 5 * 0.55;
-        var needH = preset.rows * 5 * 1.5 + pad * 2 + 2 * 5 * 1.5;
-        var fits = (vw >= needW && vh >= needH);
+        var aspect = preset.cols / preset.rows;
+        var termW, termH;
+        if (targetW / targetH > aspect) { termH = targetH; termW = termH * aspect; }
+        else { termW = targetW; termH = termW / aspect; }
+        var cellSize = termW / preset.cols;
+        var fits = cellSize >= 3; // 3px cells = ~2.25px font minimum
         btn.disabled = !fits;
         btn.style.opacity = fits ? '1' : '0.35';
         btn.style.cursor = fits ? 'pointer' : 'not-allowed';
-        // Show title explaining why disabled
-        btn.title = fits ? 'Switch to ' + key : key + ' needs ' + Math.ceil(needW) + 'x' + Math.ceil(needH) + 'px window';
+        btn.title = fits ? 'Switch to ' + key : key + ' too large for window';
       });
     },
 
-    /** Manually trigger recalculation */
     refresh: function() { this._recalc(); },
 
     /** Get current font size for a surface */
