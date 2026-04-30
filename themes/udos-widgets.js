@@ -115,22 +115,8 @@
     });
   };
 
-  // ── Shared Menu (injected by all surfaces) ──────────────────────────────
+  // ── Shared Flowbite-style Sidebar (injected by all surfaces) ────────────
 
-  /**
-   * uDosWidgets.Menu — single global +/x sidebar for all surfaces.
-   *
-   * Usage:
-   *   uDosWidgets.Menu.init({
-   *     sections: [
-   *       { label: 'SIZE', type: 'grid', buttons: ['20x10','32x16','40x24'] },
-   *       { label: 'SYSTEM', type: 'info', lines: ['seed: XYZ', 'ver: 1.0'] }
-   *     ]
-   *   });
-   *
-   * Creates the + toggle and slide-out panel with the given sections.
-   * Only one menu exists per page — calling init() again replaces content.
-   */
   uDosWidgets.Menu = {
     _initialized: false,
 
@@ -139,36 +125,52 @@
       var sections = opts.sections || [];
       var title = opts.title || 'MENU';
 
-      // Remove existing menu if any
       var old = document.getElementById('udosMenuRoot');
       if (old) old.parentNode.removeChild(old);
 
       var root = document.createElement('div');
       root.id = 'udosMenuRoot';
 
-      // ── Toggle button (+/x) ───────────────────────────────────────────
-      var toggle = document.createElement('div');
+      // ── Hamburger toggle ──────────────────────────────────────────────
+      var toggle = document.createElement('button');
       toggle.className = 'menu-toggle';
       toggle.id = 'menuToggle';
-      toggle.textContent = '+';
+      toggle.setAttribute('aria-controls', 'udosSidebar');
+      toggle.innerHTML =
+        '<span class="sr-only">Open sidebar</span>' +
+        '<svg class="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">' +
+        '<path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M5 7h14M5 12h14M5 17h10"/>' +
+        '</svg>';
 
-      // ── Panel ────────────────────────────────────────────────────────
-      var panel = document.createElement('div');
-      panel.className = 'menu-panel';
-      panel.id = 'menuPanel';
+      // ── Flowbite-style sidebar ────────────────────────────────────────
+      var aside = document.createElement('aside');
+      aside.id = 'udosSidebar';
+      aside.className = 'menu-panel';
+      aside.setAttribute('aria-label', 'Sidebar');
 
-      // Header
+      var inner = document.createElement('div');
+      inner.className = 'menu-inner';
+
+      // Title/header
       var hdr = document.createElement('div');
       hdr.className = 'menu-header';
-      hdr.innerHTML = '<span class="menu-title">' + title + '</span>' +
-        '<button class="menu-close" id="menuClose">x</button>';
-      panel.appendChild(hdr);
+      hdr.innerHTML =
+        '<span class="menu-title">' + title + '</span>' +
+        '<button class="menu-close" id="menuClose">' +
+        '<svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">' +
+        '<path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18 17.94 6M18 18 6.06 6"/>' +
+        '</svg></button>';
+      inner.appendChild(hdr);
 
-      // Sections
+      // Sections as list items
       sections.forEach(function(sec) {
-        var secDiv = document.createElement('div');
-        secDiv.className = 'menu-section';
-        secDiv.innerHTML = '<span class="menu-label">' + sec.label + '</span>';
+        var li = document.createElement('li');
+        li.className = 'menu-section';
+
+        var label = document.createElement('span');
+        label.className = 'menu-label';
+        label.textContent = sec.label;
+        li.appendChild(label);
 
         if (sec.type === 'grid') {
           var grid = document.createElement('div');
@@ -181,7 +183,7 @@
             if (btn.onclick) b.addEventListener('click', btn.onclick);
             grid.appendChild(b);
           });
-          secDiv.appendChild(grid);
+          li.appendChild(grid);
         } else if (sec.type === 'info') {
           var info = document.createElement('div');
           info.className = 'menu-info';
@@ -190,26 +192,43 @@
             d.textContent = line;
             info.appendChild(d);
           });
-          secDiv.appendChild(info);
+          li.appendChild(info);
         } else if (sec.type === 'custom') {
-          secDiv.appendChild(sec.element);
+          li.appendChild(sec.element);
         }
 
-        panel.appendChild(secDiv);
+        inner.appendChild(li);
       });
 
+      aside.appendChild(inner);
       root.appendChild(toggle);
-      root.appendChild(panel);
+      root.appendChild(aside);
       document.body.appendChild(root);
 
       // ── Toggle logic ────────────────────────────────────────────────
       var isOpen = false;
-      function openP() { isOpen = true; panel.classList.add('open'); toggle.textContent = 'x'; toggle.classList.add('active'); }
-      function closeP() { isOpen = false; panel.classList.remove('open'); toggle.textContent = '+'; toggle.classList.remove('active'); }
+      function openP() {
+        isOpen = true;
+        aside.classList.add('open');
+        toggle.classList.add('active');
+      }
+      function closeP() {
+        isOpen = false;
+        aside.classList.remove('open');
+        toggle.classList.remove('active');
+      }
 
       toggle.addEventListener('click', function(e) { e.stopPropagation(); isOpen ? closeP() : openP(); });
-      panel.querySelector('#menuClose').addEventListener('click', closeP);
-      document.addEventListener('click', function(e) { if (isOpen && !panel.contains(e.target) && e.target !== toggle) closeP(); });
+      var closeBtn = document.getElementById('menuClose');
+      if (closeBtn) closeBtn.addEventListener('click', closeP);
+      document.addEventListener('click', function(e) {
+        if (isOpen && !aside.contains(e.target) && e.target !== toggle) closeP();
+      });
+
+      this._initialized = true;
+      return { toggle: toggle, aside: aside, open: openP, close: closeP };
+    }
+  };
 
       this._initialized = true;
       return { toggle: toggle, panel: panel, open: openP, close: closeP };
