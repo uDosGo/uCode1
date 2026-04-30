@@ -40,12 +40,9 @@
       if (!vp) return;
       currentViewport = key;
       uDosWidgets.Display.resize(document.getElementById('terminal'), vp.cols, vp.rows);
-      document.getElementById('ratioDisplay').textContent = vp.cols + 'x' + vp.rows;
-      document.querySelectorAll('.menu-btn[data-size]').forEach(function(b) {
-        b.classList.toggle('active', b.dataset.size === key);
-      });
+      var rd = document.getElementById('ratioDisplay');
+      if (rd) rd.textContent = vp.cols + 'x' + vp.rows;
       flashLoader();
-      // Re-cascade content at new grid width
       cascadeBuffer();
     }
 
