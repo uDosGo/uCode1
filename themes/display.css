@@ -19,7 +19,8 @@
   --udos-aspect: 0.55;
   --udos-font-size: 24px;
   --udos-font-scale: 1.0;
-  --menu-scale: 1.0;
+  /* Responsive menu scale: 0.75 at 960px (25% smaller), 2.0 at 1920px (2× bigger) */
+  --menu-scale: clamp(0.6, (100vw - 960px) * 0.001302 + 0.75, 2.5);
 }
 
 /* Base surface class — center in viewport */
