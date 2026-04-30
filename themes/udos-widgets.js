@@ -305,13 +305,11 @@
         // Use explicit px for width/height (min 10% gap enforced by 0.8 factor)
         var gridW = fontSize * s.cols * aspect;
         var gridH = fontSize * s.rows;
-        // Square grids (cols == rows) should appear square visually
-        if (s.cols === s.rows) {
-          gridW = gridH; // match width to height so 48x48 looks square
-        }
+        // All grids use square ratio — set both dims to the larger
+        var gridSize = Math.max(gridW, gridH);
         el.style.fontSize = fontSize + 'px';
-        el.style.width = gridW + 'px';
-        el.style.height = gridH + 'px';
+        el.style.width = gridSize + 'px';
+        el.style.height = gridSize + 'px';
         el.style.setProperty('--udos-font-size', fontSize + 'px');
         el.style.setProperty('--udos-font-scale', scale);
         // Also set on root so pseudo-elements (loader bars) can reference it
@@ -330,6 +328,7 @@
         { cols: 48, rows: 48, label: '48x48' },
       ];
       var targetW = vw * 0.8, targetH = vh * 0.8;
+      var pad = 2;
       document.querySelectorAll('.menu-btn[data-size]').forEach(function(btn) {
         var key = btn.getAttribute('data-size');
         var preset = null;
@@ -337,7 +336,10 @@
           if (presets[p].label === key) { preset = presets[p]; break; }
         }
         if (!preset) return;
-        var fontW = targetW / (preset.cols * 0.55);
+        // Square ratio: both dims use the larger side
+        var dims = Math.max(preset.cols * 0.55, preset.rows);
+        var fontW = targetW / (dims + pad);
+        var fontH = targetH / (dims + pad);
         var fontH = targetH / preset.rows;
         var fits = Math.min(fontW, fontH) >= 3;
         btn.disabled = !fits;
