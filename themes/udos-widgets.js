@@ -177,34 +177,21 @@
         // 80% of each dimension
         var targetW = vw * 0.8;
         var targetH = vh * 0.8;
-        var terminalAspect = s.cols / s.rows;
+        var pad = 20; // pixels for 1ch padding on each side
 
-        var terminalW, terminalH;
-        if (targetW / targetH > terminalAspect) {
-          // Height constrained
-          terminalH = targetH;
-          terminalW = terminalH * terminalAspect;
-        } else {
-          // Width constrained
-          terminalW = targetW;
-          terminalH = terminalW / terminalAspect;
-        }
-
-        // cell_size = terminalW / cols  — THIS is the fundamental unit
-        var cellSize = terminalW / s.cols;
-        // font = 75% of cell size (readable text within CELL)
-        var fontSize = cellSize * 0.9;
-        // Clamp: min 5px readable, max baseFont
+        // Font size: fill 80% of viewport while fitting cols×rows
+        // ch width ≈ fontSize * 0.55 for this monospace font
+        var fontFromW = (targetW - pad * 2) / (s.cols * 0.55);
+        var fontFromH = (targetH - pad * 2) / s.rows;
+        var fontSize = Math.min(fontFromW, fontFromH);
         fontSize = Math.min(fontSize, s.baseFont || 24);
         fontSize = Math.max(fontSize, 5);
 
-        el.style.width = terminalW + 'px';
-        el.style.height = terminalH + 'px';
+        // Set font-size, then use ch/em for exact character count
         el.style.fontSize = fontSize + 'px';
-        el.style.setProperty('--udos-cell-size', cellSize + 'px');
+        el.style.width = 'calc(' + s.cols + 'ch + ' + (pad * 2) + 'px)';
+        el.style.height = 'calc(' + s.rows + 'em + ' + (pad * 2) + 'px)';
         el.style.setProperty('--udos-font-size', fontSize + 'px');
-        el.style.setProperty('--udos-term-w', terminalW + 'px');
-        el.style.setProperty('--udos-term-h', terminalH + 'px');
       }
 
       // Update toolbar buttons — disable presets that don't fit
@@ -226,12 +213,10 @@
           if (presets[p].label === key) { preset = presets[p]; break; }
         }
         if (!preset) return;
-        var aspect = preset.cols / preset.rows;
-        var termW, termH;
-        if (targetW / targetH > aspect) { termH = targetH; termW = termH * aspect; }
-        else { termW = targetW; termH = termW / aspect; }
-        var cellSize = termW / preset.cols;
-        var fits = cellSize >= 3; // 3px cells = ~2.25px font minimum
+        var pad = 20;
+        var fontW = (targetW - pad * 2) / (preset.cols * 0.55);
+        var fontH = (targetH - pad * 2) / preset.rows;
+        var fits = Math.min(fontW, fontH) >= 3;
         btn.disabled = !fits;
         btn.style.opacity = fits ? '1' : '0.35';
         btn.style.cursor = fits ? 'pointer' : 'not-allowed';
