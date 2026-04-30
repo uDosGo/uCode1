@@ -37,7 +37,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:#20398d}
 .bluescreen.flash::after{opacity:0}
 
 /* Terminal viewport — solid, no borders, 1ch padding */
-.terminal-viewport{background:#152060;padding:0;color:#6076c5;
+.terminal-viewport{background:#152060;padding:1em;color:#6076c5;
   font-family:"C64 User Mono",monospace;
   line-height:1;text-transform:uppercase;
   white-space:pre-wrap;word-break:break-all;overflow:auto;
