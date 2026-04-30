@@ -7,8 +7,8 @@ import tempfile
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+from narrator.lexicon import LANE_DEV, LANE_STORY, LANE_STUDENT, Lexicon, LexiconEntry
 from narrator.narrator import NarratorEngine
-from narrator.lexicon import Lexicon, LexiconEntry, LANE_DEV, LANE_STORY, LANE_STUDENT
 
 
 class TestLexicon:

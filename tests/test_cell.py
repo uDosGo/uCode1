@@ -8,22 +8,22 @@ import tempfile
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from core_py.cell import (
+    CELL_DIR,
+    LAYER_BINDER,
+    LAYER_CHAR,
+    LAYER_CUBE,
+    LAYER_FEED,
+    LAYER_GRID,
+    LAYER_META,
+    LAYER_SNACK,
+    LAYER_SPATIAL,
+    LAYER_USER,
+    LAYER_USXD,
     Cell,
     CellAddress,
     CellStore,
     Cube,
     layer_name,
-    CELL_DIR,
-    LAYER_GRID,
-    LAYER_SPATIAL,
-    LAYER_SNACK,
-    LAYER_FEED,
-    LAYER_META,
-    LAYER_CHAR,
-    LAYER_BINDER,
-    LAYER_USXD,
-    LAYER_CUBE,
-    LAYER_USER,
 )
 
 

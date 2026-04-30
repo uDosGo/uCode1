@@ -11,6 +11,7 @@ __license__ = "MIT"
 from . import (
     binder,  # Binder module implemented
     cell,  # Cell System with UDX addressing (NEW)
+    feed,  # Feed event archiving to Cells (NEW)
     grid,  # Python grid-core (NEW)
     mcp_client,  # MCP client for uCode2 communication (NEW)
     mdx,  # MDX Runtime with Snack shortcode support (NEW)

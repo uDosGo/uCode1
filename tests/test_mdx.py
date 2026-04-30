@@ -8,8 +8,7 @@ import tempfile
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from core_py.mdx import MDXProcessor, SnackResolutionError
-from core_py.snack import Snack, SnackInput, SnackOutput, SnackEngine
-
+from core_py.snack import Snack, SnackEngine, SnackInput, SnackOutput
 
 # ── Fixtures ────────────────────────────────────────────────────────────────
 

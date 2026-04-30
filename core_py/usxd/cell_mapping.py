@@ -15,24 +15,23 @@ Workflow:
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 
-from .models import USXDDocument, USXDSection, USXDMetadata
-
 from ..cell import (
+    LAYER_BINDER,
+    LAYER_CHAR,
+    LAYER_CUBE,
+    LAYER_FEED,
+    LAYER_GRID,
+    LAYER_META,
+    LAYER_SNACK,
+    LAYER_SPATIAL,
+    LAYER_USER,
+    LAYER_USXD,
     Cell,
     CellAddress,
     CellStore,
     layer_name,
-    LAYER_GRID,
-    LAYER_SPATIAL,
-    LAYER_SNACK,
-    LAYER_FEED,
-    LAYER_META,
-    LAYER_CHAR,
-    LAYER_BINDER,
-    LAYER_USXD,
-    LAYER_CUBE,
-    LAYER_USER,
 )
+from .models import USXDDocument, USXDMetadata, USXDSection
 
 CELL_SECTION_TYPE = "cell"
 CELL_REF_SECTION_TYPE = "cell-reference"

@@ -41,21 +41,27 @@ Examples:
   usxd grid interactive my_grid.txt
 """
 
-import sys
-import os
 import argparse
 import json
-import yaml
+import os
+import sys
 from pathlib import Path
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
+
+import yaml
 
 # Add core_py to path
 sys.path.insert(0, os.path.dirname(__file__))
 
 try:
     from core_py import (
-        USXDDocument, USXDMetadata, USXDSection, USXDRegistry, USXDFormat,
-        Binder, BinderEntry
+        Binder,
+        BinderEntry,
+        USXDDocument,
+        USXDFormat,
+        USXDMetadata,
+        USXDRegistry,
+        USXDSection,
     )
     CORE_PY_AVAILABLE = True
 except ImportError as e:
@@ -65,9 +71,19 @@ except ImportError as e:
 
 try:
     from core_py.usxd import (
-        ASCIIGridParser, ParsedGrid, GridComponent, GridCell, GridFormat,
-        ComponentMapper, ComponentMapping, ComponentType, ThinUIProperties,
-        GridRenderer, Style, ColorMode, TerminalUI
+        ASCIIGridParser,
+        ColorMode,
+        ComponentMapper,
+        ComponentMapping,
+        ComponentType,
+        GridCell,
+        GridComponent,
+        GridFormat,
+        GridRenderer,
+        ParsedGrid,
+        Style,
+        TerminalUI,
+        ThinUIProperties,
     )
     USXD_EXT_AVAILABLE = True
 except ImportError as e:
@@ -80,25 +96,25 @@ except ImportError as e:
 
 class USXDCLI:
     """Command-line interface for USXD management"""
-    
+
     def __init__(self):
         self.registry = USXDRegistry() if CORE_PY_AVAILABLE else None
         self.registry_dir = Path(".usxd")
         self.parser = ASCIIGridParser() if USXD_EXT_AVAILABLE else None
         self.mapper = ComponentMapper() if USXD_EXT_AVAILABLE else None
         self.renderer = GridRenderer() if USXD_EXT_AVAILABLE else None
-        
+
         # Ensure registry directory exists
         self.registry_dir.mkdir(exist_ok=True)
-    
+
     def main(self, args):
         """Main entry point for USXD CLI"""
         if len(args) < 1:
             self._print_help()
             return 0
-        
+
         command = args[0]
-        
+
         try:
             if command == "list":
                 return self._command_list(args[1:])
@@ -134,39 +150,39 @@ class USXDCLI:
             import traceback
             traceback.print_exc()
             return 1
-    
+
     def _print_help(self):
         """Print help message"""
         print(__doc__)
-    
+
     def _command_list(self, args):
         """List available USXD documents"""
         parser = argparse.ArgumentParser(description='List available USXD documents')
         parser.add_argument('--verbose', '-v', action='store_true', help='Show detailed information')
         parser.add_argument('--filter', '-f', type=str, help='Filter by title or ID')
         parser.add_argument('--sort', '-s', choices=['name', 'date', 'size'], default='name', help='Sort order')
-        
+
         args = parser.parse_args(args)
-        
+
         if not CORE_PY_AVAILABLE:
             print("Error: core_py not available")
             return 1
-        
+
         docs = self.registry.list_documents()
-        
+
         print("Available USXD Documents:")
         print("-" * 60)
-        
+
         if not docs:
             print("No documents found.")
             return 0
-        
+
         # Filter
         if args.filter:
-            docs = [d for d in docs if 
-                    args.filter.lower() in d.get('title', '').lower() or 
+            docs = [d for d in docs if
+                    args.filter.lower() in d.get('title', '').lower() or
                     args.filter.lower() in d.get('id', '').lower()]
-        
+
         # Sort
         if args.sort == 'date':
             docs.sort(key=lambda x: x.get('created_at', ''), reverse=True)
@@ -174,14 +190,14 @@ class USXDCLI:
             docs.sort(key=lambda x: x.get('size', 0), reverse=True)
         else:
             docs.sort(key=lambda x: x.get('title', ''))
-        
+
         for doc in docs:
             doc_id = doc.get('id', 'unknown')
             title = doc.get('title', 'Untitled')
             version = doc.get('version', '1.0')
             size = doc.get('size', 0)
             format_type = doc.get('format', 'json')
-            
+
             if args.verbose:
                 print(f"  ID: {doc_id}")
                 print(f"  Title: {title}")
@@ -193,11 +209,11 @@ class USXDCLI:
             else:
                 display_title = title[:40] + "..." if len(title) > 40 else title
                 print(f"  {doc_id:20} | {display_title:40} | v{version:5} | {format_type:6} | {size:8} bytes")
-        
+
         print("-" * 60)
         print(f"Total: {len(docs)} documents")
         return 0
-    
+
     def _command_show(self, args):
         """Show details of a specific USXD document"""
         parser = argparse.ArgumentParser(description='Show USXD document details')
@@ -206,17 +222,17 @@ class USXDCLI:
         parser.add_argument('--tree', '-t', action='store_true', help='Show as tree structure')
         parser.add_argument('--raw', '-r', action='store_true', help='Show raw content')
         parser.add_argument('--format', '-f', choices=['json', 'yaml'], default='json', help='Output format')
-        
+
         args = parser.parse_args(args)
-        
+
         if not CORE_PY_AVAILABLE:
             print("Error: core_py not available")
             return 1
-        
+
         if not args.doc_id:
             print("Error: Please specify a document ID or filename")
             return 1
-        
+
         try:
             doc = self.registry.load_document(args.doc_id)
         except FileNotFoundError:
@@ -225,14 +241,14 @@ class USXDCLI:
             except Exception as e:
                 print(f"Error: Document '{args.doc_id}' not found")
                 return 1
-        
+
         if args.raw:
             if args.format == 'yaml':
                 print(doc.to_yaml())
             else:
                 print(doc.to_json())
             return 0
-        
+
         print(f"USXD Document: {doc.metadata.title}")
         print(f"ID: {doc.metadata.id}")
         print(f"Version: {doc.metadata.version}")
@@ -244,7 +260,7 @@ class USXDCLI:
         print(f"Checksum: {doc.checksum}")
         print(f"Integrity: {'✓ Valid' if doc.verify_integrity() else '✗ Invalid'}")
         print()
-        
+
         if args.section:
             section = doc.get_section(args.section)
             if section:
@@ -258,11 +274,11 @@ class USXDCLI:
             else:
                 print(f"Section '{args.section}' not found")
             return 0
-        
+
         if args.tree:
             self._print_tree(doc)
             return 0
-        
+
         print(f"Sections: {len(doc.sections)}")
         for i, section in enumerate(doc.sections):
             print(f"  {i+1}. {section.name} ({section.section_type})")
@@ -270,9 +286,9 @@ class USXDCLI:
                 if isinstance(section.content, str):
                     content_preview = section.content[:100] + "..." if len(section.content) > 100 else section.content
                     print(f"      {content_preview}")
-        
+
         return 0
-    
+
     def _command_create(self, args):
         """Create a new USXD document"""
         parser = argparse.ArgumentParser(description='Create a new USXD document')
@@ -284,19 +300,19 @@ class USXDCLI:
         parser.add_argument('--format', '-f', choices=['json', 'yaml'], default='json', help='File format')
         parser.add_argument('--from-file', type=str, help='Create from file')
         parser.add_argument('--from-grid', type=str, help='Create from ASCII grid file')
-        
+
         args = parser.parse_args(args)
-        
+
         if not CORE_PY_AVAILABLE:
             print("Error: core_py not available")
             return 1
-        
+
         if args.from_file:
             file_path = Path(args.from_file)
             if not file_path.exists():
                 print(f"Error: File '{args.from_file}' not found")
                 return 1
-            
+
             try:
                 content = file_path.read_text()
                 try:
@@ -307,7 +323,7 @@ class USXDCLI:
                     except:
                         print("Error: File is not valid JSON or YAML")
                         return 1
-                
+
                 doc = USXDDocument.from_dict(data)
                 filepath = self.registry.save_document(doc)
                 print(f"✓ Created USXD document from '{args.from_file}'")
@@ -317,7 +333,7 @@ class USXDCLI:
             except Exception as e:
                 print(f"Error: {e}")
                 return 1
-        
+
         # Create new document
         metadata = USXDMetadata(
             id=args.id,
@@ -327,18 +343,18 @@ class USXDCLI:
             author=args.author,
             format=USXDFormat(args.format)
         )
-        
+
         doc = USXDDocument(metadata=metadata)
-        
+
         if args.from_grid:
             grid_text = Path(args.from_grid).read_text()
             parsed_grid = self.parser.parse_grid(grid_text, args.title)
-            
+
             # Add grid as section
             from core_py.usxd.component_mapper import ComponentMapper
             mapper = ComponentMapper()
             layout = mapper.create_grid_layout(parsed_grid)
-            
+
             section = USXDSection(
                 id='grid_layout',
                 name='Grid Layout',
@@ -347,7 +363,7 @@ class USXDCLI:
                 format='application/x-usxd-grid-layout'
             )
             doc.add_section(section)
-            
+
             # Add raw grid as section
             grid_section = USXDSection(
                 id='raw_grid',
@@ -356,28 +372,28 @@ class USXDCLI:
                 content=grid_text
             )
             doc.add_section(grid_section)
-            
+
             print(f"✓ Created USXD document with embedded grid from '{args.from_grid}'")
-        
+
         filepath = self.registry.save_document(doc)
         print(f"✓ Created USXD document: {doc.metadata.title}")
         print(f"  ID: {doc.metadata.id}")
         print(f"  Saved to: {filepath}")
-        
+
         return 0
-    
+
     def _command_validate(self, args):
         """Validate a USXD document"""
         parser = argparse.ArgumentParser(description='Validate USXD document')
         parser.add_argument('doc_id', type=str, help='Document ID or filename')
         parser.add_argument('--strict', '-s', action='store_true', help='Strict validation')
-        
+
         args = parser.parse_args(args)
-        
+
         if not CORE_PY_AVAILABLE:
             print("Error: core_py not available")
             return 1
-        
+
         try:
             doc = self.registry.load_document(args.doc_id)
         except:
@@ -386,16 +402,16 @@ class USXDCLI:
             except Exception as e:
                 print(f"Error: {e}")
                 return 1
-        
+
         errors = []
-        
+
         if not doc.metadata.id:
             errors.append("Missing ID")
         if not doc.metadata.title:
             errors.append("Missing title")
         if not doc.verify_integrity():
             errors.append("Checksum mismatch - data may be corrupted")
-        
+
         if errors:
             print("❌ Validation Failed:")
             for error in errors:
@@ -408,13 +424,13 @@ class USXDCLI:
             print(f"  Checksum: {doc.checksum}")
             print(f"  Sections: {len(doc.sections)}")
             return 0
-    
+
     def _command_parse(self, args):
         """Parse ASCII grid text into USXD"""
         if not USXD_EXT_AVAILABLE:
             print("Error: USXD extensions not available")
             return 1
-        
+
         parser = argparse.ArgumentParser(description='Parse ASCII grid')
         parser.add_argument('--text', '-t', type=str, help='ASCII grid text to parse')
         parser.add_argument('--file', '-f', type=str, help='File containing ASCII grid')
@@ -422,30 +438,30 @@ class USXDCLI:
         parser.add_argument('--output', '-o', type=str, help='Output file (USXD format)')
         parser.add_argument('--render', '-r', action='store_true', help='Render parsed grid')
         parser.add_argument('--components', '-c', action='store_true', help='Show detected components')
-        
+
         args = parser.parse_args(args)
-        
+
         if not args.text and not args.file:
             print("Error: Please provide --text or --file")
             return 1
-        
+
         grid_text = args.text or Path(args.file).read_text()
         parsed_grid = self.parser.parse_grid(grid_text, args.title)
-        
+
         print(f"✓ Parsed ASCII grid: {parsed_grid.rows}x{parsed_grid.cols}")
         print(f"  Title: {parsed_grid.title}")
         print(f"  Format: {parsed_grid.format.value}")
-        
+
         if args.components:
             print(f"  Components: {len(parsed_grid.components)}")
             for comp_id, comp in parsed_grid.components.items():
                 print(f"    - {comp_id}: {comp.name} ({len(comp.cells)} cells)")
-        
+
         if args.render:
             rendered = self.renderer.render(parsed_grid)
             print("\nRendered:")
             print(rendered)
-        
+
         if args.output:
             # Create USXD document
             metadata = USXDMetadata(
@@ -456,7 +472,7 @@ class USXDCLI:
                 format=USXDFormat.JSON
             )
             doc = USXDDocument(metadata=metadata)
-            
+
             # Add parsed grid as section
             structured = self.parser.to_structured(parsed_grid)
             section = USXDSection(
@@ -467,7 +483,7 @@ class USXDCLI:
                 format='application/x-usxd-grid'
             )
             doc.add_section(section)
-            
+
             # Add raw text as section
             raw_section = USXDSection(
                 id='raw_text',
@@ -476,39 +492,39 @@ class USXDCLI:
                 content=grid_text
             )
             doc.add_section(raw_section)
-            
+
             filepath = self.registry.save_document(doc, filename=args.output)
             print(f"✓ Saved to USXD: {filepath}")
-        
+
         return 0
-    
+
     def _command_render(self, args):
         """Render USXD document or ASCII grid"""
         if not USXD_EXT_AVAILABLE:
             print("Error: USXD extensions not available")
             return 1
-        
+
         parser = argparse.ArgumentParser(description='Render USXD or grid')
         parser.add_argument('input', type=str, nargs='?', help='USXD document or grid file')
         parser.add_argument('--text', '-t', type=str, help='ASCII grid text to render')
         parser.add_argument('--title', type=str, help='Title override')
         parser.add_argument('--no-color', action='store_true', help='Disable colors')
         parser.add_argument('--interactive', '-i', action='store_true', help='Enable interactive mode')
-        
+
         args = parser.parse_args(args)
-        
+
         if not args.input and not args.text:
             print("Error: Please provide input file or --text")
             return 1
-        
+
         # Try to parse as USXD document first
         parsed_grid = None
-        
+
         if args.input:
             input_path = Path(args.input)
             if input_path.exists():
                 content = input_path.read_text()
-                
+
                 # Try as USXD
                 try:
                     doc = USXDDocument.load_from_file(input_path)
@@ -519,7 +535,7 @@ class USXDCLI:
                             break
                 except:
                     pass
-                
+
                 # Try as ASCII grid
                 if parsed_grid is None:
                     try:
@@ -532,28 +548,28 @@ class USXDCLI:
                 return 1
         elif args.text:
             parsed_grid = self.parser.parse_grid(args.text, args.title)
-        
+
         if parsed_grid is None:
             print("Error: Could not parse input as grid")
             return 1
-        
+
         if args.no_color:
             self.renderer.config.color_mode = ColorMode.NONE
-        
+
         if args.interactive:
             self.renderer.run_interactive(parsed_grid, title=args.title or parsed_grid.title)
         else:
             rendered = self.renderer.render(parsed_grid, title=args.title)
             print(rendered)
-        
+
         return 0
-    
+
     def _command_map(self, args):
         """Map USXD to ThinUI components"""
         if not USXD_EXT_AVAILABLE:
             print("Error: USXD extensions not available")
             return 1
-        
+
         parser = argparse.ArgumentParser(description='Map USXD to ThinUI')
         parser.add_argument('input', type=str, nargs='?', help='USXD document or grid file')
         parser.add_argument('--text', '-t', type=str, help='ASCII grid text to map')
@@ -561,22 +577,22 @@ class USXDCLI:
         parser.add_argument('--format', '-f', choices=['json', 'yaml', 'html'], default='json', help='Output format')
         parser.add_argument('--layout', '-l', choices=['grid', 'teletext', 'flex'], default='grid', help='Layout type')
         parser.add_argument('--output', '-o', type=str, help='Output file')
-        
+
         args = parser.parse_args(args)
-        
+
         if not args.input and not args.text:
             print("Error: Please provide input file or --text")
             return 1
-        
+
         # Parse input
         if args.input:
             input_path = Path(args.input)
             if not input_path.exists():
                 print(f"Error: File '{args.input}' not found")
                 return 1
-            
+
             content = input_path.read_text()
-            
+
             # Try as USXD
             try:
                 doc = USXDDocument.load_from_file(input_path)
@@ -587,7 +603,7 @@ class USXDCLI:
                         if section.content.get('type') == 'grid':
                             parsed_grid = self.parser.to_grid(section.content)
                             break
-                
+
                 if parsed_grid is None:
                     # Try to parse as ASCII grid
                     parsed_grid = self.parser.parse_grid(content, args.title)
@@ -600,14 +616,14 @@ class USXDCLI:
                     return 1
         elif args.text:
             parsed_grid = self.parser.parse_grid(args.text, args.title)
-        
+
         if parsed_grid is None:
             print("Error: Could not parse input as grid")
             return 1
-        
+
         # Map to layout
         layout = self.mapper.map_to_layout(parsed_grid, args.layout)
-        
+
         # Output
         if args.format == 'json':
             output = json.dumps(layout, indent=2)
@@ -617,16 +633,16 @@ class USXDCLI:
             output = self.mapper.map_to_html(parsed_grid, args.layout)
         else:
             output = json.dumps(layout, indent=2)
-        
+
         if args.output:
             with open(args.output, 'w') as f:
                 f.write(output)
             print(f"✓ Mapped and saved to {args.output}")
         else:
             print(output)
-        
+
         return 0
-    
+
     def _command_cell(self, args):
         """Convert USXD sections to/from Cells for archiving."""
         parser = argparse.ArgumentParser(description='Cell mapping for USXD documents')
@@ -661,13 +677,13 @@ class USXDCLI:
                 print(f"Error: cannot load document '{parsed.doc_id}'")
                 return 1
 
-        from core_py.usxd.cell_mapping import (
-            archive_document_sections,
-            add_cell_references_to_doc,
-            restore_sections_from_cells,
-            link_doc_to_cell_address,
-        )
         from core_py.cell import CellStore
+        from core_py.usxd.cell_mapping import (
+            add_cell_references_to_doc,
+            archive_document_sections,
+            link_doc_to_cell_address,
+            restore_sections_from_cells,
+        )
 
         store = CellStore()
 
@@ -737,9 +753,9 @@ class USXDCLI:
         if len(args) < 1:
             self._print_grid_help()
             return 0
-        
+
         subcommand = args[0]
-        
+
         if subcommand == "parse":
             return self._grid_command_parse(args[1:])
         elif subcommand == "render":
@@ -755,7 +771,7 @@ class USXDCLI:
             print(f"Unknown grid subcommand: {subcommand}")
             self._print_grid_help()
             return 1
-    
+
     def _print_grid_help(self):
         """Print grid command help"""
         grid_help = """
@@ -772,13 +788,13 @@ Usage:
   usxd grid interactive FILE
 """
         print(grid_help)
-    
+
     def _grid_command_parse(self, args):
         """Grid parse command"""
         if not USXD_EXT_AVAILABLE:
             print("Error: USXD extensions not available")
             return 1
-        
+
         parser = argparse.ArgumentParser(description='Parse ASCII grid')
         parser.add_argument('--text', '-t', type=str, help='ASCII grid text')
         parser.add_argument('--file', '-f', type=str, help='File containing ASCII grid')
@@ -786,67 +802,67 @@ Usage:
         parser.add_argument('--render', '-r', action='store_true', help='Render the parsed grid')
         parser.add_argument('--components', '-c', action='store_true', help='Show components')
         parser.add_argument('--auto-components', '-a', action='store_true', help='Auto-detect components')
-        
+
         args = parser.parse_args(args)
-        
+
         if not args.text and not args.file:
             print("Error: Please provide --text or --file")
             return 1
-        
+
         grid_text = args.text or Path(args.file).read_text()
         parsed_grid = self.parser.parse_grid(grid_text, args.title)
-        
+
         print(f"✓ Parsed grid: {parsed_grid.rows}x{parsed_grid.cols}")
         print(f"  Format: {parsed_grid.format.value}")
-        
+
         if args.auto_components:
             components = self.parser.split_into_components(grid_text)
             print(f"  Auto-detected components: {len(components)}")
             for comp in components:
                 print(f"    - {comp['id']}: {comp['name']} ({comp['size']} cells)")
-        
+
         if args.components:
             print(f"  Manual components: {len(parsed_grid.components)}")
             for comp_id, comp in parsed_grid.components.items():
                 print(f"    - {comp_id}: {comp.name}")
-        
+
         if args.render:
             rendered = self.renderer.render(parsed_grid, args.title)
             print("\nRendered:")
             print(rendered)
-        
+
         return 0
-    
+
     def _grid_command_render(self, args):
         """Grid render command"""
         if not USXD_EXT_AVAILABLE:
             print("Error: USXD extensions not available")
             return 1
-        
+
         parser = argparse.ArgumentParser(description='Render ASCII grid')
         parser.add_argument('file', type=str, nargs='?', help='File to render')
         parser.add_argument('--text', '-t', type=str, help='ASCII grid text')
         parser.add_argument('--title', type=str, help='Title')
         parser.add_argument('--no-color', action='store_true', help='No colors')
         parser.add_argument('--focus', type=str, help='Focus position (row,col)')
-        
+
         args = parser.parse_args(args)
-        
+
         if not args.file and not args.text:
             print("Error: Please provide file or --text")
             return 1
-        
+
         grid_text = None
         if args.file:
             grid_text = Path(args.file).read_text()
         elif args.text:
             grid_text = args.text
-        
+
         parsed_grid = self.parser.parse_grid(grid_text, args.title)
-        
+
         if args.no_color:
             self.renderer.config.color_mode = ColorMode.NONE
-        
+
         # Parse focus position
         focused_cell = None
         if args.focus:
@@ -855,35 +871,35 @@ Usage:
                 focused_cell = (row, col)
             except:
                 print("Warning: Invalid focus position")
-        
+
         rendered = self.renderer.render(parsed_grid, args.title, focused_cell)
         print(rendered)
-        
+
         return 0
-    
+
     def _grid_command_to_usxd(self, args):
         """Convert ASCII grid to USXD"""
         if not CORE_PY_AVAILABLE or not USXD_EXT_AVAILABLE:
             print("Error: Required modules not available")
             return 1
-        
+
         parser = argparse.ArgumentParser(description='Convert grid to USXD')
         parser.add_argument('file', type=str, help='ASCII grid file')
         parser.add_argument('--title', '-t', type=str, help='USXD document title')
         parser.add_argument('--output', '-o', type=str, required=True, help='Output USXD file')
         parser.add_argument('--with-mapping', '-m', action='store_true', help='Include component mapping')
-        
+
         args = parser.parse_args(args)
-        
+
         file_path = Path(args.file)
         if not file_path.exists():
             print(f"Error: File '{args.file}' not found")
             return 1
-        
+
         grid_text = file_path.read_text()
         grid_title = args.title or file_path.stem.replace('_', ' ').title()
         parsed_grid = self.parser.parse_grid(grid_text, grid_title)
-        
+
         # Create USXD document
         metadata = USXDMetadata(
             id=f"doc-{file_path.stem}-{int(time.time())}",
@@ -892,9 +908,9 @@ Usage:
             description=f'ASCII grid converted to USXD: {file_path.name}',
             format=USXDFormat.JSON
         )
-        
+
         doc = USXDDocument(metadata=metadata)
-        
+
         # Add parsed grid
         structured = self.parser.to_structured(parsed_grid)
         grid_section = USXDSection(
@@ -905,7 +921,7 @@ Usage:
             format='application/x-usxd-grid'
         )
         doc.add_section(grid_section)
-        
+
         # Add raw text
         raw_section = USXDSection(
             id='raw_text',
@@ -914,7 +930,7 @@ Usage:
             content=grid_text
         )
         doc.add_section(raw_section)
-        
+
         # Add component mapping if requested
         if args.with_mapping:
             layout = self.mapper.create_grid_layout(parsed_grid)
@@ -926,35 +942,35 @@ Usage:
                 format='application/x-usxd-thinui-layout'
             )
             doc.add_section(mapping_section)
-        
+
         # Save
         output_path = Path(args.output)
         doc.save_to_file(output_path)
-        
+
         print(f"✓ Converted to USXD: {output_path}")
         print(f"  ID: {doc.metadata.id}")
         print(f"  Title: {doc.metadata.title}")
         print(f"  Sections: {len(doc.sections)}")
-        
+
         return 0
-    
+
     def _grid_command_interactive(self, args):
         """Interactive grid viewer"""
         if not USXD_EXT_AVAILABLE:
             print("Error: USXD extensions not available")
             return 1
-        
+
         parser = argparse.ArgumentParser(description='Interactive grid viewer')
         parser.add_argument('file', type=str, nargs='?', help='ASCII grid file')
         parser.add_argument('--text', '-t', type=str, help='ASCII grid text')
         parser.add_argument('--title', type=str, help='Title override')
-        
+
         args = parser.parse_args(args)
-        
+
         if not args.file and not args.text:
             print("Error: Please provide file or --text")
             return 1
-        
+
         grid_text = None
         if args.file:
             file_path = Path(args.file)
@@ -964,28 +980,28 @@ Usage:
             grid_text = file_path.read_text()
         elif args.text:
             grid_text = args.text
-        
+
         parsed_grid = self.parser.parse_grid(grid_text, args.title)
-        
+
         # Run interactive
         print("Interactive Grid Viewer - Press ESC to exit, Arrow keys to navigate")
         self.renderer.run_interactive(parsed_grid, title=args.title or parsed_grid.title)
-        
+
         return 0
-    
+
     def _command_export(self, args):
         """Export USXD to other formats"""
         if not CORE_PY_AVAILABLE:
             print("Error: core_py not available")
             return 1
-        
+
         parser = argparse.ArgumentParser(description='Export USXD document')
         parser.add_argument('doc_id', type=str, help='Document ID or filename')
         parser.add_argument('--format', '-f', choices=['json', 'yaml', 'binder', 'html'], default='json', help='Export format')
         parser.add_argument('--output', '-o', type=str, help='Output file')
-        
+
         args = parser.parse_args(args)
-        
+
         try:
             doc = self.registry.load_document(args.doc_id)
         except:
@@ -994,7 +1010,7 @@ Usage:
             except Exception as e:
                 print(f"Error: {e}")
                 return 1
-        
+
         if args.format == 'json':
             content = doc.to_json()
         elif args.format == 'yaml':
@@ -1012,7 +1028,7 @@ Usage:
                     if section.content.get('type') == 'grid':
                         parsed_grid = self.parser.to_grid(section.content)
                         break
-            
+
             if parsed_grid:
                 content = self.mapper.map_to_html(parsed_grid)
             else:
@@ -1020,16 +1036,16 @@ Usage:
                 content = doc.to_json()
         else:
             content = doc.to_json()
-        
+
         if args.output:
             with open(args.output, 'w') as f:
                 f.write(content)
             print(f"✓ Exported to {args.output}")
         else:
             print(content)
-        
+
         return 0
-    
+
     def _usxd_to_binder(self, doc) -> str:
         """Convert USXD to Binder format"""
         metadata = BinderMetadata(
@@ -1040,45 +1056,45 @@ Usage:
             author=doc.metadata.author,
             created_at=doc.metadata.created_at
         )
-        
+
         binder = Binder(metadata=metadata)
-        
+
         for section in doc.sections:
             entry = BinderEntry(
                 name=section.name,
                 entry_type=section.section_type,
                 description=section.name if not section.name.startswith('#') else None
             )
-            
+
             if section.content is not None:
                 entry.data = section.content
-            
+
             binder.add_entry(entry)
-        
+
         return binder.to_json()
-    
+
     def _command_import(self, args):
         """Import content into USXD"""
         if not CORE_PY_AVAILABLE:
             print("Error: core_py not available")
             return 1
-        
+
         parser = argparse.ArgumentParser(description='Import into USXD')
         parser.add_argument('doc_id', type=str, nargs='?', help='Target document ID (create new if not provided)')
         parser.add_argument('--file', '-f', type=str, required=True, help='File to import')
         parser.add_argument('--title', '-t', type=str, help='Document title')
         parser.add_argument('--as-section', '-s', type=str, help='Import as section name')
         parser.add_argument('--type', type=str, default='content', help='Section type')
-        
+
         args = parser.parse_args(args)
-        
+
         file_path = Path(args.file)
         if not file_path.exists():
             print(f"Error: File '{args.file}' not found")
             return 1
-        
+
         content = file_path.read_text()
-        
+
         try:
             # Try JSON
             data = json.loads(content)
@@ -1088,7 +1104,7 @@ Usage:
                 data = yaml.safe_load(content)
             except:
                 data = content
-        
+
         # Create or load document
         if args.doc_id:
             try:
@@ -1096,7 +1112,7 @@ Usage:
             except:
                 print(f"Warning: Document '{args.doc_id}' not found, creating new")
                 args.doc_id = None
-        
+
         if not args.doc_id:
             metadata = USXDMetadata(
                 id=f"doc-{int(time.time())}",
@@ -1105,7 +1121,7 @@ Usage:
                 description=f'Imported from {file_path.name}'
             )
             doc = USXDDocument(metadata=metadata)
-        
+
         # Add as section
         section_name = args.as_section or file_path.stem.replace('_', ' ').title()
         section = USXDSection(
@@ -1115,7 +1131,7 @@ Usage:
             content=data
         )
         doc.add_section(section)
-        
+
         # Save
         filepath = self.registry.save_document(doc)
         print(f"✓ Imported to USXD: {filepath}")
@@ -1124,6 +1140,7 @@ Usage:
 
 # Import time for timestamp generation
 import time
+
 
 # Main entry point
 def main():

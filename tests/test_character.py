@@ -6,18 +6,18 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from narrator.character import (
+    ANSI_CHAR_SET,
+    SLOT_ALIAS_END,
+    SLOT_ALIAS_START,
+    SLOT_COMMAND_END,
+    SLOT_COMMAND_START,
+    SLOT_SNACK_END,
+    SLOT_SNACK_START,
+    SLOT_TOTAL,
     CharacterSystem,
     SlotEntry,
     ansi_char,
     slot_range_name,
-    ANSI_CHAR_SET,
-    SLOT_COMMAND_START,
-    SLOT_COMMAND_END,
-    SLOT_SNACK_START,
-    SLOT_SNACK_END,
-    SLOT_ALIAS_START,
-    SLOT_ALIAS_END,
-    SLOT_TOTAL,
 )
 
 
