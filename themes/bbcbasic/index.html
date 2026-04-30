@@ -4,7 +4,6 @@
   <title>uCode1 BBC BASIC Terminal</title>
   <link href="css.css?v=20260430" rel="stylesheet">
   <link href="../display.css?v=20260430" rel="stylesheet">
-  <script src="prefixfree.min.js"></script>
   <script src="../udos-widgets.js?v=20260430"></script>
 </head>
 <body>
@@ -183,10 +182,9 @@
     // ── Terminal setup ──────────────────────────────────────────────────────
     (function setupTerminal() {
       var output = document.getElementById('output');
-      var cursor = document.getElementById('cursorEl');
       var PROMPT_HTML = '<span class="prompt">&gt; </span><span class="cursor" id="cursorEl"></span>';
 
-      if (!output || !cursor) return;
+      if (!output) return;
 
       // Boot messages — clean, no extra line breaks, wrapped to grid
       var bootLines = [
