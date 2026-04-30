@@ -53,14 +53,7 @@
 
   <!-- Terminal viewport -->
   <div class="terminal-viewport" id="terminal" data-surface="bbcbasic">
-    <div class="boot-msg" id="bootMsg">
-      uCode1 <span class="highlight">***</span> bbc basic version 1.0
-      <span class="highlight">***</span> 64k ram &nbsp; 38911 bytes free
-    </div>
-    <div class="boot-detail" id="bootDetail"></div>
-    <div class="terminal-output" id="output">
-      <span class="prompt">&gt; </span><span class="cursor" id="cursorEl"></span>
-    </div>
+    <div class="terminal-output" id="output"></div>
   </div>
 
   <script>
@@ -83,10 +76,12 @@
       currentViewport = key;
       uDosWidgets.Display.resize(document.getElementById('terminal'), vp.cols, vp.rows);
       document.getElementById('ratioDisplay').textContent = vp.cols + 'x' + vp.rows;
-      document.querySelectorAll('.toolbar-btn[data-size]').forEach(function(b) {
+      document.querySelectorAll('.menu-btn[data-size]').forEach(function(b) {
         b.classList.toggle('active', b.dataset.size === key);
-      });      // Flash loader bars briefly
+      });
       flashLoader();
+      // Re-cascade content at new grid width
+      cascadeBuffer();
     }
 
     function flashLoader() {
@@ -102,30 +97,110 @@
       cols: 40, rows: 24
     });
 
+    // ── Terminal content buffer + cascade ───────────────────────────────────
+    var contentBuffer = [];     // array of plain-text lines (no HTML)
+    var cascadeTimer = null;
+    var ready = false;
+    var buf = '';
+
+    // Wrap text to fit `cols` characters per line, returns array of lines
+    function wrapText(text, cols) {
+      if (!text || text.length === 0) return [''];
+      var lines = [];
+      var words = text.split(' ');
+      var cur = '';
+      for (var i = 0; i < words.length; i++) {
+        var w = words[i];
+        if (w.length === 0) continue;
+        if (cur.length === 0) {
+          cur = w;
+        } else if ((cur + ' ' + w).length <= cols) {
+          cur += ' ' + w;
+        } else {
+          lines.push(cur);
+          cur = w;
+        }
+      }
+      if (cur.length > 0) lines.push(cur);
+      return lines;
+    }
+
+    // Add text to buffer and cascade
+    function addOutput(text) {
+      // Remove leading/trailing whitespace, collapse multiple newlines
+      text = text.replace(/^\s+/, '').replace(/\s+$/, '');
+      var cols = (VIEWPORTS[currentViewport] || VIEWPORTS['40x24']).cols;
+      var rawLines = text.split('\n');
+      for (var r = 0; r < rawLines.length; r++) {
+        var trimmed = rawLines[r].replace(/^\s+/, '').replace(/\s+$/, '');
+        if (trimmed.length === 0) { contentBuffer.push(''); continue; }
+        var wrapped = wrapText(trimmed, cols);
+        for (var w = 0; w < wrapped.length; w++) {
+          contentBuffer.push(wrapped[w]);
+        }
+      }
+      cascadeBuffer();
+    }
+
+    // Cascade: clear output, redraw buffered lines top-down
+    function cascadeBuffer() {
+      if (cascadeTimer) { clearInterval(cascadeTimer); cascadeTimer = null; }
+
+      var output = document.getElementById('output');
+      var cursor = document.getElementById('cursorEl');
+      if (!output) return;
+
+      output.innerHTML = '';  // clear
+
+      var lines = contentBuffer.slice();  // copy
+      var idx = 0;
+      var total = lines.length;
+      var intervalMs = total > 0 ? Math.min(300, Math.floor(3000 / total)) : 200;
+
+      if (total === 0) {
+        // Just show prompt
+        output.innerHTML = '<span class="prompt">&gt; </span><span class="cursor" id="cursorEl"></span>';
+        return;
+      }
+
+      cascadeTimer = setInterval(function() {
+        if (idx >= total) {
+          clearInterval(cascadeTimer);
+          cascadeTimer = null;
+          // Add prompt after all content
+          output.innerHTML += '<br><span class="prompt">&gt; </span><span class="cursor" id="cursorEl"></span>';
+          return;
+        }
+        var line = document.createElement('div');
+        line.className = 'resp';
+        line.textContent = lines[idx];
+        line.style.whiteSpace = 'pre';
+        output.appendChild(line);
+        idx++;
+      }, intervalMs);
+    }
+
     // ── Terminal setup ──────────────────────────────────────────────────────
     (function setupTerminal() {
       var output = document.getElementById('output');
       var cursor = document.getElementById('cursorEl');
-      var bootDetail = document.getElementById('bootDetail');
-      var PROMPT = '<span class="prompt">&gt; </span>';
+      var PROMPT_HTML = '<span class="prompt">&gt; </span><span class="cursor" id="cursorEl"></span>';
 
       if (!output || !cursor) return;
 
-      var buf = '';
-      var ready = false;
-
-      // Boot report — includes viewport size
-      bootDetail.innerHTML =
-        'display: 40x24 compact terminal &mdash; font: 24px C64 mono<br/>' +
-        'seed pod: CITY-INDEX-001 &mdash; ' +
-        '83 cities &middot; 17 timezones loaded<br/>' +
-        'local tz: AEST (UTC+10) &middot; ' +
-        'cities: Sydney, Melbourne, Brisbane, Auckland';
+      // Boot messages — clean, no extra line breaks, wrapped to grid
+      var bootLines = [
+        'uCode1 *** bbc basic version 1.0 *** 64k ram 38911 bytes free',
+        'display: 40x24 compact terminal font: 24px C64 mono',
+        'seed pod: CITY-INDEX-001 83 cities 17 timezones loaded',
+        'local tz: AEST (UTC+10) cities: Sydney Melbourne Brisbane Auckland'
+      ];
+      contentBuffer = contentBuffer.concat(bootLines);
 
       applyViewport('40x24');
-      document.getElementById('ratioDisplay').textContent = '40x24';
+      cascadeBuffer();
 
-      // Menu toggle — + always visible, toggles panel
+      // Menu toggle
       (function setupMenu() {
         var toggle = document.getElementById('menuToggle');
         var panel = document.getElementById('menuPanel');
@@ -174,64 +249,45 @@
       // Enable input after viewport appears
       setTimeout(function() { ready = true; }, 3800);
 
+      // ── Window resize → re-cascade content ─────────────────────────────
+      var bbcResizeTimer = null;
+      window.addEventListener('resize', function() {
+        if (bbcResizeTimer) clearTimeout(bbcResizeTimer);
+        bbcResizeTimer = setTimeout(function() { cascadeBuffer(); }, 1500);
+      });
+
       document.addEventListener('keydown', function(e) {
         if (!ready) return;
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
         if (e.key === 'Enter') {
           var cmd = buf.trim().toUpperCase();
-          var line = document.createElement('div');
-          line.innerHTML = PROMPT + buf;
-          output.appendChild(line);
+          contentBuffer.push('> ' + buf);
 
-          setTimeout(function() {
-            var resp = document.createElement('div');
-            resp.className = 'resp';
-            if (cmd === 'LOAD') resp.textContent = 'SEARCHING...\nLOADING';
-            else if (cmd === 'RUN') resp.textContent = 'RUNNING...\nOK';
-            else if (cmd === 'LIST') resp.textContent = ' 10 PRINT "HELLO"\n 20 GOTO 10';
-            else if (cmd === 'NEW') resp.textContent = 'NEW PROGRAM CLEARED';
-            else if (cmd === 'HELP') resp.textContent = 'COMMANDS: LOAD RUN LIST NEW HELP CLS CITIES SIZE';
-            else if (cmd === 'CLS') { output.innerHTML = ''; resp = null; }
-            else if (cmd === 'CITIES') resp.textContent = 'SEED POD: CITY-INDEX-001\n83 CITIES, 17 TIMEZONES\nLOCAL: SYDNEY, MELBOURNE, BRISBANE';
-            else if (cmd.indexOf('SIZE') === 0) {
-              var parts = cmd.split(' ');
-              if (parts.length === 2 && VIEWPORTS[parts[1]]) {
-                applyViewport(parts[1]);
-                resp.textContent = 'VIEWPORT: ' + VIEWPORTS[parts[1]].label;
-              } else {
-                resp.textContent = 'VIEWPORT: ' + currentViewport;
-                resp.innerHTML += '<br/>SIZE 20x10 | SIZE 32x16 | SIZE 40x24 | SIZE 80x30 | SIZE 48x48';
-              }
+          if (cmd === 'LOAD')        addOutput('SEARCHING... LOADING');
+          else if (cmd === 'RUN')    addOutput('RUNNING... OK');
+          else if (cmd === 'LIST')   addOutput('10 PRINT "HELLO" 20 GOTO 10');
+          else if (cmd === 'NEW')    addOutput('NEW PROGRAM CLEARED');
+          else if (cmd === 'HELP')   addOutput('COMMANDS: LOAD RUN LIST NEW HELP CLS CITIES SIZE');
+          else if (cmd === 'CLS')    { contentBuffer = []; cascadeBuffer(); }
+          else if (cmd === 'CITIES') addOutput('SEED POD: CITY-INDEX-001 83 CITIES 17 TIMEZONES LOCAL: SYDNEY MELBOURNE BRISBANE');
+          else if (cmd.indexOf('SIZE') === 0) {
+            var parts = cmd.split(' ');
+            if (parts.length === 2 && VIEWPORTS[parts[1]]) {
+              applyViewport(parts[1]);
+            } else {
+              addOutput('SIZES: 20x10 32x16 40x24 80x30 48x48');
             }
-            else if (cmd) { resp.className = 'error'; resp.textContent = '?UNKNOWN COMMAND'; }
-            else resp = null;
-            if (resp) output.appendChild(resp);
-            var p = document.createElement('div');
-            p.innerHTML = PROMPT;
-            p.appendChild(cursor);
-            output.appendChild(p);
-            output.scrollTop = output.scrollHeight;
-          }, 120);
+          }
+          else if (cmd.length > 0)   addOutput('UNKNOWN COMMAND: ' + cmd + ' (TYPE HELP)');
+
           buf = '';
           e.preventDefault();
         } else if (e.key === 'Backspace') {
-          if (buf.length > 0) {
-            buf = buf.slice(0, -1);
-            var last = output.lastElementChild;
-            if (last && last.innerHTML && last.innerHTML.indexOf(PROMPT) === 0) {
-              last.innerHTML = PROMPT + buf;
-              last.appendChild(cursor);
-            }
-          }
+          if (buf.length > 0) buf = buf.slice(0, -1);
           e.preventDefault();
         } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
           buf += e.key;
-          var last = output.lastElementChild;
-          if (last && last.innerHTML && last.innerHTML.indexOf(PROMPT) === 0) {
-            last.innerHTML = PROMPT + buf;
-            last.appendChild(cursor);
-          }
           e.preventDefault();
         }
       });
