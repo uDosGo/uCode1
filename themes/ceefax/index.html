@@ -201,9 +201,20 @@
 
     var pageKeys = Object.keys(pageData).map(Number).sort(function(a,b){return a-b});
     var emojiOn = false;
-    var fontSize = 25;       // base Teletext50 size
+    var fontSize = 25;       // base Teletext50 size (adjusted on init)
     var CHAR_ASPECT = 0.60;  // Teletext50 char width ratio
     var chromeRows = 6;      // header + sub-header + ticker + fasttext + nav + footer
+
+    // ── Adaptive initial font size ────────────────────────────────────────
+    function initFontSize() {
+      // Find a font size that gives at least ~40×25 grid in the current window
+      var vw = window.innerWidth;
+      var vh = window.innerHeight;
+      var idealW = vw / (40 * CHAR_ASPECT);  // font size for 40 cols
+      var idealH = vh / (25 + chromeRows);   // font size for 25 rows
+      var ideal = Math.min(idealW, idealH);
+      fontSize = Math.round(Math.min(35, Math.max(12, ideal)));
+    }
 
     // ── Dynamic grid calculation ─────────────────────────────────────────
     function calcGrid() {
@@ -232,16 +243,27 @@
       cascadePage(currentPage);
     }
 
+    // ── Font size controls ────────────────────────────────────────────────
+    function fontSmaller() { if (fontSize > 10) { fontSize -= 2; applyFont(); } }
+    function fontLarger()  { if (fontSize < 60) { fontSize += 2; applyFont(); } }
+    function fontReset()   { initFontSize(); applyFont(); }
+
     function updateGridInfo() {
       var g = calcGrid();
       document.getElementById('gridInfo').textContent = 'cols: ' + g.cols + ' · rows: ' + g.rows;
       document.getElementById('gridDims').textContent = g.cols + '×' + g.rows;
     }
 
-    // ── Font size controls ────────────────────────────────────────────────
-    function fontSmaller() { if (fontSize > 10) { fontSize -= 2; applyFont(); } }
-    function fontLarger()  { if (fontSize < 60) { fontSize += 2; applyFont(); } }
-    function fontReset()   { fontSize = 25; applyFont(); }
+    function applyFont() {
+      var el = document.getElementById('ceefax');
+      el.style.setProperty('--ttx-size', fontSize + 'px');
+      document.getElementById('fzLabel').textContent = fontSize;
+      document.getElementById('fontReset').textContent = fontSize + 'px';
+      // Sync to shared font scale (base: 25px Teletext50)
+      document.documentElement.style.setProperty('--udos-font-scale', (fontSize / 25).toFixed(2));
+      updateGridInfo();
+      cascadePage(currentPage);
+    }
 
     // ── Page rendering ────────────────────────────────────────────────────
     function renderAsGrid(line, emojiMode) {
@@ -364,6 +386,7 @@
     document.getElementById('fzLabel').addEventListener('click', fontReset);
 
     currentPage = 100;
+    initFontSize();
     applyFont();
     cascadePage(100);
     updateClock();
