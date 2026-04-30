@@ -21,9 +21,9 @@
   <div class="toolbar" id="toolbar">
     <div class="toolbar-group">
       <span class="toolbar-label">VIEW</span>
-      <button class="toolbar-btn" data-size="80x30">80×30</button>
-      <button class="toolbar-btn" data-size="40x25">40×25</button>
-      <button class="toolbar-btn" data-size="80x24">80×24</button>
+      <button class="toolbar-btn" data-size="80x30">80x30</button>
+      <button class="toolbar-btn" data-size="40x25">40x25</button>
+      <button class="toolbar-btn" data-size="80x24">80x24</button>
     </div>
     <div class="toolbar-divider"></div>
     <div class="toolbar-group">
@@ -96,23 +96,28 @@
       var vp = VIEWPORTS[key];
       if (!vp) return;
       currentViewport = key;
-      var term = document.getElementById('terminal');
-      term.style.setProperty('--vp-cols', vp.cols);
-      term.style.setProperty('--vp-rows', vp.rows);
-      term.style.width = 'calc(var(--vp-cols) * 1ch + 40px)';
-      term.style.height = 'calc(var(--vp-rows) * 1.5em + 40px)';
-      document.getElementById('ratioDisplay').textContent = vp.cols + '×' + vp.rows;
-      // Highlight active button
+      uDosWidgets.Display.resize(document.getElementById('terminal'), vp.cols, vp.rows);
+      document.getElementById('ratioDisplay').textContent = vp.cols + 'x' + vp.rows;
       document.querySelectorAll('.toolbar-btn[data-size]').forEach(function(b) {
         b.classList.toggle('active', b.dataset.size === key);
       });
     }
 
     function applyFontSize(delta) {
-      var term = document.getElementById('terminal');
       currentFontSize = Math.max(10, Math.min(24, currentFontSize + delta));
-      term.style.fontSize = currentFontSize + 'px';
-      document.getElementById('fontDisplay').textContent = currentFontSize + 'px';
+      var term = document.getElementById('terminal');
+      for (var i = 0; i < uDosWidgets.Display._surfaces.length; i++) {
+        if (uDosWidgets.Display._surfaces[i].el === term) {
+          uDosWidgets.Display._surfaces[i].baseFont = currentFontSize;
+          break;
+        }
+      }
+      uDosWidgets.Display.refresh();
+      // Update display after recalc
+      setTimeout(function() {
+        var sz = parseFloat(term.style.fontSize) || currentFontSize;
+        document.getElementById('fontDisplay').textContent = Math.round(sz) + 'px';
+      }, 50);
     }
 
     // ── Initialize display scaling ──────────────────────────────────────────
@@ -143,7 +148,7 @@
       // Apply initial viewport
       applyViewport('80x30');
       applyFontSize(0);
-      document.getElementById('ratioDisplay').textContent = '80×30';
+      document.getElementById('ratioDisplay').textContent = '80x30';
 
       // Toolbar auto-hide — show on hover near top
       (function setupToolbar() {

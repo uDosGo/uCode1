@@ -99,17 +99,9 @@ html, body {
   100% { opacity: 0; pointer-events: none; }
 }
 
-/* Terminal viewport — lighter blue, appears after scramble, size via CSS vars */
+/* Terminal viewport — scaled by display system */
 .terminal-viewport {
-  position: fixed;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  --vp-cols: 80;
-  --vp-rows: 30;
-  width: calc(var(--vp-cols) * 1ch + 40px);
-  height: calc(var(--vp-rows) * 1.5em + 40px);
-  max-width: calc(100vw - 48px);
-  max-height: calc(100vh - 48px);
+  /* udos-surface class handles positioning + sizing via display.js */
   background: #152a6b;
   border: 2px solid #4a6ac0;
   border-radius: 4px;
@@ -122,7 +114,6 @@ html, body {
   z-index: 5;
   opacity: 0;
   animation: viewportAppear 0.4s ease-out 3.3s forwards;
-  transition: width 0.3s ease, height 0.3s ease, font-size 0.2s ease;
 }
 
 @keyframes viewportAppear {

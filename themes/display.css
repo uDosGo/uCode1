@@ -7,13 +7,14 @@
  *
  * Usage:
  *   <link href="../display.css" rel="stylesheet">
- *   <div class="udos-surface" data-cols="80" data-rows="30" style="--udos-font-base:15px">
+ *   <div class="udos-surface" data-surface="bbcbasic">
  *
- * CSS Custom Properties (set per-surface):
+ * CSS Custom Properties (set via JS Display.init()):
  *   --udos-cols: 80          — character columns
  *   --udos-rows: 30          — character rows
  *   --udos-font-base: 15px   — base font size at 1:1 scale
- *   --udos-aspect: 0.55      — font width/height ratio (default ~0.55 for monospace)
+ *   --udos-aspect: 0.55      — font width/height ratio
+ *   --udos-font-size: 15px   — computed dynamic font size
  */
 
 :root {
@@ -21,19 +22,7 @@
   --udos-rows: 30;
   --udos-font-base: 15px;
   --udos-aspect: 0.55;
-  --udos-vp-w: 100vw;
-  --udos-vp-h: 100vh;
-  --udos-margin: 0.08;           /* 8% margin on each side */
-  --udos-avail-w: calc(var(--udos-vp-w) * (1 - 2 * var(--udos-margin)));
-  --udos-avail-h: calc(var(--udos-vp-h) * (1 - 2 * var(--udos-margin)));
-  --udos-font-from-w: calc(var(--udos-avail-w) / var(--udos-cols) / var(--udos-aspect));
-  --udos-font-from-h: calc(var(--udos-avail-h) / var(--udos-rows));
-  --udos-font-scale: min(var(--udos-font-from-w), var(--udos-font-from-h));
-  --udos-font-size: min(var(--udos-font-scale), var(--udos-font-base));
-
-  /* Calculated surface dimensions */
-  --udos-surface-w: calc(var(--udos-cols) * var(--udos-font-size) * var(--udos-aspect));
-  --udos-surface-h: calc(var(--udos-rows) * var(--udos-font-size) * 1.5);
+  --udos-font-size: 15px;
 }
 
 /* Base surface class — center in viewport */
@@ -42,22 +31,23 @@
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   font-size: var(--udos-font-size);
-  width: var(--udos-surface-w);
-  height: var(--udos-surface-h);
-  max-width: calc(100vw - 48px);
-  max-height: calc(100vh - 48px);
-  transition: font-size 0.3s ease, width 0.3s ease, height 0.3s ease;
-  overflow-y: auto;
   box-sizing: border-box;
-}
-
-/* Recalculate on resize — applied via JS */
-.udos-surface.recalc {
-  /* JS will update --udos-vp-w and --udos-vp-h */
+  transition: font-size 0.25s ease, width 0.25s ease, height 0.25s ease;
+  overflow-y: auto;
 }
 
 /* Surface-specific overrides */
 .udos-surface[data-surface="bbcbasic"] {
+  --udos-cols: 80;
+  --udos-rows: 30;
+  --udos-font-base: 15px;
+}
+.udos-surface[data-surface="ceefax"] {
+  --udos-cols: 40;
+  --udos-rows: 25;
+  --udos-font-base: 16px;
+  --udos-aspect: 0.60;
+}
   --udos-cols: 80;
   --udos-rows: 30;
   --udos-font-base: 15px;

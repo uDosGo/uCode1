@@ -120,14 +120,14 @@
   /**
    * uDosDisplay — viewport-aware font scaling for all surfaces.
    *
-   * Automatically adjusts a surface's font-size so its character grid
-   * (cols × rows) fills the available viewport proportionally.
+   * Auto-scales font-size so the character grid (cols × rows) fills the
+   * available viewport. Recalculates on resize. Buttons for viewport sizes
+   * that don't fit at current window size are auto-disabled.
    *
    * Usage:
-   *   uDosDisplay.init(document.getElementById('terminal'), { cols:80, rows:30, baseFont:15 });
-   *
-   * The surface element needs class "udos-surface" and the display.css stylesheet.
-   * Font size recalculates on window resize for seamless scaling.
+   *   uDosWidgets.Display.init(document.getElementById('terminal'), {
+   *     cols: 80, rows: 30, baseFont: 15, aspect: 0.55, margin: 0.08
+   *   });
    */
   uDosWidgets.Display = {
     _surfaces: [],
@@ -137,31 +137,37 @@
     init: function(el, opts) {
       if (!el) return;
       opts = opts || {};
-      var cols = opts.cols || parseInt(el.getAttribute('data-cols')) || 80;
-      var rows = opts.rows || parseInt(el.getAttribute('data-rows')) || 30;
-      var baseFont = opts.baseFont || parseFloat(el.style.getPropertyValue('--udos-font-base')) || 15;
-      var aspect = opts.aspect || parseFloat(el.style.getPropertyValue('--udos-aspect')) || 0.55;
+      var cols = opts.cols || 80;
+      var rows = opts.rows || 30;
+      var baseFont = opts.baseFont || 15;
+      var aspect = opts.aspect || 0.55;
       var margin = opts.margin !== undefined ? opts.margin : 0.08;
 
       el.classList.add('udos-surface');
-      el.style.setProperty('--udos-cols', cols);
-      el.style.setProperty('--udos-rows', rows);
-      el.style.setProperty('--udos-font-base', baseFont + 'px');
-      el.style.setProperty('--udos-aspect', aspect);
-      el.style.setProperty('--udos-margin', margin);
-
       this._surfaces.push({ el: el, cols: cols, rows: rows, baseFont: baseFont, aspect: aspect, margin: margin });
       this._recalc();
 
-      // Throttled resize listener
-      var self = this;
+      // Throttled resize listener (once)
       if (this._surfaces.length === 1) {
+        var self = this;
         window.addEventListener('resize', function() {
           if (self._rafId) cancelAnimationFrame(self._rafId);
           self._rafId = requestAnimationFrame(function() { self._recalc(); });
         });
       }
       return this;
+    },
+
+    /** Resize a surface to new dimensions (called by toolbar buttons) */
+    resize: function(el, cols, rows) {
+      for (var i = 0; i < this._surfaces.length; i++) {
+        if (this._surfaces[i].el === el) {
+          this._surfaces[i].cols = cols;
+          this._surfaces[i].rows = rows;
+          break;
+        }
+      }
+      this._recalc();
     },
 
     /** Recalculate font size for all registered surfaces */
@@ -173,34 +179,63 @@
         var s = this._surfaces[i];
         var el = s.el;
 
-        // Available space (accounting for margin)
-        var availW = vw * (1 - 2 * s.margin);
-        var availH = vh * (1 - 2 * s.margin);
+        // Available space after margin
+        var margin = s.margin;
+        var availW = vw * (1 - 2 * margin);
+        var availH = vh * (1 - 2 * margin);
 
         // Font size from width and height constraints
         var fontFromW = availW / s.cols / s.aspect;
-        var fontFromH = availH / s.rows;
-        var fontScale = Math.min(fontFromW, fontFromH);
+        var fontFromH = availH / (s.rows * 1.5);
+        var fontSize = Math.min(fontFromW, fontFromH);
 
-        // Clamp to base font (don't exceed it)
-        var fontSize = Math.min(fontScale, s.baseFont);
-        // But don't go below 8px readability
-        fontSize = Math.max(fontSize, 8);
+        // Clamp: min 4px (readable at tiny), max = baseFont
+        fontSize = Math.min(fontSize, s.baseFont);
+        fontSize = Math.max(fontSize, 4);
 
-        el.style.setProperty('--udos-vp-w', vw + 'px');
-        el.style.setProperty('--udos-vp-h', vh + 'px');
-        el.style.setProperty('--udos-font-size', fontSize + 'px');
+        var padding = 40; // 20px each side
+        var surfW = s.cols * fontSize * s.aspect + padding;
+        var surfH = s.rows * fontSize * 1.5 + padding;
+
         el.style.fontSize = fontSize + 'px';
-
-        // Calculate and set exact surface dimensions
-        var surfW = s.cols * fontSize * s.aspect;
-        var surfH = s.rows * fontSize * 1.5;
         el.style.width = surfW + 'px';
         el.style.height = surfH + 'px';
+        el.style.setProperty('--udos-font-size', fontSize + 'px');
       }
+
+      // Update toolbar buttons — disable presets that don't fit
+      this._updateToolbarButtons(vw, vh);
     },
 
-    /** Manually trigger recalculation (e.g. after viewport change) */
+    /** Disable viewport buttons whose preset doesn't fit the current window */
+    _updateToolbarButtons: function(vw, vh) {
+      var presets = [
+        { cols: 80, rows: 30, label: '80x30' },
+        { cols: 40, rows: 25, label: '40x25' },
+        { cols: 80, rows: 24, label: '80x24' },
+      ];
+      var margin = 0.08;
+      var minFont = 5;
+      document.querySelectorAll('.toolbar-btn[data-size]').forEach(function(btn) {
+        var key = btn.getAttribute('data-size');
+        var preset = null;
+        for (var p = 0; p < presets.length; p++) {
+          if (presets[p].label === key) { preset = presets[p]; break; }
+        }
+        if (!preset) return;
+        // Minimum window size needed for this preset at minFont
+        var needW = (preset.cols * minFont * 0.55 + 40) / (1 - 2 * margin);
+        var needH = (preset.rows * minFont * 1.5 + 40) / (1 - 2 * margin);
+        var fits = (vw >= needW && vh >= needH);
+        btn.disabled = !fits;
+        btn.style.opacity = fits ? '1' : '0.35';
+        btn.style.cursor = fits ? 'pointer' : 'not-allowed';
+        // Show title explaining why disabled
+        btn.title = fits ? 'Switch to ' + key : key + ' needs ' + Math.ceil(needW) + 'x' + Math.ceil(needH) + 'px window';
+      });
+    },
+
+    /** Manually trigger recalculation */
     refresh: function() { this._recalc(); },
 
     /** Get current font size for a surface */
