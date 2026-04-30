@@ -146,18 +146,17 @@
       if (cascadeTimer) { clearInterval(cascadeTimer); cascadeTimer = null; }
 
       var output = document.getElementById('output');
-      var cursor = document.getElementById('cursorEl');
       if (!output) return;
 
-      output.innerHTML = '';  // clear
+      output.innerHTML = '';
+      var vp = document.getElementById('terminal');
 
-      var lines = contentBuffer.slice();  // copy
+      var lines = contentBuffer.slice();
       var idx = 0;
       var total = lines.length;
       var intervalMs = total > 0 ? Math.min(300, Math.floor(3000 / total)) : 200;
 
       if (total === 0) {
-        // Just show prompt
         output.innerHTML = '<span class="prompt">&gt; </span><span class="cursor" id="cursorEl"></span>';
         return;
       }
@@ -166,8 +165,8 @@
         if (idx >= total) {
           clearInterval(cascadeTimer);
           cascadeTimer = null;
-          // Add prompt after all content
-          output.innerHTML += '<br><span class="prompt">&gt; </span><span class="cursor" id="cursorEl"></span>';
+          output.innerHTML += '<span class="prompt">&gt; </span><span class="cursor" id="cursorEl"></span>';
+          if (vp) vp.scrollTop = vp.scrollHeight;
           return;
         }
         var line = document.createElement('div');
@@ -176,6 +175,7 @@
         line.style.whiteSpace = 'pre-wrap';
         line.style.wordBreak = 'break-word';
         output.appendChild(line);
+        if (vp) vp.scrollTop = vp.scrollHeight;
         idx++;
       }, intervalMs);
     }
@@ -183,18 +183,32 @@
     // ── Terminal setup ──────────────────────────────────────────────────────
     (function setupTerminal() {
       var output = document.getElementById('output');
+      var vp = document.getElementById('terminal');
       if (!output) return;
 
-      // Boot messages — clean, no extra line breaks, wrapped to grid
+      // Boot messages — render instantly (no cascade delay for initial display)
       var bootLines = [
         'uCode1 *** bbc basic version 1.0 *** 64k ram 38911 bytes free',
         'display: 40x24 compact terminal font: 24px C64 mono',
         'seed pod: CITY-INDEX-001 83 cities 17 timezones loaded',
         'local tz: AEST (UTC+10) cities: Sydney Melbourne Brisbane Auckland'
       ];
-      contentBuffer = contentBuffer.concat(bootLines);
+      contentBuffer = bootLines.slice();
+      output.innerHTML = '';
+      bootLines.forEach(function(l) {
+        var d = document.createElement('div');
+        d.className = 'resp';
+        d.textContent = l;
+        d.style.whiteSpace = 'pre-wrap';
+        d.style.wordBreak = 'break-word';
+        output.appendChild(d);
+      });
+      output.innerHTML += '<span class="prompt">&gt; </span><span class="cursor" id="cursorEl"></span>';
+      if (vp) vp.scrollTop = vp.scrollHeight;
+
       applyViewport('40x24');
-      // applyViewport already calls cascadeBuffer() — no duplicate needed
+      // applyViewport calls cascadeBuffer — but since content is already
+      // rendered, the cascade just re-appends it (no need for boot delay)
 
       // Menu toggle
       (function setupMenu() {
