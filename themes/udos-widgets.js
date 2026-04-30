@@ -115,6 +115,100 @@
     });
   };
 
+  // ── Display Scaling ─────────────────────────────────────────────────────
+
+  /**
+   * uDosDisplay — viewport-aware font scaling for all surfaces.
+   *
+   * Automatically adjusts a surface's font-size so its character grid
+   * (cols × rows) fills the available viewport proportionally.
+   *
+   * Usage:
+   *   uDosDisplay.init(document.getElementById('terminal'), { cols:80, rows:30, baseFont:15 });
+   *
+   * The surface element needs class "udos-surface" and the display.css stylesheet.
+   * Font size recalculates on window resize for seamless scaling.
+   */
+  uDosWidgets.Display = {
+    _surfaces: [],
+    _rafId: null,
+
+    /** Register a surface for auto-scaling */
+    init: function(el, opts) {
+      if (!el) return;
+      opts = opts || {};
+      var cols = opts.cols || parseInt(el.getAttribute('data-cols')) || 80;
+      var rows = opts.rows || parseInt(el.getAttribute('data-rows')) || 30;
+      var baseFont = opts.baseFont || parseFloat(el.style.getPropertyValue('--udos-font-base')) || 15;
+      var aspect = opts.aspect || parseFloat(el.style.getPropertyValue('--udos-aspect')) || 0.55;
+      var margin = opts.margin !== undefined ? opts.margin : 0.08;
+
+      el.classList.add('udos-surface');
+      el.style.setProperty('--udos-cols', cols);
+      el.style.setProperty('--udos-rows', rows);
+      el.style.setProperty('--udos-font-base', baseFont + 'px');
+      el.style.setProperty('--udos-aspect', aspect);
+      el.style.setProperty('--udos-margin', margin);
+
+      this._surfaces.push({ el: el, cols: cols, rows: rows, baseFont: baseFont, aspect: aspect, margin: margin });
+      this._recalc();
+
+      // Throttled resize listener
+      var self = this;
+      if (this._surfaces.length === 1) {
+        window.addEventListener('resize', function() {
+          if (self._rafId) cancelAnimationFrame(self._rafId);
+          self._rafId = requestAnimationFrame(function() { self._recalc(); });
+        });
+      }
+      return this;
+    },
+
+    /** Recalculate font size for all registered surfaces */
+    _recalc: function() {
+      var vw = window.innerWidth;
+      var vh = window.innerHeight;
+
+      for (var i = 0; i < this._surfaces.length; i++) {
+        var s = this._surfaces[i];
+        var el = s.el;
+
+        // Available space (accounting for margin)
+        var availW = vw * (1 - 2 * s.margin);
+        var availH = vh * (1 - 2 * s.margin);
+
+        // Font size from width and height constraints
+        var fontFromW = availW / s.cols / s.aspect;
+        var fontFromH = availH / s.rows;
+        var fontScale = Math.min(fontFromW, fontFromH);
+
+        // Clamp to base font (don't exceed it)
+        var fontSize = Math.min(fontScale, s.baseFont);
+        // But don't go below 8px readability
+        fontSize = Math.max(fontSize, 8);
+
+        el.style.setProperty('--udos-vp-w', vw + 'px');
+        el.style.setProperty('--udos-vp-h', vh + 'px');
+        el.style.setProperty('--udos-font-size', fontSize + 'px');
+        el.style.fontSize = fontSize + 'px';
+
+        // Calculate and set exact surface dimensions
+        var surfW = s.cols * fontSize * s.aspect;
+        var surfH = s.rows * fontSize * 1.5;
+        el.style.width = surfW + 'px';
+        el.style.height = surfH + 'px';
+      }
+    },
+
+    /** Manually trigger recalculation (e.g. after viewport change) */
+    refresh: function() { this._recalc(); },
+
+    /** Get current font size for a surface */
+    getFontSize: function(el) {
+      return parseFloat(el.style.fontSize) || 0;
+    },
+  };
+
   // Auto-init: render widgets on page load, refresh every 30s
   if (typeof document !== 'undefined') {
     document.addEventListener('DOMContentLoaded', () => {

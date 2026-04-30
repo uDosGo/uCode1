@@ -3,6 +3,7 @@
 <head>
   <title>uCode1 BBC BASIC Terminal</title>
   <link href="css.css" rel="stylesheet">
+  <link href="../display.css" rel="stylesheet">
   <script src="prefixfree.min.js"></script>
   <script src="../udos-widgets.js"></script>
 </head>
@@ -39,7 +40,7 @@
   </div>
 
   <!-- Terminal viewport — appears after scramble -->
-  <div class="terminal-viewport" id="terminal">
+  <div class="terminal-viewport" id="terminal" data-surface="bbcbasic">
     <div class="boot-msg" id="bootMsg">
       uCode1 <span class="highlight">***</span> bbc basic version 1.0
       <span class="highlight">***</span> 64k ram &nbsp; 38911 bytes free
@@ -113,6 +114,11 @@
       term.style.fontSize = currentFontSize + 'px';
       document.getElementById('fontDisplay').textContent = currentFontSize + 'px';
     }
+
+    // ── Initialize display scaling ──────────────────────────────────────────
+    uDosWidgets.Display.init(document.getElementById('terminal'), {
+      cols: 80, rows: 30, baseFont: 15, aspect: 0.55, margin: 0.08
+    });
 
     // ── Terminal setup ──────────────────────────────────────────────────────
     (function setupTerminal() {

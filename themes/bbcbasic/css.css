@@ -34,6 +34,31 @@ html, body {
   z-index: 1;
 }
 
+/* Horizontal color bar decrunch — pulses behind scramble during boot */
+.bluescreen::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 2;
+  animation: decrunch 0.8s steps(1) 6 both;
+}
+
+@keyframes decrunch {
+  0%   { background: #20398d; }
+  8%   { background: #b8b8b8; }
+  16%  { background: #5090d0; }
+  24%  { background: #98ff98; }
+  32%  { background: #808080; }
+  40%  { background: #484848; }
+  48%  { background: #c87870; }
+  56%  { background: #472b1b; }
+  64%  { background: #a04800; }
+  72%  { background: #f0e858; }
+  80%  { background: #181090; }
+  88%  { background: #20398d; }
+  100% { background: #20398d; }
+}
+
 /* Pulsing scramble overlay — 3 seconds then fades */
 .scramble-overlay {
   position: fixed;
