@@ -4,62 +4,70 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ceefax — uDos Teletext</title>
+  <link href="../display.css" rel="stylesheet">
   <script src="../udos-widgets.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: #000; color: #0ff;
-      font-family: 'VT323', 'Courier New', monospace;
-      padding: 20px; min-height: 100vh;
-    }
-    .ceefax {
-      max-width: 780px; margin: 0 auto;
-      border: 2px solid #0ff; padding: 12px;
-    }
-    .header {
-      display: flex; justify-content: space-between;
-      border-bottom: 2px solid #0ff; padding-bottom: 6px; margin-bottom: 10px;
-      font-size: 18px;
-    }
-    .page-num { color: #ff0; }
-    .content { font-size: 16px; line-height: 1.4; white-space: pre; }
-    .content .highlight { color: #ff0; }
-    .content .flash { animation: blink 1s step-end infinite; }
-    @keyframes blink { 50% { opacity: 0; } }
-    .footer {
-      border-top: 2px solid #0ff; margin-top: 12px; padding-top: 6px;
-      display: flex; justify-content: space-between; font-size: 14px;
-    }
-    .widget-area {
-      border: 1px solid #0ff; padding: 8px; margin-top: 10px;
-      font-size: 14px;
-    }
-    .widget-area h3 { color: #ff0; font-size: 14px; margin-bottom: 6px; }
-    .key {
-      color: #ff0; background: #033; padding: 1px 6px;
-      border: 1px solid #0ff; cursor: pointer;
-    }
-    .key:hover { background: #0ff; color: #000; }
-    .nav-bar {
-      display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;
-    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#000;color:#0ff;font-family:'VT323','Courier New',monospace}
+
+    .ceefax-surface{width:calc(40ch + 4ch);margin:0 auto;padding:1ch;color:#0ff;font-size:24px}
+
+    .ceefax-header{display:flex;justify-content:space-between;border-bottom:2px solid #0ff;padding-bottom:0.5em;margin-bottom:0.5em}
+    .page-num{color:#ff0}
+    .ceefax-footer{border-top:2px solid #0ff;margin-top:0.5em;padding-top:0.5em;display:flex;justify-content:space-between}
+
+    .content{white-space:pre;line-height:1}
+    .content .highlight{color:#ff0}
+    .content .flash{animation:blink 1s step-end infinite}
+    @keyframes blink{50%{opacity:0}}
+
+    .widget-area{border:1px solid #0ff;padding:0.5em;margin-top:0.8em;font-size:0.7em}
+    .widget-area h3{color:#ff0;margin-bottom:0.3em}
+    .key{color:#ff0;background:#033;padding:0.1em 0.3em;border:1px solid #0ff;cursor:pointer}
+    .key:hover{background:#0ff;color:#000}
+    .nav-bar{display:flex;gap:0.5em;margin-top:0.8em;flex-wrap:wrap}
   </style>
 </head>
 <body>
-  <div class="ceefax">
-    <div class="header">
+
+  <!-- + Menu toggle -->
+  <div class="menu-toggle" id="menuToggle">+</div>
+  <div class="menu-panel" id="menuPanel">
+    <div class="menu-header">
+      <span class="menu-title">TELETEXT</span>
+      <button class="menu-close" id="menuClose">x</button>
+    </div>
+    <div class="menu-section">
+      <span class="menu-label">VIEWPORT</span>
+      <div class="menu-grid">
+        <button class="menu-btn active" data-size="40x25">40x25</button>
+        <button class="menu-btn" data-size="80x24">80x24</button>
+        <button class="menu-btn" data-size="20x10">20x10</button>
+      </div>
+    </div>
+    <div class="menu-section">
+      <span class="menu-label">SYSTEM</span>
+      <div class="menu-info">
+        <div>seed: CITY-INDEX-001</div>
+        <div>cities: 83 · tz: 17</div>
+        <div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(74,106,192,0.3);color:#3a5090">VT323 · Ceefax v0.1</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ceefax-surface" id="ceefax">
+    <div class="ceefax-header">
       <span>uDos CEEFAX</span>
-      <span class="page-num">PAGE 101</span>
+      <span class="page-num" id="pageNum">PAGE 100</span>
       <span id="clock">00:00</span>
     </div>
 
-    <div class="content" id="mainContent">
-    </div>
+    <div class="content" id="mainContent"></div>
 
     <div class="widget-area">
       <h3>⚡ SYSTEM STATUS</h3>
-      <div data-udos-widget="fullDashboard" style="font-size:12px;"></div>
+      <div data-udos-widget="fullDashboard" style="font-size:0.6em;"></div>
     </div>
 
     <div class="nav-bar">
@@ -70,123 +78,50 @@
       <span class="key" onclick="loadPage(888)">888</span>
     </div>
 
-    <div class="footer">
+    <div class="ceefax-footer">
       <span id="subpage">SUBPAGE 01</span>
       <span id="date"></span>
-      <span>uCode2 Ceefax v0.1</span>
+      <span>Ceefax v0.1</span>
     </div>
   </div>
 
   <script>
-    const pages = {
-      100: [
-        '┌──────────────────────────────────────────┐',
-        '│                                          │',
-        '│   🏠 <span class="highlight">uDos Ceefax — Main Menu</span>              │',
-        '│                                          │',
-        '│   101  System Dashboard                   │',
-        '│   200  Vault Notes                        │',
-        '│   300  Snack Runner                       │',
-        '│   400  Spatial Map                        │',
-        '│   888  About                              │',
-        '│                                          │',
-        '│   <span class="flash">►</span> Press a number to navigate              │',
-        '└──────────────────────────────────────────┘',
-      ],
-      101: [
-        '┌──────────────────────────────────────────┐',
-        '│                                          │',
-        '│   <span class="highlight">System Dashboard</span>                          │',
-        '│   See widget panel below for live stats   │',
-        '│                                          │',
-        '│   Components:                            │',
-        '│   • uCode1 Python Core     ✅ ACTIVE     │',
-        '│   • uCode2 Rust Backend    ✅ ACTIVE     │',
-        '│   • ThinUI Tauri Shell     ✅ STANDBY    │',
-        '│   • MCP Socket             ✅ LISTENING  │',
-        '│                                          │',
-        '└──────────────────────────────────────────┘',
-      ],
-      200: [
-        '┌──────────────────────────────────────────┐',
-        '│                                          │',
-        '│   <span class="highlight">Vault Notes</span>                               │',
-        '│                                          │',
-        '│   Your knowledge base is accessible via: │',
-        '│                                          │',
-        '│   $ ucode vault list /                    │',
-        '│   $ ucode vault read <path>               │',
-        '│   $ ucode vault search <query>            │',
-        '│                                          │',
-        '│   Or browse in notionish surface          │',
-        '│                                          │',
-        '└──────────────────────────────────────────┘',
-      ],
-      300: [
-        '┌──────────────────────────────────────────┐',
-        '│                                          │',
-        '│   <span class="highlight">Snack Runner</span>                               │',
-        '│                                          │',
-        '│   Available snacks:                      │',
-        '│   • snack:hello — Hello World            │',
-        '│   • snack:bash — Run bash script         │',
-        '│   • snack:python — Run Python script     │',
-        '│                                          │',
-        '│   $ ucode snack list                      │',
-        '│   $ ucode snack run <id>                  │',
-        '│                                          │',
-        '└──────────────────────────────────────────┘',
-      ],
-      888: [
-        '┌──────────────────────────────────────────┐',
-        '│                                          │',
-        '│   <span class="highlight">About uDos Ceefax</span>                          │',
-        '│                                          │',
-        '│   Ceefax Teletext Emulator               │',
-        '│   Part of the uDos Ecosystem             │',
-        '│                                          │',
-        '│   Version: 0.1.0                         │',
-        '│   Engine: uCode1 Python + uCode2 Rust     │',
-        '│   Surface: HTML/CSS Teletext             │',
-        '│   Protocol: MCP over Unix socket         │',
-        '│                                          │',
-        '│   <span class="flash">© 2026 uDos Team</span>                            │',
-        '└──────────────────────────────────────────┘',
-      ],
+    var pages = {
+      100:['┌──────────────────────────────────────┐','│                                      │','│  uDos Ceefax — Main Menu             │','│                                      │','│  101  System Dashboard                │','│  200  Vault Notes                     │','│  300  Snack Runner                    │','│  400  Spatial Map                     │','│  888  About                           │','│                                      │','│  <span class="flash">►</span> Press a number to navigate         │','└──────────────────────────────────────┘'],
+      101:['┌──────────────────────────────────────┐','│                                      │','│  System Dashboard                     │','│                                      │','│  • uCode1 Core        ✅ ACTIVE      │','│  • uCode2 Rust        ✅ ACTIVE      │','│  • ThinUI Shell       ✅ STANDBY     │','│  • MCP Socket         ✅ LISTENING   │','│                                      │','│  Widget panel below for live stats   │','└──────────────────────────────────────┘'],
+      200:['┌──────────────────────────────────────┐','│                                      │','│  Vault Notes                          │','│                                      │','│  ucode vault list /                   │','│  ucode vault read <path>              │','│  ucode vault search <query>           │','│                                      │','│  Browse in notionish surface          │','└──────────────────────────────────────┘'],
+      300:['┌──────────────────────────────────────┐','│                                      │','│  Snack Runner                         │','│                                      │','│  • snack:hello — Hello World          │','│  • snack:bash — Bash script           │','│  • snack:python — Python script       │','│                                      │','│  ucode snack list                     │','│  ucode snack run <id>                 │','└──────────────────────────────────────┘'],
+      888:['┌──────────────────────────────────────┐','│                                      │','│  About uDos Ceefax                    │','│                                      │','│  Version: 0.1.0                       │','│  Engine: uCode1 + uCode2             │','│  Font: VT323 / Teletext              │','│  Grid: 40×25 characters              │','│                                      │','│  <span class="flash">© 2026 uDos</span>                          │','└──────────────────────────────────────┘']
     };
 
-    function loadPage(num) {
-      const content = pages[num] || pages[100];
-      document.querySelector('.page-num').textContent = `PAGE ${num}`;
-      document.getElementById('mainContent').innerHTML = content.join('\n');
+    function loadPage(num){
+      document.getElementById('pageNum').textContent='PAGE '+num;
+      document.getElementById('mainContent').innerHTML=(pages[num]||pages[100]).join('\n');
     }
 
-    // Clock update
-    function updateClock() {
-      const now = new Date();
-      document.getElementById('clock').textContent =
-        String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-      document.getElementById('date').textContent = now.toLocaleDateString('en-GB');
-    }
-
-    // Keyboard nav: type page number
-    let pageBuffer = '';
-    document.addEventListener('keydown', function(e) {
-      if (e.key >= '0' && e.key <= '9') {
-        pageBuffer += e.key;
-        if (pageBuffer.length >= 3) {
-          const page = parseInt(pageBuffer);
-          if (pages[page]) loadPage(page);
-          pageBuffer = '';
-        }
-      } else {
-        pageBuffer = '';
-      }
+    var buf='';
+    document.addEventListener('keydown',function(e){
+      if(e.key>='0'&&e.key<='9'){buf+=e.key;if(buf.length>=3){var p=parseInt(buf);if(pages[p])loadPage(p);buf=''}}
+      else buf='';
     });
 
-    loadPage(100);
-    updateClock();
-    setInterval(updateClock, 10000);
+    function updateClock(){
+      var n=new Date();
+      document.getElementById('clock').textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+      document.getElementById('date').textContent=n.toLocaleDateString('en-GB');
+    }
+
+    loadPage(100);updateClock();setInterval(updateClock,10000);
+
+    // Menu toggle
+    (function(){
+      var t=document.getElementById('menuToggle'),p=document.getElementById('menuPanel'),c=document.getElementById('menuClose'),o=false;
+      function op(){o=true;p.classList.add('open');t.textContent='x';t.classList.add('active')}
+      function cl(){o=false;p.classList.remove('open');t.textContent='+';t.classList.remove('active')}
+      t.addEventListener('click',function(e){e.stopPropagation();o?cl():op()});
+      c.addEventListener('click',cl);
+      document.addEventListener('click',function(e){if(o&&!p.contains(e.target)&&e.target!==t)cl()});
+    })();
   </script>
 </body>
 </html>
