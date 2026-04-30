@@ -210,9 +210,15 @@
     /** Disable viewport buttons whose preset doesn't fit the current window */
     _updateToolbarButtons: function(vw, vh) {
       var presets = [
-        { cols: 80, rows: 30, label: '80x30' },
-        { cols: 40, rows: 25, label: '40x25' },
+        { cols: 20, rows: 10, label: '20x10' },
+        { cols: 32, rows: 16, label: '32x16' },
+        { cols: 40, rows: 16, label: '40x16' },
+        { cols: 40, rows: 24, label: '40x24' },
+        { cols: 64, rows: 16, label: '64x16' },
+        { cols: 64, rows: 24, label: '64x24' },
         { cols: 80, rows: 24, label: '80x24' },
+        { cols: 80, rows: 20, label: '80x20' },
+        { cols: 48, rows: 48, label: '48x48' },
       ];
       var margin = 0.08;
       var minFont = 5;

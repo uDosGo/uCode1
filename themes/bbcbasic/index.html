@@ -21,9 +21,15 @@
   <div class="toolbar" id="toolbar">
     <div class="toolbar-group">
       <span class="toolbar-label">VIEW</span>
-      <button class="toolbar-btn" data-size="80x30">80x30</button>
-      <button class="toolbar-btn" data-size="40x25">40x25</button>
+      <button class="toolbar-btn" data-size="20x10">20x10</button>
+      <button class="toolbar-btn" data-size="32x16">32x16</button>
+      <button class="toolbar-btn" data-size="40x16">40x16</button>
+      <button class="toolbar-btn" data-size="40x24">40x24</button>
+      <button class="toolbar-btn" data-size="64x16">64x16</button>
+      <button class="toolbar-btn" data-size="64x24">64x24</button>
       <button class="toolbar-btn" data-size="80x24">80x24</button>
+      <button class="toolbar-btn" data-size="80x20">80x20</button>
+      <button class="toolbar-btn" data-size="48x48">48x48</button>
     </div>
     <div class="toolbar-divider"></div>
     <div class="toolbar-group">
@@ -45,7 +51,7 @@
       uCode1 <span class="highlight">***</span> bbc basic version 1.0
       <span class="highlight">***</span> 64k ram &nbsp; 38911 bytes free
     </div>
-    <div class="boot-detail" id="bootDetail" style="font-size:12px;color:#7b96e0;line-height:1.4;margin-bottom:8px;"></div>
+    <div class="boot-detail" id="bootDetail"></div>
     <div class="terminal-output" id="output">
       <span class="prompt">&gt; </span><span class="cursor" id="cursorEl"></span>
     </div>
@@ -56,11 +62,17 @@
   <script>
     // ── Viewport presets ────────────────────────────────────────────────────
     var VIEWPORTS = {
-      '80x30': { cols: 80, rows: 30, label: '80x30 TERMINAL' },
-      '40x25': { cols: 40, rows: 25, label: '40x25 TELETEXT' },
-      '80x24': { cols: 80, rows: 24, label: '80x24 STANDARD' },
+      '20x10': { cols: 20, rows: 10, label: '20x10 TINY' },
+      '32x16': { cols: 32, rows: 16, label: '32x16 NANO' },
+      '40x16': { cols: 40, rows: 16, label: '40x16 MICRO' },
+      '40x24': { cols: 40, rows: 24, label: '40x24 COMPACT' },
+      '64x16': { cols: 64, rows: 16, label: '64x16 SMALL' },
+      '64x24': { cols: 64, rows: 24, label: '64x24 STANDARD' },
+      '80x24': { cols: 80, rows: 24, label: '80x24 CLASSIC' },
+      '80x20': { cols: 80, rows: 20, label: '80x20 WIDE' },
+      '48x48': { cols: 48, rows: 48, label: '48x48 SQUARE' },
     };
-    var currentViewport = '80x30';
+    var currentViewport = '80x24';
     var currentFontSize = 15;
 
     // ── Generate scramble text ──────────────────────────────────────────────
@@ -139,16 +151,16 @@
 
       // Boot report — includes viewport size
       bootDetail.innerHTML =
-        'display: 80x30 terminal &mdash; font: 15px C64 mono<br/>' +
+        'display: 80x24 classic terminal &mdash; font: 15px C64 mono<br/>' +
         'seed pod: CITY-INDEX-001 &mdash; ' +
         '83 cities &middot; 17 timezones loaded<br/>' +
         'local tz: AEST (UTC+10) &middot; ' +
         'cities: Sydney, Melbourne, Brisbane, Auckland';
 
       // Apply initial viewport
-      applyViewport('80x30');
+      applyViewport('80x24');
       applyFontSize(0);
-      document.getElementById('ratioDisplay').textContent = '80x30';
+      document.getElementById('ratioDisplay').textContent = '80x24';
 
       // Toolbar auto-hide — show on hover near top
       (function setupToolbar() {
@@ -197,7 +209,7 @@
                 resp.textContent = 'VIEWPORT: ' + VIEWPORTS[parts[1]].label;
               } else {
                 resp.textContent = 'VIEWPORT: ' + currentViewport + ' (' + currentFontSize + 'px)';
-                resp.innerHTML += '<br/>SIZE 80x30 | SIZE 40x25 | SIZE 80x24';
+                resp.innerHTML += '<br/>SIZE 20x10 | SIZE 32x16 | SIZE 40x16 | SIZE 40x24<br/>SIZE 64x16 | SIZE 64x24 | SIZE 80x24 | SIZE 80x20 | SIZE 48x48';
               }
             }
             else if (cmd) { resp.className = 'error'; resp.textContent = '?UNKNOWN COMMAND'; }
