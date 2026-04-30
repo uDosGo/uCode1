@@ -174,21 +174,20 @@
         var s = this._surfaces[i];
         var el = s.el;
 
-        // 80% of viewport, 1ch padding all around
+        // 80% of viewport, no padding
         var targetW = vw * 0.8;
         var targetH = vh * 0.8;
-        var pad = 1; // 1ch (≈24px at base, scales with font)
 
         // ch width ≈ fontSize * 0.55 for this monospace font
-        var fontFromW = (targetW - pad * 2) / (s.cols * 0.55);
-        var fontFromH = (targetH - pad * 2) / s.rows;
+        var fontFromW = targetW / (s.cols * 0.55);
+        var fontFromH = targetH / s.rows;
         var fontSize = Math.min(fontFromW, fontFromH);
         fontSize = Math.min(fontSize, s.baseFont || 24);
         fontSize = Math.max(fontSize, 5);
 
         el.style.fontSize = fontSize + 'px';
-        el.style.width = 'calc(' + s.cols + 'ch + ' + (pad * 2) + 'ch)';
-        el.style.height = 'calc(' + s.rows + 'em + ' + (pad * 2) + 'ch)';
+        el.style.width = 'calc(' + s.cols + 'ch)';
+        el.style.height = 'calc(' + s.rows + 'em)';
         el.style.setProperty('--udos-font-size', fontSize + 'px');
       }
 
@@ -211,9 +210,8 @@
           if (presets[p].label === key) { preset = presets[p]; break; }
         }
         if (!preset) return;
-        var pad = 1;
-        var fontW = (targetW - pad * 2) / (preset.cols * 0.55);
-        var fontH = (targetH - pad * 2) / preset.rows;
+        var fontW = targetW / (preset.cols * 0.55);
+        var fontH = targetH / preset.rows;
         var fits = Math.min(fontW, fontH) >= 3;
         btn.disabled = !fits;
         btn.style.opacity = fits ? '1' : '0.35';
