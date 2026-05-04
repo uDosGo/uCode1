@@ -41,7 +41,7 @@ def main():
     p = build_arg_parser()
     args = p.parse_args()
 
-    vault_base = os.path.expanduser("~/Code/Vault")
+    vault_base = os.path.expanduser("$UDOS_VAULT")
 
     if args.command == "list":
         target = os.path.join(vault_base, args.path.lstrip("/"))
@@ -69,7 +69,7 @@ def main():
         print(f"Written {len(args.content)} bytes to {args.path}")
 
     elif args.command == "search":
-        target = os.path.expanduser("~/Code/Vault")
+        target = os.path.expanduser("$UDOS_VAULT")
         results = []
         for root, dirs, files in os.walk(target):
             for f in files:

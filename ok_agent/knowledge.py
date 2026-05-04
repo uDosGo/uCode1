@@ -54,7 +54,7 @@ GENERAL_KNOWLEDGE: dict[str, str] = {
         "MODE 0 is 640x256 2-colour. MODE 1 is 320x256 4-colour."
     ),
     "udos_vault": (
-        "The vault is at ~/Code/Vault. Use `ucode vault list /` to browse. "
+        "The vault is at $UDOS_VAULT. Use `ucode vault list /` to browse. "
         "Notes are markdown files with YAML frontmatter."
     ),
     "udos_snack": (
