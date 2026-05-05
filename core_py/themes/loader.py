@@ -56,8 +56,15 @@ class ThemeLoader:
             with open(config_file, 'r') as f:
                 config = yaml.safe_load(f)
                 
-            for theme_name, theme_data in config.get('priority', {}):
-                self._load_theme(theme_name, theme_data)
+            priority_list = config.get('priority', [])
+            if isinstance(priority_list, list):
+                for theme_name in priority_list:
+                    theme_data = config.get(theme_name, {})
+                    if theme_data:
+                        self._load_theme(theme_name, theme_data)
+            elif isinstance(priority_list, dict):
+                for theme_name, theme_data in priority_list.items():
+                    self._load_theme(theme_name, theme_data)
             
             # Also load from main themes section
             for theme_name, theme_data in config.items():

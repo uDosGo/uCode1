@@ -68,6 +68,7 @@ def main():
         "usxd":     lambda: dispatch("usxd_cli"),
         "grid":     lambda: dispatch("grid_cli"),
         "thinui":   lambda: dispatch_cli("thinui_cli"),
+        "liquid":   lambda: dispatch("liquid_cli"),
         "mdx":      lambda: dispatch("mdx_cli"),
         "cell":     lambda: dispatch("cell_cli"),
         "feed":     lambda: dispatch("feed_cli"),

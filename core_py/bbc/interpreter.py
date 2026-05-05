@@ -185,14 +185,29 @@ class BBCBasicState:
     for_stack: List[Dict[str, Any]] = field(default_factory=list)
     repeat_stack: List[int] = field(default_factory=list)
     gosub_stack: List[int] = field(default_factory=list)
+    while_stack: List[int] = field(default_factory=list)
+    case_stack: List[Dict[str, Any]] = field(default_factory=list)
+    proc_stack: List[Dict[str, Any]] = field(default_factory=list)
+    
+    # DATA/READ state
+    data_values: List[Any] = field(default_factory=list)
+    data_pointer: int = 0
+    
+    # ON ERROR state
+    on_error_line: Optional[int] = None
+    on_error_action: Optional[str] = None
+    on_error_target: Optional[str] = None
+    error_line: Optional[int] = None
     
     # I/O state
     input_buffer: str = ""
     input_prompt: str = "? "
+    open_files: Dict[int, Any] = field(default_factory=dict)
     
     # Misc state
     trace: bool = False
     break_requested: bool = False
+    random_seeded: bool = False
     
     @property
     def current_line_text(self) -> str:
@@ -644,6 +659,10 @@ class BBCBasicInterpreter:
         if command == 'VDU':
             return self._stmt_vdu(args, line_number)
         
+        # Handle uCode1 PROC_* extension commands (PROC_LENS_*, PROC_SKIN_*, PROC_MCP_*, PROC_SPOOL_*)
+        if command.startswith('PROC_'):
+            return self._handle_proc_extension(statement, line_number)
+        
         # Check for statement handler
         handler_name = f'_stmt_{command.lower()}'
         if hasattr(self, handler_name):
@@ -653,6 +672,149 @@ class BBCBasicInterpreter:
         # Unknown command
         raise BBCBasicError.from_ern(BBCErrorCodes.UNKNOWN_COMMAND.value, line_number)
     
+    def _handle_proc_extension(self, statement: str, line_number: int) -> bool:
+        """
+        Handle uCode1 PROC_* extension commands.
+        
+        Dispatches to the appropriate engine (LENS, SKIN, MCP, Spool)
+        based on the command prefix.
+        """
+        # Parse: PROC_XXX_CommandName(arg1, arg2, ...)
+        # or: PROC_XXX_CommandName arg1 arg2
+        proc_match = re.match(
+            r'^PROC_([A-Za-z_][A-Za-z0-9_]*)\((.*)\)\s*$',
+            statement,
+            re.IGNORECASE | re.DOTALL
+        )
+        if proc_match:
+            full_name = proc_match.group(1).upper()
+            args_str = proc_match.group(2)
+        else:
+            # Try space-separated args
+            parts = statement.split(None, 1)
+            if len(parts) > 1:
+                full_name = parts[0].upper()
+                args_str = parts[1]
+            else:
+                full_name = statement.upper()
+                args_str = ""
+        
+        # Strip PROC_ prefix for dispatch
+        # full_name is like "LENS_FLAGEVENT" or "SKIN_APPLY"
+        # Split on first underscore to get engine name
+        engine_end = full_name.find('_')
+        if engine_end < 0:
+            raise BBCBasicError.from_ern(BBCErrorCodes.UNKNOWN_COMMAND.value, line_number)
+        
+        engine_name = full_name[:engine_end]  # "LENS", "SKIN", "MCP", "SPOOL"
+        command_name = full_name[engine_end + 1:]  # "FLAGEVENT", "APPLY", etc.
+        
+        # Parse arguments from the args string
+        args_list = []
+        if args_str.strip():
+            depth = 0
+            current = ""
+            for ch in args_str:
+                if ch == '(':
+                    depth += 1
+                    current += ch
+                elif ch == ')':
+                    depth -= 1
+                    current += ch
+                elif ch == ',' and depth == 0:
+                    args_list.append(current.strip())
+                    current = ""
+                else:
+                    current += ch
+            if current.strip():
+                args_list.append(current.strip())
+        
+        # Evaluate each argument
+        evaluated_args = [self.evaluate(a) for a in args_list]
+        
+        # Dispatch to the appropriate engine
+        if engine_name == 'LENS':
+            return self._dispatch_lens(command_name, evaluated_args, line_number)
+        elif engine_name == 'SKIN':
+            return self._dispatch_skin(command_name, evaluated_args, line_number)
+        elif engine_name == 'MCP':
+            return self._dispatch_mcp(command_name, evaluated_args, line_number)
+        elif engine_name == 'SPOOL':
+            return self._dispatch_spool(command_name, evaluated_args, line_number)
+        else:
+            raise BBCBasicError.from_ern(BBCErrorCodes.UNKNOWN_COMMAND.value, line_number)
+    
+    def _dispatch_lens(self, command: str, args: list, line_number: int) -> bool:
+        """Dispatch a LENS command to the LENS engine"""
+        engine = getattr(self, '_lens_engine', None)
+        if engine is None:
+            raise BBCBasicError.from_ern(BBCErrorCodes.UNKNOWN_COMMAND.value, line_number)
+        
+        cmd_upper = command.upper()
+        if cmd_upper == 'FLAGEVENT':
+            if len(args) < 1:
+                raise BBCBasicError.from_ern(BBCErrorCodes.SYNTAX_ERROR.value, line_number)
+            engine.flag_event(str(args[0]))
+        elif cmd_upper == 'SNAPSHOT':
+            if len(args) < 1:
+                raise BBCBasicError.from_ern(BBCErrorCodes.SYNTAX_ERROR.value, line_number)
+            engine.snapshot(str(args[0]))
+        else:
+            raise BBCBasicError.from_ern(BBCErrorCodes.UNKNOWN_COMMAND.value, line_number)
+        return True
+    
+    def _dispatch_skin(self, command: str, args: list, line_number: int) -> bool:
+        """Dispatch a SKIN command to the SKIN engine"""
+        engine = getattr(self, '_skin_engine', None)
+        if engine is None:
+            raise BBCBasicError.from_ern(BBCErrorCodes.UNKNOWN_COMMAND.value, line_number)
+        
+        cmd_upper = command.upper()
+        if cmd_upper == 'APPLY':
+            if len(args) < 1:
+                raise BBCBasicError.from_ern(BBCErrorCodes.SYNTAX_ERROR.value, line_number)
+            engine.apply(str(args[0]))
+        elif cmd_upper == 'MAPCHAR':
+            if len(args) < 2:
+                raise BBCBasicError.from_ern(BBCErrorCodes.SYNTAX_ERROR.value, line_number)
+            engine.map_char(int(args[0]), str(args[1]))
+        elif cmd_upper == 'SETPALETTE':
+            if len(args) < 2:
+                raise BBCBasicError.from_ern(BBCErrorCodes.SYNTAX_ERROR.value, line_number)
+            engine.set_palette(int(args[0]), str(args[1]))
+        else:
+            raise BBCBasicError.from_ern(BBCErrorCodes.UNKNOWN_COMMAND.value, line_number)
+        return True
+    
+    def _dispatch_mcp(self, command: str, args: list, line_number: int) -> bool:
+        """Dispatch an MCP command to the MCP bridge"""
+        engine = getattr(self, '_mcp_bridge', None)
+        if engine is None:
+            raise BBCBasicError.from_ern(BBCErrorCodes.UNKNOWN_COMMAND.value, line_number)
+        
+        cmd_upper = command.upper()
+        if cmd_upper == 'RESPOND':
+            if len(args) < 1:
+                raise BBCBasicError.from_ern(BBCErrorCodes.SYNTAX_ERROR.value, line_number)
+            engine.respond(str(args[0]))
+        else:
+            raise BBCBasicError.from_ern(BBCErrorCodes.UNKNOWN_COMMAND.value, line_number)
+        return True
+    
+    def _dispatch_spool(self, command: str, args: list, line_number: int) -> bool:
+        """Dispatch a Spool command to the Spool bridge"""
+        engine = getattr(self, '_spool_bridge', None)
+        if engine is None:
+            raise BBCBasicError.from_ern(BBCErrorCodes.UNKNOWN_COMMAND.value, line_number)
+        
+        cmd_upper = command.upper()
+        if cmd_upper == 'SAVE':
+            if len(args) < 1:
+                raise BBCBasicError.from_ern(BBCErrorCodes.SYNTAX_ERROR.value, line_number)
+            engine.save(str(args[0]))
+        else:
+            raise BBCBasicError.from_ern(BBCErrorCodes.UNKNOWN_COMMAND.value, line_number)
+        return True
     def step(self):
         """Execute one statement and pause"""
         if not self.state.running:
@@ -1040,14 +1202,62 @@ class BBCBasicInterpreter:
         return False
     
     def _stmt_data(self, args: str, line_number: int) -> bool:
-        """DATA - Data for READ"""
-        # DATA statements are skipped during execution
+        """DATA - Data for READ (collects values during execution)"""
+        # Parse DATA values and add to the data_values list
+        data_str = args.strip()
+        if data_str:
+            for item in data_str.split(','):
+                item = item.strip()
+                if item:
+                    if item.startswith('"') and item.endswith('"'):
+                        self.state.data_values.append(item[1:-1])
+                    else:
+                        try:
+                            self.state.data_values.append(int(item))
+                        except ValueError:
+                            try:
+                                self.state.data_values.append(float(item))
+                            except ValueError:
+                                self.state.data_values.append(item)
         return True
     
     def _stmt_read(self, args: str, line_number: int) -> bool:
-        """READ - Read data"""
-        # Would need DATA pointer implementation
+        """READ - Read next DATA value into variable(s)"""
+        var_names = [v.strip() for v in args.split(',')]
+        for var_name in var_names:
+            if not var_name:
+                continue
+            if self.state.data_pointer >= len(self.state.data_values):
+                raise BBCBasicError.from_ern(BBCErrorCodes.END_OF_FILE.value, line_number)
+            
+            value = self.state.data_values[self.state.data_pointer]
+            self.state.data_pointer += 1
+            
+            # Handle array element assignment
+            if '(' in var_name and ')' in var_name:
+                base_name = var_name[:var_name.index('(')]
+                indices_str = var_name[var_name.index('(')+1:var_name.index(')')]
+                indices = [int(self.evaluate(idx.strip())) for idx in indices_str.split(',')]
+                
+                if base_name not in self.state.arrays:
+                    raise BBCBasicError.from_ern(BBCErrorCodes.VARIABLE_NOT_FOUND.value, line_number)
+                
+                # Flatten multi-dimensional index
+                if len(indices) == 1:
+                    self.state.arrays[base_name][indices[0]] = value
+                else:
+                    # For multi-dimensional, compute flat index
+                    flat_idx = 0
+                    stride = 1
+                    for i in range(len(indices) - 1, -1, -1):
+                        flat_idx += indices[i] * stride
+                        stride *= 10  # Approximate dimension size
+                    self.state.arrays[base_name][flat_idx] = value
+            else:
+                self.state.variables[var_name] = value
+        
         return True
+
     
     def _stmt_trace(self, args: str, line_number: int) -> bool:
         """TRACE - Enable/disable trace"""
@@ -1124,10 +1334,100 @@ class BBCBasicInterpreter:
             if func_name in self.state.functions:
                 return self.state.functions[func_name](args_str)
             
+            # Handle uCode1 FN_* extension functions (FN_LENS_*, FN_MCP_*, FN_SPOOL_*)
+            if func_name.startswith('FN_'):
+                return self._handle_fn_extension(func_name, args_str)
+            
+            raise BBCBasicError.from_ern(BBCErrorCodes.UNKNOWN_COMMAND.value)
+    
+    def _handle_fn_extension(self, func_name: str, args_str: str) -> Any:
+        """
+        Handle uCode1 FN_* extension function calls.
+        
+        Dispatches to the appropriate engine (LENS, MCP, Spool)
+        based on the function name prefix.
+        """
+        # Strip FN_ prefix
+        # func_name is like "FN_LENS_GETJSON" -> "LENS_GETJSON"
+        inner = func_name[3:]  # Remove "FN_"
+        
+        # Split on first underscore to get engine name
+        engine_end = inner.find('_')
+        if engine_end < 0:
             raise BBCBasicError.from_ern(BBCErrorCodes.UNKNOWN_COMMAND.value)
         
-        # Evaluate numeric expression
-        return self._evaluate_numeric(expression)
+        engine_name = inner[:engine_end]  # "LENS", "MCP", "SPOOL"
+        command_name = inner[engine_end + 1:]  # "GETJSON", "POLL", "LOAD"
+        
+        # Parse arguments
+        args_list = []
+        if args_str.strip():
+            depth = 0
+            current = ""
+            for ch in args_str:
+                if ch == '(':
+                    depth += 1
+                    current += ch
+                elif ch == ')':
+                    depth -= 1
+                    current += ch
+                elif ch == ',' and depth == 0:
+                    args_list.append(current.strip())
+                    current = ""
+                else:
+                    current += ch
+            if current.strip():
+                args_list.append(current.strip())
+        
+        evaluated_args = [self.evaluate(a) for a in args_list]
+        
+        # Dispatch to the appropriate engine
+        if engine_name == 'LENS':
+            return self._fn_dispatch_lens(command_name, evaluated_args)
+        elif engine_name == 'MCP':
+            return self._fn_dispatch_mcp(command_name, evaluated_args)
+        elif engine_name == 'SPOOL':
+            return self._fn_dispatch_spool(command_name, evaluated_args)
+        else:
+            raise BBCBasicError.from_ern(BBCErrorCodes.UNKNOWN_COMMAND.value)
+    
+    def _fn_dispatch_lens(self, command: str, args: list) -> Any:
+        """Dispatch a LENS FN_* function call"""
+        engine = getattr(self, '_lens_engine', None)
+        if engine is None:
+            raise BBCBasicError.from_ern(BBCErrorCodes.UNKNOWN_COMMAND.value)
+        
+        cmd_upper = command.upper()
+        if cmd_upper == 'GETJSON':
+            return engine.get_json()
+        else:
+            raise BBCBasicError.from_ern(BBCErrorCodes.UNKNOWN_COMMAND.value)
+    
+    def _fn_dispatch_mcp(self, command: str, args: list) -> Any:
+        """Dispatch an MCP FN_* function call"""
+        engine = getattr(self, '_mcp_bridge', None)
+        if engine is None:
+            raise BBCBasicError.from_ern(BBCErrorCodes.UNKNOWN_COMMAND.value)
+        
+        cmd_upper = command.upper()
+        if cmd_upper == 'POLL':
+            return engine.poll()
+        else:
+            raise BBCBasicError.from_ern(BBCErrorCodes.UNKNOWN_COMMAND.value)
+    
+    def _fn_dispatch_spool(self, command: str, args: list) -> Any:
+        """Dispatch a Spool FN_* function call"""
+        engine = getattr(self, '_spool_bridge', None)
+        if engine is None:
+            raise BBCBasicError.from_ern(BBCErrorCodes.UNKNOWN_COMMAND.value)
+        
+        cmd_upper = command.upper()
+        if cmd_upper == 'LOAD':
+            if len(args) < 1:
+                raise BBCBasicError.from_ern(BBCErrorCodes.SYNTAX_ERROR.value)
+            return engine.load(str(args[0]))
+        else:
+            raise BBCBasicError.from_ern(BBCErrorCodes.UNKNOWN_COMMAND.value)
     
     def _evaluate_numeric(self, expression: str) -> float:
         """Evaluate a numeric expression"""
@@ -1360,7 +1660,19 @@ class BBCBasicInterpreter:
     
     def _fn_rnd(self, x: float) -> float:
         import random
-        return random.random() if x == 0 else random.random()
+        if not self.state.random_seeded:
+            random.seed()
+            self.state.random_seeded = True
+        if x == 0:
+            return random.random()
+        elif x < 0:
+            # RND(-n) - seed the random number generator
+            random.seed(int(abs(x)))
+            self.state.random_seeded = True
+            return random.random()
+        else:
+            # RND(n) - return random integer in range 1..n
+            return random.randint(1, int(x))
     
     def _fn_right(self, s: str, n: float) -> str:
         n = int(n)
@@ -1403,38 +1715,126 @@ class BBCBasicInterpreter:
         # VPOS - Vertical position (not implemented)
         return 0
 
-    # ========== MISSING STATEMENT HANDLERS (STUBS) ==========
+    # ========== SPRINT 1: PROPER STATEMENT HANDLERS ==========
     
     def _stmt_while(self, args: str, line_number: int) -> bool:
-        """WHILE - While loop start"""
-        # For now, just execute
-        return self._stmt_if(args + " THEN", line_number)
+        """WHILE - While loop start with proper loop stack"""
+        condition = self.evaluate(args.strip())
+        if condition:
+            self.state.while_stack.append(line_number)
+        else:
+            # Skip to matching ENDWHILE
+            depth = 1
+            pc = self.state.program_counter + 1
+            while pc < len(self.state.program):
+                line_text = self.state.program[pc].strip().upper()
+                if line_text.startswith('WHILE'):
+                    depth += 1
+                elif line_text.startswith('ENDWHILE'):
+                    depth -= 1
+                    if depth == 0:
+                        self.state.program_counter = pc
+                        break
+                pc += 1
+        return True
     
     def _stmt_endwhile(self, args: str, line_number: int) -> bool:
-        """ENDWHILE - End of while loop"""
-        # Would need loop stack
+        """ENDWHILE - Jump back to matching WHILE"""
+        if self.state.while_stack:
+            while_line = self.state.while_stack.pop()
+            self.state.program_counter = self.find_line(while_line) - 1
         return True
     
     def _stmt_case(self, args: str, line_number: int) -> bool:
-        """CASE - Case statement"""
-        # Not fully implemented
+        """CASE - Case statement with proper stack"""
+        selector = self.evaluate(args.strip())
+        self.state.case_stack.append({
+            'selector': selector,
+            'matched': False,
+            'line': line_number
+        })
         return True
     
     def _stmt_of(self, args: str, line_number: int) -> bool:
         """OF - Of clause in CASE"""
+        if not self.state.case_stack:
+            return True
+        
+        case = self.state.case_stack[-1]
+        if case['matched']:
+            # Already matched, skip to next OF, OTHERWISE, or ENDCASE
+            depth = 1
+            pc = self.state.program_counter + 1
+            while pc < len(self.state.program):
+                line_text = self.state.program[pc].strip().upper()
+                if line_text.startswith('OF'):
+                    depth += 1
+                elif line_text.startswith('OTHERWISE') or line_text.startswith('ENDCASE'):
+                    depth -= 1
+                    if depth == 0:
+                        self.state.program_counter = pc - 1
+                        break
+                pc += 1
+            return True
+        
+        # Check if this OF value matches the selector
+        of_value = self.evaluate(args.strip())
+        if of_value == case['selector']:
+            case['matched'] = True
+        else:
+            # Skip to next OF, OTHERWISE, or ENDCASE
+            depth = 1
+            pc = self.state.program_counter + 1
+            while pc < len(self.state.program):
+                line_text = self.state.program[pc].strip().upper()
+                if line_text.startswith('OF'):
+                    depth += 1
+                elif line_text.startswith('OTHERWISE') or line_text.startswith('ENDCASE'):
+                    depth -= 1
+                    if depth == 0:
+                        self.state.program_counter = pc - 1
+                        break
+                pc += 1
         return True
     
     def _stmt_otherwise(self, args: str, line_number: int) -> bool:
-        """OTHERWISE - Otherwise clause"""
+        """OTHERWISE - Otherwise clause (default case)"""
+        if not self.state.case_stack:
+            return True
+        
+        case = self.state.case_stack[-1]
+        if case['matched']:
+            # Already matched, skip to ENDCASE
+            pc = self.state.program_counter + 1
+            while pc < len(self.state.program):
+                line_text = self.state.program[pc].strip().upper()
+                if line_text.startswith('ENDCASE'):
+                    self.state.program_counter = pc - 1
+                    break
+                pc += 1
+        else:
+            case['matched'] = True
         return True
     
     def _stmt_endcase(self, args: str, line_number: int) -> bool:
-        """ENDCASE - End case"""
+        """ENDCASE - End case, pop case stack"""
+        if self.state.case_stack:
+            self.state.case_stack.pop()
         return True
     
     def _stmt_chain(self, args: str, line_number: int) -> bool:
         """CHAIN - Chain to another program"""
-        return True
+        filename = args.strip()
+        if filename.startswith('"') and filename.endswith('"'):
+            filename = filename[1:-1]
+        try:
+            with open(filename, 'r') as f:
+                lines = f.readlines()
+            self.load_program(lines)
+            self.run()
+        except FileNotFoundError:
+            raise BBCBasicError.from_ern(BBCErrorCodes.FILE_NOT_FOUND.value, line_number)
+        return False
     
     def _stmt_quit(self, args: str, line_number: int) -> bool:
         """QUIT - Quit interpreter"""
@@ -1442,22 +1842,73 @@ class BBCBasicInterpreter:
     
     def _stmt_openin(self, args: str, line_number: int) -> bool:
         """OPENIN - Open file for input"""
+        parts = [p.strip() for p in args.split(',')]
+        if len(parts) >= 2:
+            channel_part = parts[0].replace('#', '').strip()
+            filename = parts[1]
+            if filename.startswith('"') and filename.endswith('"'):
+                filename = filename[1:-1]
+            try:
+                channel = int(self.evaluate(channel_part))
+                self.state.open_files[channel] = open(filename, 'r')
+            except (ValueError, FileNotFoundError):
+                raise BBCBasicError.from_ern(BBCErrorCodes.FILE_NOT_FOUND.value, line_number)
         return True
     
     def _stmt_openout(self, args: str, line_number: int) -> bool:
         """OPENOUT - Open file for output"""
+        parts = [p.strip() for p in args.split(',')]
+        if len(parts) >= 2:
+            channel_part = parts[0].replace('#', '').strip()
+            filename = parts[1]
+            if filename.startswith('"') and filename.endswith('"'):
+                filename = filename[1:-1]
+            try:
+                channel = int(self.evaluate(channel_part))
+                self.state.open_files[channel] = open(filename, 'w')
+            except (ValueError, FileNotFoundError):
+                raise BBCBasicError.from_ern(BBCErrorCodes.FILE_NOT_FOUND.value, line_number)
         return True
     
     def _stmt_openup(self, args: str, line_number: int) -> bool:
         """OPENUP - Open file for update"""
+        parts = [p.strip() for p in args.split(',')]
+        if len(parts) >= 2:
+            channel_part = parts[0].replace('#', '').strip()
+            filename = parts[1]
+            if filename.startswith('"') and filename.endswith('"'):
+                filename = filename[1:-1]
+            try:
+                channel = int(self.evaluate(channel_part))
+                self.state.open_files[channel] = open(filename, 'r+')
+            except (ValueError, FileNotFoundError):
+                raise BBCBasicError.from_ern(BBCErrorCodes.FILE_NOT_FOUND.value, line_number)
         return True
     
     def _stmt_close(self, args: str, line_number: int) -> bool:
         """CLOSE - Close file"""
+        channel_part = args.replace('#', '').strip()
+        if channel_part:
+            try:
+                channel = int(self.evaluate(channel_part))
+                if channel in self.state.open_files:
+                    self.state.open_files[channel].close()
+                    del self.state.open_files[channel]
+            except (ValueError, KeyError):
+                pass
         return True
     
     def _stmt_ptr(self, args: str, line_number: int) -> bool:
-        """PTR - Get file pointer"""
+        """PTR - Set file pointer position"""
+        parts = [p.strip() for p in args.split('#')]
+        if len(parts) >= 2:
+            try:
+                channel = int(self.evaluate(parts[0].strip()))
+                position = int(self.evaluate(parts[1].strip()))
+                if channel in self.state.open_files:
+                    self.state.open_files[channel].seek(position)
+            except (ValueError, KeyError):
+                pass
         return True
     
     def _stmt_ext(self, args: str, line_number: int) -> bool:
@@ -1466,24 +1917,42 @@ class BBCBasicInterpreter:
     
     def _stmt_bput(self, args: str, line_number: int) -> bool:
         """BPUT - Write byte to file"""
+        parts = [p.strip() for p in args.split('#')]
+        if len(parts) >= 2:
+            try:
+                channel = int(self.evaluate(parts[0].strip()))
+                byte_val = int(self.evaluate(parts[1].strip()))
+                if channel in self.state.open_files:
+                    self.state.open_files[channel].write(bytes([byte_val]))
+            except (ValueError, KeyError):
+                pass
         return True
     
     def _stmt_bget(self, args: str, line_number: int) -> bool:
         """BGET - Read byte from file"""
+        channel_part = args.replace('#', '').strip()
+        if channel_part:
+            try:
+                channel = int(self.evaluate(channel_part))
+                if channel in self.state.open_files:
+                    byte_val = self.state.open_files[channel].read(1)
+                    return ord(byte_val) if byte_val else -1
+            except (ValueError, KeyError):
+                pass
         return True
     
     def _stmt_sound(self, args: str, line_number: int) -> bool:
-        """SOUND - Make sound"""
+        """SOUND - Make sound (stub)"""
         return True
     
     def _stmt_envelope(self, args: str, line_number: int) -> bool:
-        """ENVELOPE - Define sound envelope"""
+        """ENVELOPE - Define sound envelope (stub)"""
         return True
     
     def _stmt_scroll(self, args: str, line_number: int) -> bool:
         """SCROLL - Scroll screen"""
         if self.state.vdu_handler:
-            self.state.vdu_handler.vdu(14)  # VDU 14 = scroll
+            self.state.vdu_handler.vdu(14)
         return True
     
     def _stmt_window(self, args: str, line_number: int) -> bool:
@@ -1491,39 +1960,215 @@ class BBCBasicInterpreter:
         return True
     
     def _stmt_call(self, args: str, line_number: int) -> bool:
-        """CALL - Call OS routine"""
+        """CALL - Call OS routine (stub)"""
         return True
     
     def _stmt_proc(self, args: str, line_number: int) -> bool:
-        """PROC - Procedure definition"""
+        """PROC - Call a user-defined procedure"""
+        proc_match = re.match(r'^([A-Za-z_][A-Za-z0-9_]*)\((.*)\)$', args, re.DOTALL)
+        if proc_match:
+            proc_name = proc_match.group(1).upper()
+            proc_args_str = proc_match.group(2)
+        else:
+            parts = args.split(None, 1)
+            proc_name = parts[0].upper() if parts else args.upper()
+            proc_args_str = parts[1] if len(parts) > 1 else ""
+        
+        if proc_name in self.state.functions:
+            proc_def = self.state.functions[proc_name]
+            actual_args = []
+            if proc_args_str.strip():
+                depth = 0
+                current = ""
+                for ch in proc_args_str:
+                    if ch == '(':
+                        depth += 1
+                        current += ch
+                    elif ch == ')':
+                        depth -= 1
+                        current += ch
+                    elif ch == ',' and depth == 0:
+                        actual_args.append(current.strip())
+                        current = ""
+                    else:
+                        current += ch
+                if current.strip():
+                    actual_args.append(current.strip())
+            
+            evaluated_args = [self.evaluate(a) for a in actual_args]
+            
+            self.state.proc_stack.append({
+                'return_pc': self.state.program_counter + 1,
+                'local_vars': {}
+            })
+            
+            if 'params' in proc_def:
+                for i, param_name in enumerate(proc_def['params']):
+                    if i < len(evaluated_args):
+                        self.state.variables[param_name] = evaluated_args[i]
+            
+            self.state.program_counter = self.find_line(proc_def['line'])
+        else:
+            raise BBCBasicError.from_ern(BBCErrorCodes.UNKNOWN_COMMAND.value, line_number)
         return True
     
     def _stmt_endproc(self, args: str, line_number: int) -> bool:
-        """ENDPROC - End procedure"""
+        """ENDPROC - Return from procedure"""
+        if self.state.proc_stack:
+            frame = self.state.proc_stack.pop()
+            if 'local_vars' in frame:
+                for var_name in frame['local_vars']:
+                    if var_name in self.state.variables:
+                        del self.state.variables[var_name]
+            self.state.program_counter = frame['return_pc']
         return True
     
     def _stmt_def(self, args: str, line_number: int) -> bool:
-        """DEF - Define function"""
-        return True
+        """DEF - Define procedure or function"""
+        args = args.strip()
+        
+        proc_match = re.match(r'^PROC_?([A-Za-z_][A-Za-z0-9_]*)\((.*)\)', args, re.IGNORECASE)
+        if proc_match:
+            proc_name = proc_match.group(1).upper()
+            params_str = proc_match.group(2)
+            params = [p.strip() for p in params_str.split(',')] if params_str.strip() else []
+            self.state.functions[proc_name] = {
+                'type': 'proc',
+                'params': params,
+                'line': line_number,
+                'end_line': None
+            }
+            return True
+        
+        fn_match = re.match(r'^FN_?([A-Za-z_][A-Za-z0-9_]*)\((.*)\)\s*=\s*(.*)', args, re.IGNORECASE)
+        if fn_match:
+            fn_name = fn_match.group(1).upper()
+            params_str = fn_match.group(2)
+            expression = fn_match.group(3)
+            params = [p.strip() for p in params_str.split(',')] if params_str.strip() else []
+            self.state.functions[fn_name] = {
+                'type': 'fn',
+                'params': params,
+                'expression': expression,
+                'line': line_number
+            }
+            return True
+        
+        raise BBCBasicError.from_ern(BBCErrorCodes.SYNTAX_ERROR.value, line_number)
     
     def _stmt_fn(self, args: str, line_number: int) -> bool:
-        """FN - Function"""
+        """FN - Call a user-defined function (as statement)"""
+        fn_match = re.match(r'^([A-Za-z_][A-Za-z0-9_]*)\((.*)\)$', args, re.DOTALL)
+        if fn_match:
+            fn_name = fn_match.group(1).upper()
+            fn_args_str = fn_match.group(2)
+            
+            if fn_name in self.state.functions:
+                fn_def = self.state.functions[fn_name]
+                if fn_def['type'] == 'fn':
+                    actual_args = []
+                    if fn_args_str.strip():
+                        depth = 0
+                        current = ""
+                        for ch in fn_args_str:
+                            if ch == '(':
+                                depth += 1
+                                current += ch
+                            elif ch == ')':
+                                depth -= 1
+                                current += ch
+                            elif ch == ',' and depth == 0:
+                                actual_args.append(current.strip())
+                                current = ""
+                            else:
+                                current += ch
+                        if current.strip():
+                            actual_args.append(current.strip())
+                    
+                    evaluated_args = [self.evaluate(a) for a in actual_args]
+                    
+                    saved_vars = {}
+                    for i, param_name in enumerate(fn_def['params']):
+                        if i < len(evaluated_args):
+                            saved_vars[param_name] = self.state.variables.get(param_name)
+                            self.state.variables[param_name] = evaluated_args[i]
+                    
+                    result = self.evaluate(fn_def['expression'])
+                    
+                    for param_name in fn_def['params']:
+                        if param_name in saved_vars:
+                            if saved_vars[param_name] is not None:
+                                self.state.variables[param_name] = saved_vars[param_name]
+                            elif param_name in self.state.variables:
+                                del self.state.variables[param_name]
+                    
+                    return True
+            raise BBCBasicError.from_ern(BBCErrorCodes.UNKNOWN_COMMAND.value, line_number)
         return True
     
     def _stmt_on(self, args: str, line_number: int) -> bool:
-        """ON - ON ERROR or multi-way branch"""
-        return True
+        """ON - ON ERROR GOTO/GOSUB or multi-way branch"""
+        args = args.strip()
+        
+        error_match = re.match(r'^ERROR\s+(GOTO|GOSUB|PROC)\s+(.+)$', args, re.IGNORECASE)
+        if error_match:
+            action = error_match.group(1).upper()
+            target = error_match.group(2).strip()
+            self.state.on_error_line = line_number
+            self.state.on_error_action = action
+            self.state.on_error_target = target
+            return True
+        
+        branch_match = re.match(r'^(.+?)\s+(GOTO|GOSUB)\s+(.+)$', args, re.IGNORECASE)
+        if branch_match:
+            expr = self.evaluate(branch_match.group(1).strip())
+            action = branch_match.group(2).upper()
+            targets_str = branch_match.group(3)
+            targets = [t.strip() for t in targets_str.split(',')]
+            
+            idx = int(expr) - 1
+            if 0 <= idx < len(targets):
+                target_line = int(self.evaluate(targets[idx]))
+                if action == 'GOTO':
+                    self.state.program_counter = self.find_line(target_line)
+                else:
+                    self.state.gosub_stack.append(self.state.program_counter + 1)
+                    self.state.program_counter = self.find_line(target_line)
+            return True
+        
+        raise BBCBasicError.from_ern(BBCErrorCodes.SYNTAX_ERROR.value, line_number)
     
     def _stmt_error(self, args: str, line_number: int) -> bool:
-        """ERROR - Generate error"""
-        return True
+        """ERROR - Generate error with message"""
+        error_msg = args.strip()
+        if error_msg.startswith('"') and error_msg.endswith('"'):
+            error_msg = error_msg[1:-1]
+        raise BBCBasicError(2, error_msg, line_number)
     
     def _stmt_resume(self, args: str, line_number: int) -> bool:
         """RESUME - Resume after error"""
+        if self.state.error_line is not None:
+            if args.strip().upper() == 'NEXT':
+                self.state.program_counter = self.find_line(self.state.error_line + 1)
+            else:
+                self.state.program_counter = self.find_line(self.state.error_line)
+            self.state.error = None
+            self.state.error_line = None
         return True
     
     def _stmt_local(self, args: str, line_number: int) -> bool:
-        """LOCAL - Declare local variable"""
+        """LOCAL - Declare local variables"""
+        if not self.state.proc_stack:
+            return True
+        
+        frame = self.state.proc_stack[-1]
+        var_names = [v.strip() for v in args.split(',')]
+        
+        for var_name in var_names:
+            if var_name in self.state.variables:
+                frame['local_vars'][var_name] = self.state.variables[var_name]
+            self.state.variables[var_name] = 0 if not var_name.endswith('$') else ""
+        
         return True
     
     def _stmt_plot(self, args: str, line_number: int) -> bool:
@@ -1531,7 +2176,7 @@ class BBCBasicInterpreter:
         if self.state.vdu_handler:
             parts = [p.strip() for p in args.split(',')]
             if len(parts) >= 2:
-                self.state.vdu_handler.vdu(128, *args)  # Extended PLOT
+                self.state.vdu_handler.vdu(128, *args)
         return True
     
     def _stmt_draw(self, args: str, line_number: int) -> bool:
@@ -1539,7 +2184,7 @@ class BBCBasicInterpreter:
         if self.state.vdu_handler:
             parts = [p.strip() for p in args.split(',')]
             if len(parts) >= 2:
-                self.state.vdu_handler.vdu(129, *parts)  # Extended DRAW
+                self.state.vdu_handler.vdu(129, *parts)
         return True
     
     def _stmt_colour(self, args: str, line_number: int) -> bool:
@@ -1561,7 +2206,7 @@ class BBCBasicInterpreter:
         if self.state.vdu_handler:
             parts = [p.strip() for p in args.split(',')]
             if len(parts) >= 2:
-                self.state.vdu_handler.vdu(132, *parts)  # Extended MOVE
+                self.state.vdu_handler.vdu(132, *parts)
         return True
     
     def _stmt_origin(self, args: str, line_number: int) -> bool:
@@ -1570,12 +2215,56 @@ class BBCBasicInterpreter:
     
     def _stmt_load(self, args: str, line_number: int) -> bool:
         """LOAD - Load program"""
-        return True
+        filename = args.strip()
+        if filename.startswith('"') and filename.endswith('"'):
+            filename = filename[1:-1]
+        try:
+            with open(filename, 'r') as f:
+                lines = f.readlines()
+            self.load_program(lines)
+        except FileNotFoundError:
+            raise BBCBasicError.from_ern(BBCErrorCodes.FILE_NOT_FOUND.value, line_number)
+        return False
     
     def _stmt_save(self, args: str, line_number: int) -> bool:
         """SAVE - Save program"""
+        filename = args.strip()
+        if filename.startswith('"') and filename.endswith('"'):
+            filename = filename[1:-1]
+        try:
+            with open(filename, 'w') as f:
+                for i, line_num in enumerate(self.state.line_numbers):
+                    f.write(f"{line_num} {self.state.program[i]}\n")
+        except IOError:
+            raise BBCBasicError.from_ern(BBCErrorCodes.FILE_NOT_FOUND.value, line_number)
         return True
     
     def _stmt_restore(self, args: str, line_number: int) -> bool:
         """RESTORE - Restore DATA pointer"""
+        if args.strip():
+            target_line = int(self.evaluate(args.strip()))
+            # Find the DATA line and reset pointer
+            self.state.data_pointer = 0
+            self.state.data_values = []
+            for i, line_num in enumerate(self.state.line_numbers):
+                if line_num >= target_line:
+                    stmt = self.state.program[i].strip().upper()
+                    if stmt.startswith('DATA'):
+                        data_str = stmt[4:].strip()
+                        for item in data_str.split(','):
+                            item = item.strip()
+                            if item:
+                                if item.startswith('"') and item.endswith('"'):
+                                    self.state.data_values.append(item[1:-1])
+                                else:
+                                    try:
+                                        self.state.data_values.append(int(item))
+                                    except ValueError:
+                                        try:
+                                            self.state.data_values.append(float(item))
+                                        except ValueError:
+                                            self.state.data_values.append(item)
+                    break
+        else:
+            self.state.data_pointer = 0
         return True

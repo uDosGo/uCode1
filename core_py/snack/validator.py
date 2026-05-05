@@ -11,6 +11,14 @@ from .models import Snack, SnackInput, SnackOutput, SnackResource
 from .schema import SnackSchema, SnackInputSchema, SnackOutputSchema, validate_snack_schema
 
 
+class SnackExecutionError(Exception):
+    """Raised when a snack fails during execution."""
+    def __init__(self, message: str, snack_id: Optional[str] = None, exit_code: Optional[int] = None):
+        self.snack_id = snack_id
+        self.exit_code = exit_code
+        super().__init__(message)
+
+
 def validate_snack(snack: Snack) -> None:
     """Validate a Snack instance"""
     # Convert Snack to SnackSchema for validation

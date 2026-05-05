@@ -1,6 +1,7 @@
 # uCode1 Python Core Dependencies
 # Core runtime (minimal)
 pyyaml>=6.0
+liquidpy>=0.9
 
 # Development & Testing
 pytest>=8.0

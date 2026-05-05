@@ -23,7 +23,15 @@ Snack Commands:
 
 import sys
 import argparse
-from .runtime import Runtime
+
+
+def _get_runtime():
+    """Lazy import of Runtime to avoid import errors when module doesn't exist."""
+    try:
+        from .runtime import Runtime
+        return Runtime()
+    except ImportError:
+        return None
 
 
 def main():
@@ -55,7 +63,10 @@ def main():
         parser.print_help()
         return
     
-    runtime = Runtime()
+    runtime = _get_runtime()
+    if runtime is None:
+        print("Error: uCode1 runtime module not available")
+        sys.exit(1)
     
     if args.repl:
         print("uCode1 REPL (Python mode)")

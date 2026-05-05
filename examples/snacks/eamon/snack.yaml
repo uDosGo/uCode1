@@ -1,0 +1,92 @@
+# uCode1 Snack Manifest: Eamon Dungeon Designer
+# 
+# This snack packages the classic Eamon adventure system for uCode1.
+# The original Apple II disk images are mounted read-only.
+# LENS captures common game variables (HP%, GOLD%, ROOM%).
+# SKIN provides teletext and retro paper themes.
+# MCP supports pause, save, restore, and export commands.
+
+name: "Eamon Dungeon Designer"
+version: "1.0.0"
+lane: "ucode1"
+container_type: "snack"
+
+origin:
+  platform: "apple2"
+  media:
+    - "disks/eamon_master.dsk"
+    - "disks/eamon_scenes.dsk"
+  checksum: "sha256:abc123..."
+  preservation_level: "bit_accurate"
+
+runtime:
+  emulator: "bbc_basic"
+  memory: "32K"
+  disk_drive_speed: "1x"
+
+lens:
+  enabled: true
+  capture_intervals:
+    - "frame"
+    - "room_change"
+    - "save"
+  variable_patterns:
+    - "^HP%$"
+    - "^GOLD%$"
+    - "^ROOM%$"
+    - "^PLAYER\\$"
+    - "^LEVEL%$"
+  memory_regions:
+    - name: "tilemap"
+      address: 0x6000
+      size: 225
+      description: "15x15 tile grid"
+    - name: "rooms"
+      address: 0x8000
+      size: 4096
+      description: "Room descriptions"
+  export_format: "spool"
+
+skin:
+  default: "teletext_classic"
+  available:
+    - "teletext_classic"
+    - "paper_retro"
+    - "dark_mode"
+  targets:
+    - "thinui"
+    - "ceefax_thinui"
+
+mcp:
+  commands:
+    - name: "pause"
+      description: "Pause game execution"
+    - name: "resume"
+      description: "Resume game execution"
+    - name: "save"
+      description: "Save game state to spool"
+    - name: "restore"
+      description: "Restore game state from spool"
+    - name: "export_spool"
+      description: "Export current spool data"
+    - name: "inspect"
+      description: "Inspect a variable value"
+    - name: "eval"
+      description: "Evaluate a BASIC expression"
+
+depends_on:
+  - name: "bbc_basic_runtime"
+    version: "1.0.0"
+
+entrypoint: "scripts/boot.bbc"
+
+description: >
+  The classic Eamon adventure system, ported to uCode1 teletext.
+  Explore dungeons, fight monsters, and collect treasure — all
+  rendered in beautiful Mode 7 teletext via CeefaxThinUI.
+
+tags:
+  - "adventure"
+  - "rpg"
+  - "dungeon"
+  - "classic"

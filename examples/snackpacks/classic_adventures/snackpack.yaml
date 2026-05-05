@@ -1,0 +1,51 @@
+# uCode1 Snackpack: Classic Apple II Adventures
+#
+# This snackpack bundles classic Apple II adventure games together
+# with shared LENS/SKIN rules and a BBC BASIC launcher menu.
+
+name: "Classic Apple II Adventures"
+version: "1.0.0"
+snacks:
+  - "eamon@1.0.0"
+  - "nethack@1.0.0"
+
+shared_lens:
+  variable_patterns:
+    - "^HP%$"
+    - "^GOLD%$"
+    - "^ROOM%$"
+    - "^PLAYER\\$"
+    - "^LEVEL%$"
+  memory_regions:
+    - name: "tilemap"
+      address: 0x6000
+      size: 225
+      description: "15x15 tile grid"
+
+shared_skins:
+  available:
+    - "teletext_classic"
+    - "paper_retro"
+    - "dark_mode"
+  targets:
+    - "thinui"
+    - "ceefax_thinui"
+
+meta_export:
+  collection_spool: "adventures.spool"
+  combined_feed: true
+
+launcher:
+  type: "bbc_basic"
+  script: "launcher.bbc"
+
+description: >
+  A collection of classic Apple II adventure games, packaged for uCode1
+  teletext. Includes Eamon, NetHack, and more. All games share common
+  LENS extraction rules and SKIN themes.
+
+tags:
+  - "adventure"
+  - "collection"
+  - "apple2"
+  - "classic"
