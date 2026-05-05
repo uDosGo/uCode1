@@ -1,0 +1,95 @@
+REM Eamon Boot Script for uCode1
+REM Initializes LENS/SKIN/MCP engines and loads Eamon adventure
+
+REM Clear screen and show banner
+CLS
+PRINT "Eamon Adventure System"
+PRINT "======================"
+PRINT ""
+
+REM Initialize LENS engine
+PROC_LENS_FLAGEVENT("init")
+PRINT "LENS engine initialized"
+
+REM Initialize SKIN with paper_retro
+PROC_SKIN_APPLY("paper_retro")
+PRINT "SKIN engine initialized"
+
+REM Initialize MCP bridge
+PROC_MCP_RESPOND("init")
+PRINT "MCP bridge initialized"
+
+REM Set up auto-capture
+PROC_LENS_FLAGEVENT("set_capture_interval:0.5")
+PRINT "Auto-capture configured"
+
+REM Display adventure selection menu
+PRINT ""
+PRINT "Available Adventures:"
+PRINT "  1. The Beginner's Cave"
+PRINT "  2. The Lair of the Minotaur"
+PRINT "  3. The Castle of Doom"
+PRINT "  4. The Quest for the Holy Grail"
+PRINT ""
+PRINT "Select adventure (1-4): "
+INPUT adv$
+
+REM Load selected adventure
+IF adv$ = "1" THEN
+  PRINT "Loading: The Beginner's Cave"
+  REM PROC_LENS_FLAGEVENT("load_adventure:beginners_cave")
+ELIF adv$ = "2" THEN
+  PRINT "Loading: The Lair of the Minotaur"
+  REM PROC_LENS_FLAGEVENT("load_adventure:lair_minotaur")
+ELIF adv$ = "3" THEN
+  PRINT "Loading: The Castle of Doom"
+  REM PROC_LENS_FLAGEVENT("load_adventure:castle_doom")
+ELIF adv$ = "4" THEN
+  PRINT "Loading: The Quest for the Holy Grail"
+  REM PROC_LENS_FLAGEVENT("load_adventure:holy_grail")
+ELSE
+  PRINT "Invalid selection, loading default"
+  REM PROC_LENS_FLAGEVENT("load_adventure:beginners_cave")
+ENDIF
+
+PRINT ""
+PRINT "Adventure loaded!"
+PRINT ""
+
+REM Main game loop
+REPEAT
+  REM Poll for MCP commands
+  cmd$ = FN_MCP_POLL
+  IF cmd$ <> "" THEN
+    IF cmd$ = "PAUSE" THEN
+      PRINT "Adventure paused"
+      WAIT
+    ELIF cmd$ = "RESUME" THEN
+      PRINT "Adventure resumed"
+    ELIF cmd$ = "SAVE" THEN
+      PROC_SPOOL_SAVE("eamon_save")
+      PRINT "Adventure saved"
+    ELIF cmd$ = "RESTORE" THEN
+      data$ = FN_SPOOL_LOAD("eamon_save")
+      PRINT "Adventure restored"
+    ELIF cmd$ = "STATUS" THEN
+      PRINT "HP%: "; HP%; "/"; MAXHP%
+      PRINT "GOLD%: "; GOLD%
+      PRINT "ROOM%: "; ROOM%
+      PRINT "WEAPON: "; WEAPON$
+      PRINT "ARMOR: "; ARMOR$
+    ELIF cmd$ = "DISK" THEN
+      PRINT "Swapping adventure disk..."
+      REM PROC_LENS_FLAGEVENT("swap_disk")
+    ELIF cmd$ = "QUIT" THEN
+      PRINT "Quitting Eamon"
+      QUIT
+    ENDIF
+  ENDIF
+  
+  REM Capture game state
+  PROC_LENS_FLAGEVENT("snapshot")
+  
+  REM Small delay to prevent busy-waiting
+  FOR I = 1 TO 100: NEXT I
+UNTIL FALSE

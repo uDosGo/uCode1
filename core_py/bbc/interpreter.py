@@ -1298,7 +1298,42 @@ class BBCBasicInterpreter:
         if expression.startswith('"') and expression.endswith('"'):
             return expression[1:-1]
         
-        # Check for variable
+        # Check for numeric literal (integer or float)
+        try:
+            if '.' in expression:
+                return float(expression)
+            return int(expression)
+        except (ValueError, TypeError):
+            pass
+        
+        # Check for function call (with parentheses)
+        func_match = re.match(r'^([A-Za-z_][A-Za-z0-9_]*)\((.*)\)$', expression, re.IGNORECASE)
+        if func_match:
+            func_name = func_match.group(1).upper()
+            args_str = func_match.group(2)
+            
+            # Built-in function
+            if func_name in self._builtins:
+                args = [self.evaluate(a.strip()) for a in args_str.split(',')]
+                return self._builtins[func_name](*args)
+            
+            # User-defined function
+            if func_name in self.state.functions:
+                return self.state.functions[func_name](args_str)
+            
+            # Handle uCode1 FN_* extension functions (FN_LENS_*, FN_MCP_*, FN_SPOOL_*)
+            if func_name.startswith('FN_'):
+                return self._handle_fn_extension(func_name, args_str)
+            
+            raise BBCBasicError.from_ern(BBCErrorCodes.UNKNOWN_COMMAND.value)
+        
+        # Check for FN_* extension function without parentheses (e.g. FN_LENS_GetJSON)
+        fn_match = re.match(r'^FN_[A-Za-z_][A-Za-z0-9_]*$', expression, re.IGNORECASE)
+        if fn_match:
+            func_name = expression.upper()
+            return self._handle_fn_extension(func_name, "")
+        
+        # Check for variable (must come after numeric and function checks)
         if re.match(r'^[A-Za-z_][A-Za-z0-9_]*\$?%?$', expression):
             var_name = expression
             
@@ -1319,26 +1354,8 @@ class BBCBasicInterpreter:
             # Not initialized
             return 0 if not var_name.endswith('$') else ""
         
-        # Check for function call
-        func_match = re.match(r'^([A-Za-z_][A-Za-z0-9_]*)\((.*)\)$', expression, re.IGNORECASE)
-        if func_match:
-            func_name = func_match.group(1).upper()
-            args_str = func_match.group(2)
-            
-            # Built-in function
-            if func_name in self._builtins:
-                args = [self.evaluate(a.strip()) for a in args_str.split(',')]
-                return self._builtins[func_name](*args)
-            
-            # User-defined function
-            if func_name in self.state.functions:
-                return self.state.functions[func_name](args_str)
-            
-            # Handle uCode1 FN_* extension functions (FN_LENS_*, FN_MCP_*, FN_SPOOL_*)
-            if func_name.startswith('FN_'):
-                return self._handle_fn_extension(func_name, args_str)
-            
-            raise BBCBasicError.from_ern(BBCErrorCodes.UNKNOWN_COMMAND.value)
+        # Unknown expression
+        raise BBCBasicError.from_ern(BBCErrorCodes.SYNTAX_ERROR.value)
     
     def _handle_fn_extension(self, func_name: str, args_str: str) -> Any:
         """

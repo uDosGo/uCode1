@@ -1,0 +1,66 @@
+REM NetHack Boot Script for uCode1
+REM Initializes LENS/SKIN/MCP engines and launches NetHack
+
+REM Clear screen and show banner
+CLS
+PRINT "NetHack for uCode1"
+PRINT "=================="
+PRINT ""
+
+REM Initialize LENS engine
+PROC_LENS_FLAGEVENT("init")
+PRINT "LENS engine initialized"
+
+REM Initialize SKIN with teletext_classic
+PROC_SKIN_APPLY("teletext_classic")
+PRINT "SKIN engine initialized"
+
+REM Initialize MCP bridge
+PROC_MCP_RESPOND("init")
+PRINT "MCP bridge initialized"
+
+REM Set up auto-capture
+PROC_LENS_FLAGEVENT("set_capture_interval:1.0")
+PRINT "Auto-capture configured"
+
+REM Launch NetHack with tty backend
+PRINT ""
+PRINT "Launching NetHack..."
+PRINT ""
+
+REM The actual NetHack process would be spawned here
+REM For now, we simulate the game loop
+REM In production, this would fork/exec nethack with -n -d -u flags
+
+REM Main game loop
+REPEAT
+  REM Poll for MCP commands
+  cmd$ = FN_MCP_POLL
+  IF cmd$ <> "" THEN
+    IF cmd$ = "PAUSE" THEN
+      PRINT "Game paused"
+      WAIT
+    ELIF cmd$ = "RESUME" THEN
+      PRINT "Game resumed"
+    ELIF cmd$ = "SAVE" THEN
+      PROC_SPOOL_SAVE("nethack_save")
+      PRINT "Game saved"
+    ELIF cmd$ = "RESTORE" THEN
+      data$ = FN_SPOOL_LOAD("nethack_save")
+      PRINT "Game restored"
+    ELIF cmd$ = "STATUS" THEN
+      PRINT "HP%: "; HP%
+      PRINT "GOLD%: "; GOLD%
+      PRINT "ROOM%: "; ROOM%
+    ELIF cmd$ = "QUIT" THEN
+      PRINT "Quitting NetHack"
+      QUIT
+    ENDIF
+  ENDIF
+  
+  REM Capture game state
+  PROC_LENS_FLAGEVENT("snapshot")
+  
+  REM Small delay to prevent busy-waiting
+  FOR I = 1 TO 100: NEXT I
+UNTIL FALSE

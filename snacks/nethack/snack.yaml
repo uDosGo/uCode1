@@ -1,0 +1,133 @@
+# NetHack Snack Manifest
+# uCode1 Snack Container for NetHack with teletext rendering
+
+name: nethack
+version: "1.0.0"
+description: "NetHack — Dungeons & Dragons-style roguelike with teletext rendering"
+author: "uCode1 Team"
+lane: ucode1
+
+entrypoint:
+  type: bbc
+  path: scripts/boot.bbc
+
+emulator:
+  type: native
+  backend: tty
+  args:
+    - -n
+    - -d
+    - -u
+
+lens:
+  enabled: true
+  auto_capture:
+    interval: 1.0
+    type: time
+    events:
+      - hp_change
+      - gold_change
+      - room_change
+      - level_change
+      - combat
+      - item_pickup
+      - item_drop
+  variables:
+    - name: HP%
+      address: "0x8000"
+      type: int
+      description: "Current hit points percentage"
+    - name: GOLD%
+      address: "0x8002"
+      type: int
+      description: "Current gold pieces"
+    - name: XP%
+      address: "0x8004"
+      type: int
+      description: "Experience points"
+    - name: STR%
+      address: "0x8006"
+      type: int
+      description: "Strength"
+    - name: DEX%
+      address: "0x8008"
+      type: int
+      description: "Dexterity"
+    - name: ROOM%
+      address: "0x800A"
+      type: int
+      description: "Current room/level number"
+    - name: DEPTH%
+      address: "0x800C"
+      type: int
+      description: "Dungeon depth"
+    - name: AC%
+      address: "0x800E"
+      type: int
+      description: "Armor class"
+    - name: WEAPON$
+      address: "0x8100"
+      type: string
+      length: 20
+      description: "Current weapon name"
+    - name: ARMOR$
+      address: "0x8120"
+      type: string
+      length: 20
+      description: "Current armor name"
+    - name: RING$
+      address: "0x8140"
+      type: string
+      length: 20
+      description: "Current ring name"
+    - name: STATUS$
+      address: "0x8200"
+      type: string
+      length: 40
+      description: "Full status line text"
+
+skin:
+  default: teletext_classic
+  styles:
+    teletext_classic:
+      foreground: "#00FF00"
+      background: "#000000"
+      font: "Courier New"
+      border: "#00FF00"
+      header: "#FFFF00"
+      highlight: "#FF0000"
+    amber_monitor:
+      foreground: "#FFB000"
+      background: "#000000"
+      font: "Courier New"
+      border: "#FFB000"
+      header: "#FFD700"
+      highlight: "#FF4500"
+
+mcp:
+  commands:
+    - name: PAUSE
+      description: "Pause game execution"
+    - name: RESUME
+      description: "Resume game execution"
+    - name: SAVE
+      description: "Save game state to spool"
+    - name: RESTORE
+      description: "Restore game state from spool"
+    - name: STATUS
+      description: "Get current game status"
+    - name: QUIT
+      description: "Quit game"
+
+spool:
+  format: json
+  compression: none
+  auto_save:
+    enabled: true
+    interval: 60
+    events:
+      - room_change
+      - level_change
+      - save_game
+
+dependencies: []
