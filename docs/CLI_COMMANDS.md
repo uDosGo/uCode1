@@ -2,310 +2,159 @@
 
 ## Overview
 
-uCode1 is a next-generation uDos platform with a comprehensive CLI interface for managing notes, knowledge, spatial data, and more.
+The `ucode` command is the **runtime and educational interface** for the uDos ecosystem. It provides BBC BASIC scripting, grid/cell management, teletext rendering, and feed operations.
 
-## Basic Usage
+**Layer:** uCode1 — Text/ASCII/Teletext layer  
+**System operations:** Use `udo` (see [Connect/udo](https://github.com/uDosGo/Connect))  
+**Sprites/BOBs:** Use uCode2 (AMOS runtime)  
+**Vector/SVG:** Use uCode3 (HomeNest)  
+**Spatial/3D:** Use uCode4
+
+## Usage
 
 ```bash
-ucode1 [OPTIONS] [SUBCOMMAND]
+ucode <command> [arguments] [flags]
 ```
 
-## Global Options
+## Core Commands
 
-| Option | Description |
-|--------|-------------|
-| `--user` | Run in user mode (default) |
-| `--privacy` | Run in privacy mode (no telemetry, no network) |
-| `--status` | Run in status mode (enables MCP server) |
-| `--dev` | Run in development mode |
-| `--debug` | Enable debug logging |
-| `--roadmap` | Show development roadmap |
+### Program Execution
 
-## Modes
+| Command | Description | Example |
+|---------|-------------|---------|
+| `run <file>` | Execute BASIC file | `ucode run hello.bas` |
+| `list` | List available programs | `ucode list` |
+| `load <file>` | Load program into memory | `ucode load adventure.bas` |
+| `save <file>` | Save current program | `ucode save mygame.bas` |
+| `new` | Clear current program | `ucode new` |
 
-uCode1 operates in different modes that affect its behavior:
+### Cell Commands (Grid System)
 
-- **User Mode** (`--user`): Default mode for regular users
-- **Privacy Mode** (`--privacy`): Disables telemetry and network features
-- **Status Mode** (`--status`): Enables MCP server for inter-process communication
-- **Dev Mode** (`--dev`): Development mode with additional logging and features
-- **Debug Mode** (`--debug`): Enables verbose debug logging
+Cells are 24×24 pixel addressable units with 45KB storage each.
 
-## Commands
+| Command | Description | Example |
+|---------|-------------|---------|
+| `cell create <coord>` | Create a cell at coordinate | `ucode cell create L100-AA10-0000-0` |
+| `cell show <coord>` | Show cell details | `ucode cell show L100-AA10-0317-2` |
+| `cell edit <coord> --resource <file>` | Edit cell resource | `ucode cell edit L100-AA10-0000-0 --resource script.ucode` |
+| `cell neighbours <coord> --radius <n>` | List neighbouring cells | `ucode cell neighbours L100-AA10-0000-0 --radius 5` |
 
-### 1. Note Management
+### Cube Commands
 
-Manage notes in your vault:
+A Cube is 6 stacked Cells (layers 0-5) at the same grid/cell coordinate.
 
-#### List Notes
-```bash
-ucode1 note list
-```
+| Command | Description | Example |
+|---------|-------------|---------|
+| `cube create <cube-coord>` | Create a 6-cell cube | `ucode cube create L100-AA10-0317` |
+| `cube stack <cube-coord> --layers <list>` | Stack layers into cube | `ucode cube stack L100-AA10-0317 --layers 0,1,2,3,4,5` |
+| `cube physical <cube-coord> --lego` | Generate Lego build instructions | `ucode cube physical L100-AA10-0317 --lego` |
 
-Lists all notes in the current vault.
+### Grid Commands
 
-#### Show Note
-```bash
-ucode1 note show <name>
-```
+| Command | Description | Example |
+|---------|-------------|---------|
+| `grid export --level <n> --format <fmt>` | Export grid data | `ucode grid export --level 100 --format json` |
+| `grid import --file <path>` | Import grid data | `ucode grid import --file grid_data.json` |
 
-Display the content of a specific note.
+### Map Commands
 
-**Arguments:**
-- `name`: Name of the note to display
+| Command | Description | Example |
+|---------|-------------|---------|
+| `map render --world <name>` | Render a world map | `ucode map render --world L100` |
+| `map near <coord> --radius <n> --type <type>` | Find nearby features | `ucode map near L100-AA10-0000-0 --radius 10 --type waypoint` |
+| `map path <from> <to>` | Find path between coordinates | `ucode map path L100-AA10-0000-0 L300-BD14-1522-0` |
 
-#### Create Note
-```bash
-ucode1 note create <name> [content]
-```
+### Movement Commands
 
-Create a new note in the vault.
+| Command | Description | Example |
+|---------|-------------|---------|
+| `locate <coord> X=<x> Y=<y>` | Position within grid | `ucode locate L100-AA10-0000-0 X=100 Y=50` |
+| `move <coord> TO <x>,<y> STEP <n>` | Animate movement | `ucode move L100-AA10-0000-0 TO 200,100 STEP 10` |
+| `collide <coord>` | Check collision | `ucode collide L100-AA10-0000-0` |
 
-**Arguments:**
-- `name`: Name of the new note
-- `content`: (Optional) Initial content for the note
+### Audio Commands
 
-### 2. OK Agent
+| Command | Description | Example |
+|---------|-------------|---------|
+| `sound play <file>` | Play audio file | `ucode sound play alert.wav` |
+| `sound stop` | Stop current audio | `ucode sound stop` |
+| `sound loop <file> [count]` | Loop playback | `ucode sound loop bgm.mp3 3` |
+| `sound volume <level>` | Set volume (0-100) | `ucode sound volume 75` |
 
-Interact with the local intent assistant:
+*Note: Audio is handled by the Groovebox audio lane.*
 
-#### Ask Question
-```bash
-ucode1 ok <prompt>
-```
+### Program Flow
 
-Ask a question or give a command to the OK agent.
+| Command | Description | Example |
+|---------|-------------|---------|
+| `wait <frames>` | Delay execution | `ucode wait 50` |
+| `print "<message>"` | Output to console | `ucode print "Hello, World!"` |
+| `input "<prompt>", <var>$` | Read user input | `ucode input "Your name? ", name$` |
+| `goto <line>` | Jump to line | `ucode goto 100` |
+| `gosub <line>` | Subroutine call | `ucode gosub 500` |
+| `return` | Return from subroutine | `ucode return` |
+| `if <cond> then <cmd>` | Conditional execution | `ucode if score > 100 then print "Winner!"` |
 
-**Arguments:**
-- `prompt`: Your question or command
+### Variables
 
-### 3. Terminal User Interface
+| Command | Description | Example |
+|---------|-------------|---------|
+| `let <var> = <value>` | Variable assignment | `ucode let score = 100` |
+| `dim <array>(<size>)` | Array declaration | `ucode dim grid(10, 10)` |
+| `poke <addr>, <value>` | Write to cell memory | `ucode poke 53280, 0` |
+| `peek <addr>` | Read from cell memory | `ucode peek 53280` |
 
-#### Launch TUI
-```bash
-ucode1 tui
-```
+### Feed Commands
 
-Launch the interactive Terminal User Interface for managing your vault.
+| Command | Description | Example |
+|---------|-------------|---------|
+| `feed recent --limit <n>` | Show recent feed entries | `ucode feed recent --limit 10` |
+| `feed search <query>` | Search feed spool | `ucode feed search "game update"` |
+| `feed post <message>` | Post to feed | `ucode feed post "Level completed!"` |
 
-### 4. Spatial Map Operations
+### Sync
 
-Manage spatial data and maps:
+| Command | Description | Example |
+|---------|-------------|---------|
+| `sync` | Wait for vertical blank | `ucode sync` |
 
-#### Add Point
-```bash
-ucode1 map add <layer> <x> <y> <id>
-```
+## Global Flags
 
-Add a point to a spatial layer.
-
-**Arguments:**
-- `layer`: Name of the layer
-- `x`: X coordinate
-- `y`: Y coordinate
-- `id`: Point identifier
-
-#### Find Nearby Points
-```bash
-ucode1 map near <x> <y> <radius>
-```
-
-Find points near a specific location.
-
-**Arguments:**
-- `x`: X coordinate of search center
-- `y`: Y coordinate of search center
-- `radius`: Search radius
-
-### 5. Feed Operations
-
-Manage RSS/Atom feed subscriptions:
-
-#### Add Feed
-```bash
-ucode1 feed add <url>
-```
-
-Subscribe to a new feed.
-
-**Arguments:**
-- `url`: URL of the feed to subscribe to
-
-#### List Feeds
-```bash
-ucode1 feed list
-```
-
-List all subscribed feeds.
-
-#### Remove Feed
-```bash
-ucode1 feed remove <url>
-```
-
-Unsubscribe from a feed.
-
-**Arguments:**
-- `url`: URL of the feed to remove
-
-#### Fetch Feed
-```bash
-ucode1 feed fetch <url>
-```
-
-Manually fetch and update a feed.
-
-**Arguments:**
-- `url`: URL of the feed to fetch
+| Flag | Description |
+|------|-------------|
+| `--line <n>` | Start at specific line number |
+| `--quiet` | Suppress output (except PRINT) |
+| `--trace` | Trace execution (for debugging) |
+| `--profile` | Profile performance |
 
 ## Examples
 
-### Basic Workflow
-
-```bash
-# Create a new note
-ucode1 note create "Project Ideas" "# Project Ideas\n\n1. Build a new CLI tool\n2. Create documentation\n3. Implement testing"
-
-# List all notes
-ucode1 note list
-
-# View a specific note
-ucode1 note show "Project Ideas"
-
-# Ask the OK agent a question
-ucode1 ok "What should I work on next?"
-
-# Launch the TUI for interactive management
-ucode1 tui
+### Create and explore a cell
+```basic
+OK> cell create L100-AA10-0000-0
+OK> cell edit L100-AA10-0000-0 --resource "notes.txt"
+OK> cell neighbours L100-AA10-0000-0 --radius 3
 ```
 
-### Spatial Data Management
-
-```bash
-# Add locations to a map
-ucode1 map add "Coffee Shops" 37.7749 -122.4194 "Blue Bottle"
-ucode1 map add "Coffee Shops" 37.7670 -122.4230 "Ritual"
-
-# Find coffee shops near a location
-ucode1 map near 37.77 -122.42 0.5
+### BASIC program
+```basic
+10 PRINT "Welcome to uDos!"
+20 INPUT "What's your name? ", name$
+30 PRINT "Hello, "; name$;
+40 FOR i = 1 TO 10
+50   PRINT i;
+60 NEXT i
+70 END
 ```
 
-### Feed Management
-
+### Grid export
 ```bash
-# Subscribe to feeds
-ucode1 feed add "https://example.com/blog/rss"
-ucode1 feed add "https://news.ycombinator.com/rss"
-
-# List all subscriptions
-ucode1 feed list
-
-# Manually update a feed
-ucode1 feed fetch "https://example.com/blog/rss"
+ucode grid export --level 300 --format json
 ```
 
-## Advanced Usage
+## See Also
 
-### Development Mode
-
-```bash
-# Run in development mode with debug logging
-ucode1 --dev --debug tui
-```
-
-### Privacy Mode
-
-```bash
-# Run with no telemetry or network access
-ucode1 --privacy note list
-```
-
-### Status Mode with MCP Server
-
-```bash
-# Run with MCP server enabled for inter-process communication
-ucode1 --status tui
-```
-
-## Configuration
-
-uCode1 uses a configuration file at `~/.uCode1/config.yaml` for persistent settings.
-
-### Dev Configuration
-
-In development mode, uCode1 looks for a `.dev.yaml` file in the current directory for additional development-specific configuration.
-
-## Vault Location
-
-By default, uCode1 stores notes and data in `~/Code/Vault`. This can be configured in the settings.
-
-## Help Command
-
-To get help information:
-
-```bash
-# General help
-ucode1 --help
-
-# Help for a specific command
-ucode1 note --help
-ucode1 ok --help
-ucode1 map --help
-ucode1 feed --help
-```
-
-## Roadmap
-
-To view the development roadmap:
-
-```bash
-ucode1 --roadmap
-```
-
-## Troubleshooting
-
-### Common Issues
-
-**Vault not found:**
-```bash
-# Ensure the vault directory exists
-mkdir -p ~/Code/Vault
-```
-
-**Permission issues:**
-```bash
-# Check directory permissions
-chmod -R 755 ~/Code/Vault
-```
-
-**Debug mode:**
-```bash
-# Run with debug logging for troubleshooting
-ucode1 --debug note list
-```
-
-## Best Practices
-
-1. **Regular Backups**: Backup your vault directory regularly
-2. **Use Modes Appropriately**: Use privacy mode when working with sensitive data
-3. **Organize Notes**: Use a consistent naming convention for notes
-4. **Leverage Spatial Data**: Use the map features for location-based data
-5. **Feed Management**: Regularly review and clean up feed subscriptions
-
-## Integration
-
-uCode1 can integrate with:
-
-- **Marksmith**: Shared vault compatibility
-- **uDos**: Legacy uDos system integration
-- **External Tools**: Via MCP server in status mode
-
-## Future Features
-
-Upcoming features in development:
-
-- Advanced search and filtering
-- Note tagging and categorization
-- Export/import functionality
-- Collaboration features
-- Enhanced spatial analysis tools
+- [System commands (`udo`)](https://github.com/uDosGo/Connect)
+- [uCode2 — Sprite/BOB layer (AMOS runtime)](https://github.com/uDosGo/uCode2)
+- [uCode3 — Vector/SVG layer (HomeNest)](https://github.com/uDosGo/uCode3)
+- [uCode4 — Spatial/3D layer](https://github.com/uDosGo/uCode4)

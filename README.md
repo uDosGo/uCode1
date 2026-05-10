@@ -1,154 +1,147 @@
-# uCode1 - BASIC Scripting Language
+# uCode1 — BBC BASIC Runtime + Grid/Cell System
 
-**Ownership**: uDosGo
-**Core Language**: Python
-**Performance Option**: Rust via OkAgentDigital bindings
+**Ownership:** uDosGo  
+**Core Language:** Python  
+**CLI Command:** `ucode` (runtime/educational)  
+**Status:** 🟢 Active
+
+---
 
 ## Overview
 
-uCode1 is a modern BASIC-inspired scripting language designed for the uDos ecosystem. It provides:
+uCode1 is the **Text/ASCII/Teletext layer** of the uDos ecosystem. It provides a modern BBC BASIC-inspired scripting runtime with a spatial grid/cell system.
 
-- Simple, beginner-friendly syntax
-- Teletext/MODE 7 graphics support
-- Vault filesystem operations
-- Integration with uDos tools
+### What uCode1 Owns
+
+- **BBC BASIC interpreter** — Run `.bas` scripts with modern extensions
+- **Grid/Cell system** — Spatial coordinate addressing, cell storage (SQLite)
+- **Teletext/MODE 7 graphics** — Character-based rendering
+- **Vault filesystem** — Secure document storage
+- **Feed spool** — Time-ordered event management
+
+### What Belongs to Other Layers
+
+| Feature | Layer | CLI |
+|---------|-------|-----|
+| Sprites & BOBs (visual rendering) | uCode2 | `ucode` |
+| Vector/SVG, HomeNest | uCode3 | `ucode` |
+| Spatial/3D, virtual worlds | uCode4 | `ucode` |
+| System operations (daemons, containers) | System | `udo` |
+
+### CLI: `ucode` (Runtime/Educational)
+
+All uCode layers use the `ucode` command. System operations use `udo` (see [Connect/udo](https://github.com/uDosGo/Connect)).
+
+```
+ucode <command> [arguments] [flags]
+```
+
+| Command | Purpose | Example |
+|---------|---------|---------|
+| `run` | Execute BASIC file | `ucode run hello.bas` |
+| `list` | List available programs | `ucode list` |
+| `load` | Load program into memory | `ucode load adventure.bas` |
+| `save` | Save current program | `ucode save mygame.bas` |
+| `new` | Clear current program | `ucode new` |
+| `cell` | Cell operations | `ucode cell show L100-AA10-0317-2` |
+| `cube` | Cube operations | `ucode cube create L100-AA10-0317` |
+| `grid` | Grid-level operations | `ucode grid export --level 100 --format json` |
+| `map` | Map-level operations | `ucode map render --world L100` |
+| `locate` | Position within grid | `ucode locate L100-AA10-0000-0 X=100 Y=50` |
+| `move` | Animate movement | `ucode move L100-AA10-0000-0 TO 200,100 STEP 10` |
+| `collide` | Check collision | `ucode collide L100-AA10-0000-0` |
+| `sound` | Audio playback | `ucode sound play alert.wav` |
+| `print` | Output to console | `ucode print "Hello, uDos!"` |
+| `input` | Read user input | `ucode input "Your name? " name$` |
+| `let` | Variable assignment | `ucode let score = 100` |
+| `feed` | Feed spool operations | `ucode feed recent --limit 10` |
+| `wait` | Delay execution | `ucode wait 50` |
+
+### Global Flags
+
+| Flag | Description |
+|------|-------------|
+| `--line <n>` | Start at specific line number |
+| `--quiet` | Suppress output (except PRINT) |
+| `--trace` | Trace execution (debugging) |
+| `--profile` | Profile performance |
+
+---
+
+## Quick Start
+
+### Install
+```bash
+pip install ucode1
+```
+
+### Run a BASIC script
+```bash
+ucode run examples/hello.bas
+```
+
+### Interactive REPL
+```bash
+ucode
+OK> PRINT "Hello, World!"
+OK> RUN
+```
+
+### Create a cell
+```basic
+OK> cell create L100-AA10-0000-0
+OK> cell edit L100-AA10-0000-0 --resource script.ucode
+OK> cell neighbours L100-AA10-0000-0 --radius 5
+```
+
+---
 
 ## Architecture
 
 ```
-uCode1 (Python Core)
-├── Core interpreter (Python)
-├── Standard library (Python)
-├── Teletext rendering (Python + Rust option)
-├── Vault operations (Python + Rust option)
-└── OkAgentDigital bindings (optional)
+uCode1 (Python)
+├── Interpreter       — BBC BASIC parser & runtime
+├── Grid Engine       — Spatial coordinate system (24×24 cells)
+├── Cell Storage      — SQLite-backed cell database
+├── Teletext Renderer — MODE 7 character graphics
+├── Vault Bridge      — Secure document storage
+├── Feed Spool        — Time-ordered event management
+└── Cube Manager      — 6-cell stack (display, storage, physical)
 ```
 
-## Core Components
+### Spatial Hierarchy
 
-### 1. Interpreter
-- Python-based BASIC parser
-- REPL support
-- Error handling
-
-### 2. Teletext Support
-- **Python mode**: Pure Python rendering (always works)
-- **Rust mode**: High-performance via CeeFaxThinUi (optional)
-
-### 3. Vault Operations
-- **Python mode**: Secure filesystem operations
-- **Rust mode**: Enhanced security via RustVault (optional)
-
-### 4. Standard Library
-- File I/O
-- Math functions
-- String manipulation
-- Teletext graphics
-- Vault management
-
-## Usage
-
-### Basic Script
-```basic
-10 PRINT "Hello, uDos!"
-20 INPUT "What's your name? ", name$
-30 PRINT "Hello, "; name$;
-40 TELETEXT MODE 7
-50 PLOT 10, 5, "Hello in teletext!"
-60 END
+```
+Pixel (24×24 px) ──┐
+QR Code (5KB) ─────┼──► Cell (24×24 px, 45KB storage, 36 bricks)
+Physical Brick ────┘
+FCELL (flexible width, 24px height) ──► Cell (for prose/teletext)
+Cell × 6 (stacked) = Cube (display, storage, physical)
+Rows × Columns of Cells → Grid
+Single Z-plane (0-5) → Layer
+Named world, multiple Layers → Map
 ```
 
-### Running Scripts
-```bash
-# Pure Python mode (always works)
-python -m ucode1 my_script.bas
+### Coordinate Format
 
-# With Rust acceleration (if available)
-python -m ucode1 --rust my_script.bas
+```
+L{level}-{gridX}{gridY}-{cellX}{cellY}-{layer}
+
+Example: L100-AA10-0317-2
+  level=100, grid=AA10, cell=0317, layer=2
 ```
 
-## Teletext Integration
-
-### Python Mode (Fallback)
-```python
-from ucode1.teletext import PythonTeletextRenderer
-
-renderer = PythonTeletextRenderer()
-image = renderer.render([
-    "Hello, World!",
-    "This is teletext mode"
-])
-image.save("output.png")
-```
-
-### Rust Mode (Optional)
-```python
-from ucode1.teletext import RustTeletextRenderer
-
-try:
-    renderer = RustTeletextRenderer()  # Uses CeeFaxThinUi
-    image = renderer.render([
-        "Hello, World!",
-        "This is teletext mode"
-    ])
-    image.save("output.png")
-except ImportError:
-    # Fallback to Python mode
-    from ucode1.teletext import PythonTeletextRenderer
-    renderer = PythonTeletextRenderer()
-    image = renderer.render([...])
-```
-
-## Vault Operations
-
-### Python Mode
-```python
-from ucode1.vault import Vault
-
-vault = Vault("/path/to/vault")
-vault.write("notes.txt", "Hello from uCode1!")
-content = vault.read("notes.txt")
-print(content)
-```
-
-### Rust Mode (Optional)
-```python
-from ucode1.vault import SecureVault
-
-try:
-    vault = SecureVault("/path/to/vault")  # Uses RustVault
-    vault.secure_write("notes.txt", "Hello from uCode1!")
-    content = vault.secure_read("notes.txt")
-    print(content)
-except ImportError:
-    # Fallback to Python mode
-    from ucode1.vault import Vault
-    vault = Vault("/path/to/vault")
-    vault.write("notes.txt", "Hello from uCode1!")
-```
-
-## OkAgentDigital Integration
-
-uCode1 can optionally use OkAgentDigital components for enhanced performance:
-
-```python
-from ucode1.okagent import enable_rust_acceleration
-
-if enable_rust_acceleration():
-    print("🚀 Rust acceleration enabled!")
-    # Now using Rust for graphics and vault operations
-else:
-    print("🐍 Using pure Python mode")
-    # Using Python implementations
-```
+---
 
 ## Development
 
 ### Setup
 ```bash
+git clone git@github.com:uDosGo/uCode1.git
+cd uCode1
 python -m venv venv
 source venv/bin/activate
-pip install -e .
+pip install -e ".[dev]"
 ```
 
 ### Testing
@@ -156,34 +149,17 @@ pip install -e .
 pytest tests/
 ```
 
-### Building
+### Build
 ```bash
-python setup.py sdist bdist_wheel
+python -m build
 ```
 
-## Performance Comparison
-
-| Operation | Python Mode | Rust Mode | Speedup |
-|-----------|------------|----------|---------|
-| Teletext Render | 100ms | 10ms | 10x |
-| Vault Read | 5ms | 1ms | 5x |
-| Script Parse | 20ms | 5ms | 4x |
-| Graphics | 50ms | 5ms | 10x |
+---
 
 ## License
 
 MIT
 
-## Roadmap
-
-- [ ] Basic interpreter
-- [ ] Teletext support (Python)
-- [ ] Vault operations (Python)
-- [ ] Rust bindings (optional)
-- [ ] Standard library
-- [ ] ThinUI integration
-- [ ] DevStudio plugin
-
 ---
 
-**Note**: uCode1 is designed to work without OkAgentDigital components. Rust acceleration is completely optional and provides performance enhancements when available.
+*Part of the uDos ecosystem. See [uCode4](https://github.com/uDosGo/uCode4) for Spatial/3D documentation.*

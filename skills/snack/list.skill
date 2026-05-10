@@ -1,6 +1,0 @@
-# snack/list.skill
-name: snack_list
-description: List available snacks
-parameters: []
-action: cd /Users/fredbook/Code/uDosGo/uCode1 && python3 ucode snack list
-output: List of snacks

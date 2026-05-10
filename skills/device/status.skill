@@ -1,6 +1,0 @@
-# device/status.skill
-name: device_status
-description: Check Sonic device status
-parameters: []
-action: echo "Device status check"
-output: JSON device status

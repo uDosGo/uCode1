@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "ucode1"
+version = "0.1.0"
+description = "uCode1 - BASIC-inspired scripting language for uDos ecosystem"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.8"
+authors = [
+    { name = "uDos Team", email = "team@udos.io" },
+]
+keywords = ["basic", "scripting", "udos", "retro", "education"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Interpreters",
+    "Topic :: Education",
+]
+
+dependencies = [
+    "click>=8.0.0",
+    "pygments>=2.0.0",
+    "rich>=10.0.0",
+    "pyyaml>=6.0",
+    "liquidpy>=0.9",
+]
+
+[project.urls]
+Homepage = "https://github.com/uDosGo/uCode1"
+Repository = "https://github.com/uDosGo/uCode1.git"
+Documentation = "https://github.com/uDosGo/uCode1#readme"
+
+[project.scripts]
+ucode1 = "ucode1.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["ucode1*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --tb=short"
+
+[tool.ruff]
+target-version = "py38"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+
+[tool.mypy]
+python_version = "3.8"
+strict = false
+ignore_missing_imports = true

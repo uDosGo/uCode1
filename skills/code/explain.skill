@@ -1,9 +1,0 @@
-# code/explain.skill
-name: code_explain
-description: Explain a BBC BASIC or uCode1 code snippet
-parameters:
-  - name: code
-    type: string
-    required: true
-action: echo "Explaining: {{code}}"
-output: Explanation with line-by-line breakdown

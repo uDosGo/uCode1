@@ -1,9 +1,0 @@
-# vault/list.skill
-name: vault_list
-description: List vault contents at a path
-parameters:
-  - name: path
-    type: string
-    required: false
-action: cd /Users/fredbook/Code/uDosGo/uCode1 && python3 ucode vault list {{path}}
-output: Directory listing
