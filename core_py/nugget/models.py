@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Relic models - Python Implementation
+Nugget models - Python Implementation
 
-Relics are binary executable units in the uDos ecosystem.
+Nuggets are binary executable units in the uDos ecosystem.
 They provide a compact, portable format for distributing and executing code.
 """
 
@@ -17,8 +17,8 @@ import struct
 
 
 @dataclass
-class RelicMetadata:
-    """Metadata for a Relic"""
+class NuggetMetadata:
+    """Metadata for a Nugget"""
     id: str
     name: str
     version: str
@@ -31,8 +31,8 @@ class RelicMetadata:
 
 
 @dataclass
-class RelicResource:
-    """Resource included in a Relic"""
+class NuggetResource:
+    """Resource included in a Nugget"""
     name: str
     type: str  # "file", "data", "script", etc.
     data: bytes
@@ -40,11 +40,11 @@ class RelicResource:
 
 
 @dataclass
-class Relic:
-    """Represents a Relic - a binary executable unit"""
-    metadata: RelicMetadata
+class Nugget:
+    """Represents a Nugget - a binary executable unit"""
+    metadata: NuggetMetadata
     main_code: bytes
-    resources: List[RelicResource] = field(default_factory=list)
+    resources: List[NuggetResource] = field(default_factory=list)
     checksum: Optional[str] = None
     signature: Optional[str] = None
     
@@ -53,7 +53,7 @@ class Relic:
         self.checksum = self.calculate_checksum()
     
     def calculate_checksum(self) -> str:
-        """Calculate SHA256 checksum of the relic content"""
+        """Calculate SHA256 checksum of the nugget content"""
         # Create a hash of metadata + resources + main_code
         content = f"{self.metadata.id}:{self.metadata.version}".encode()
         for resource in self.resources:
@@ -63,12 +63,12 @@ class Relic:
         return hashlib.sha256(content).hexdigest()
     
     def verify_integrity(self) -> bool:
-        """Verify the relic's integrity"""
+        """Verify the nugget's integrity"""
         return self.checksum == self.calculate_checksum()
     
     def add_resource(self, name: str, data: bytes, resource_type: str = "file") -> None:
-        """Add a resource to the relic"""
-        resource = RelicResource(
+        """Add a resource to the nugget"""
+        resource = NuggetResource(
             name=name,
             type=resource_type,
             data=data,
@@ -79,7 +79,7 @@ class Relic:
         self.checksum = self.calculate_checksum()
     
     def to_dict(self) -> Dict[str, Any]:
-        """Convert Relic to dictionary"""
+        """Convert Nugget to dictionary"""
         return {
             'metadata': {
                 'id': self.metadata.id,
@@ -107,9 +107,9 @@ class Relic:
         }
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Relic':
-        """Create Relic from dictionary (limited reconstruction)"""
-        metadata = RelicMetadata(
+    def from_dict(cls, data: Dict[str, Any]) -> 'Nugget':
+        """Create Nugget from dictionary (limited reconstruction)"""
+        metadata = NuggetMetadata(
             id=data['metadata']['id'],
             name=data['metadata']['name'],
             version=data['metadata']['version'],
@@ -121,7 +121,7 @@ class Relic:
             entry_point=data['metadata'].get('entry_point')
         )
         
-        relic = cls(
+        nugget = cls(
             metadata=metadata,
             main_code=b'',  # Main code would need to be loaded separately
             checksum=data.get('checksum')
@@ -130,41 +130,41 @@ class Relic:
         # Resources would need to be loaded separately
         for resource_data in data.get('resources', []):
             # Placeholder resources
-            relic.resources.append(RelicResource(
+            nugget.resources.append(NuggetResource(
                 name=resource_data['name'],
                 type=resource_data['type'],
                 data=b'',  # Data would be loaded separately
                 checksum=resource_data.get('checksum')
             ))
         
-        return relic
+        return nugget
 
 
-class RelicBinaryFormat:
-    """Binary format for Relic files"""
+class NuggetBinaryFormat:
+    """Binary format for Nugget files"""
     
-    # File magic number (4 bytes): 'RELI'
-    MAGIC = b'RELI'
+    # File magic number (4 bytes): 'NUGG'
+    MAGIC = b'NUGG'
     # Format version (2 bytes): 0x0100 = version 1.0
     VERSION = struct.pack('>H', 0x0100)  # Big-endian, version 1.0
     
     @classmethod
-    def pack(cls, relic: Relic) -> bytes:
-        """Pack a Relic into binary format"""
+    def pack(cls, nugget: Nugget) -> bytes:
+        """Pack a Nugget into binary format"""
         # Header: MAGIC (4) + VERSION (2) + RESERVED (2) = 8 bytes
         header = cls.MAGIC + cls.VERSION + b'\x00\x00'
         
         # Metadata section
         metadata_json = json.dumps({
-            'id': relic.metadata.id,
-            'name': relic.metadata.name,
-            'version': relic.metadata.version,
-            'description': relic.metadata.description,
-            'author': relic.metadata.author,
-            'tags': relic.metadata.tags,
-            'dependencies': relic.metadata.dependencies,
-            'runtime': relic.metadata.runtime,
-            'entry_point': relic.metadata.entry_point
+            'id': nugget.metadata.id,
+            'name': nugget.metadata.name,
+            'version': nugget.metadata.version,
+            'description': nugget.metadata.description,
+            'author': nugget.metadata.author,
+            'tags': nugget.metadata.tags,
+            'dependencies': nugget.metadata.dependencies,
+            'runtime': nugget.metadata.runtime,
+            'entry_point': nugget.metadata.entry_point
         }).encode('utf-8')
         
         # Metadata length (4 bytes) + metadata
@@ -172,7 +172,7 @@ class RelicBinaryFormat:
         
         # Resources section
         resources_data = b''
-        for resource in relic.resources:
+        for resource in nugget.resources:
             # Resource header: name_length (2) + type_length (1) + data_length (4)
             name_bytes = resource.name.encode('utf-8')
             type_bytes = resource.type.encode('utf-8')
@@ -186,10 +186,10 @@ class RelicBinaryFormat:
             resources_data += resource_header + name_bytes + type_bytes + resource.data
         
         # Resources count (2 bytes) + resources data
-        resources_section = struct.pack('>H', len(relic.resources)) + resources_data
+        resources_section = struct.pack('>H', len(nugget.resources)) + resources_data
         
         # Main code section: length (4 bytes) + code
-        main_code_section = struct.pack('>I', len(relic.main_code)) + relic.main_code
+        main_code_section = struct.pack('>I', len(nugget.main_code)) + nugget.main_code
         
         # Checksum (32 bytes SHA256)
         checksum = hashlib.sha256(
@@ -206,14 +206,14 @@ class RelicBinaryFormat:
         )
     
     @classmethod
-    def unpack(cls, data: bytes) -> Relic:
-        """Unpack binary data into a Relic"""
+    def unpack(cls, data: bytes) -> Nugget:
+        """Unpack binary data into a Nugget"""
         # Validate header
         if data[:4] != cls.MAGIC:
-            raise ValueError("Invalid Relic magic number")
+            raise ValueError("Invalid Nugget magic number")
         
         if data[4:6] != cls.VERSION:
-            raise ValueError("Unsupported Relic version")
+            raise ValueError("Unsupported Nugget version")
         
         # Parse metadata
         metadata_length = struct.unpack('>I', data[8:12])[0]
@@ -245,7 +245,7 @@ class RelicBinaryFormat:
             resource_data = data[resources_end:resources_end+data_length]
             resources_end += data_length
             
-            resources.append(RelicResource(
+            resources.append(NuggetResource(
                 name=name,
                 type=resource_type,
                 data=resource_data,
@@ -266,10 +266,10 @@ class RelicBinaryFormat:
         ).digest()
         
         if actual_checksum != expected_checksum:
-            raise ValueError("Relic checksum mismatch - file may be corrupted")
+            raise ValueError("Nugget checksum mismatch - file may be corrupted")
         
         # Create metadata object
-        metadata_obj = RelicMetadata(
+        metadata_obj = NuggetMetadata(
             id=metadata['id'],
             name=metadata['name'],
             version=metadata['version'],
@@ -281,34 +281,34 @@ class RelicBinaryFormat:
             entry_point=metadata.get('entry_point')
         )
         
-        # Create and return relic
-        relic = Relic(
+        # Create and return nugget
+        nugget = Nugget(
             metadata=metadata_obj,
             resources=resources,
             main_code=main_code,
             checksum=expected_checksum.hex()
         )
         
-        return relic
+        return nugget
 
 
-class RelicRegistry:
-    """Registry for managing Relics"""
+class NuggetRegistry:
+    """Registry for managing Nuggets"""
     
-    def __init__(self, base_path: str = ".relics"):
-        """Initialize the relic registry"""
+    def __init__(self, base_path: str = ".nuggets"):
+        """Initialize the nugget registry"""
         self.base_path = Path(base_path)
         self.base_path.mkdir(exist_ok=True)
     
-    def save_relic(self, relic: Relic, filename: Optional[str] = None) -> Path:
-        """Save a relic to the registry"""
+    def save_nugget(self, nugget: Nugget, filename: Optional[str] = None) -> Path:
+        """Save a nugget to the registry"""
         if filename is None:
-            filename = f"{relic.metadata.id}.relic"
+            filename = f"{nugget.metadata.id}.nugget"
         
         filepath = self.base_path / filename
         
         # Pack to binary format
-        binary_data = RelicBinaryFormat.pack(relic)
+        binary_data = NuggetBinaryFormat.pack(nugget)
         
         # Write to file
         with open(filepath, 'wb') as f:
@@ -316,46 +316,46 @@ class RelicRegistry:
         
         return filepath
     
-    def load_relic(self, filename: str) -> Relic:
-        """Load a relic from the registry"""
+    def load_nugget(self, filename: str) -> Nugget:
+        """Load a nugget from the registry"""
         filepath = self.base_path / filename
         
         if not filepath.exists():
-            raise FileNotFoundError(f"Relic not found: {filename}")
+            raise FileNotFoundError(f"Nugget not found: {filename}")
         
         # Read binary data
         with open(filepath, 'rb') as f:
             binary_data = f.read()
         
         # Unpack from binary format
-        return RelicBinaryFormat.unpack(binary_data)
+        return NuggetBinaryFormat.unpack(binary_data)
     
-    def list_relics(self) -> List[Dict[str, Any]]:
-        """List all relics in the registry"""
-        relics = []
+    def list_nuggets(self) -> List[Dict[str, Any]]:
+        """List all nuggets in the registry"""
+        nuggets = []
         
-        for filepath in self.base_path.glob("*.relic"):
+        for filepath in self.base_path.glob("*.nugget"):
             try:
-                relic = self.load_relic(filepath.name)
-                relics.append({
+                nugget = self.load_nugget(filepath.name)
+                nuggets.append({
                     'filename': filepath.name,
-                    'id': relic.metadata.id,
-                    'name': relic.metadata.name,
-                    'version': relic.metadata.version,
-                    'runtime': relic.metadata.runtime,
-                    'checksum': relic.checksum,
+                    'id': nugget.metadata.id,
+                    'name': nugget.metadata.name,
+                    'version': nugget.metadata.version,
+                    'runtime': nugget.metadata.runtime,
+                    'checksum': nugget.checksum,
                     'size': filepath.stat().st_size
                 })
             except Exception as e:
-                relics.append({
+                nuggets.append({
                     'filename': filepath.name,
                     'error': str(e)
                 })
         
-        return relics
+        return nuggets
     
-    def delete_relic(self, filename: str) -> bool:
-        """Delete a relic from the registry"""
+    def delete_nugget(self, filename: str) -> bool:
+        """Delete a nugget from the registry"""
         filepath = self.base_path / filename
         
         if filepath.exists():
@@ -365,51 +365,51 @@ class RelicRegistry:
         return False
 
 
-# Test the Relic implementation
+# Test the Nugget implementation
 if __name__ == "__main__":
-    print("Testing Relic System...")
+    print("Testing Nugget System...")
     
-    # Create a test relic
-    metadata = RelicMetadata(
-        id="TEST-RELIC-001",
-        name="Test Relic",
+    # Create a test nugget
+    metadata = NuggetMetadata(
+        id="TEST-NUGGET-001",
+        name="Test Nugget",
         version="1.0.0",
-        description="A test relic for validation",
+        description="A test nugget for validation",
         author="uDos Team",
         tags=["test", "demo"],
         runtime="python"
     )
     
-    relic = Relic(
+    nugget = Nugget(
         metadata=metadata,
-        main_code=b'print("Hello from Relic!")',
+        main_code=b'print("Hello from Nugget!")',
     )
     
     # Add a resource
-    relic.add_resource("config.json", b'{"setting": "value"}', "file")
+    nugget.add_resource("config.json", b'{"setting": "value"}', "file")
     
-    print(f"✓ Created relic: {relic.metadata.name}")
-    print(f"✓ Checksum: {relic.checksum}")
-    print(f"✓ Integrity check: {relic.verify_integrity()}")
+    print(f"✓ Created nugget: {nugget.metadata.name}")
+    print(f"✓ Checksum: {nugget.checksum}")
+    print(f"✓ Integrity check: {nugget.verify_integrity()}")
     
     # Test binary format
-    binary_data = RelicBinaryFormat.pack(relic)
+    binary_data = NuggetBinaryFormat.pack(nugget)
     print(f"✓ Packed to binary: {len(binary_data)} bytes")
     
     # Test unpacking
-    unpacked_relic = RelicBinaryFormat.unpack(binary_data)
-    print(f"✓ Unpacked relic: {unpacked_relic.metadata.name}")
-    print(f"✓ Unpacked integrity: {unpacked_relic.verify_integrity()}")
+    unpacked_nugget = NuggetBinaryFormat.unpack(binary_data)
+    print(f"✓ Unpacked nugget: {unpacked_nugget.metadata.name}")
+    print(f"✓ Unpacked integrity: {unpacked_nugget.verify_integrity()}")
     
     # Test registry
-    registry = RelicRegistry()
-    filepath = registry.save_relic(relic)
+    registry = NuggetRegistry()
+    filepath = registry.save_nugget(nugget)
     print(f"✓ Saved to registry: {filepath}")
     
-    loaded_relic = registry.load_relic(filepath.name)
-    print(f"✓ Loaded from registry: {loaded_relic.metadata.name}")
+    loaded_nugget = registry.load_nugget(filepath.name)
+    print(f"✓ Loaded from registry: {loaded_nugget.metadata.name}")
     
-    relics_list = registry.list_relics()
-    print(f"✓ Registry contains {len(relics_list)} relics")
+    nuggets_list = registry.list_nuggets()
+    print(f"✓ Registry contains {len(nuggets_list)} nuggets")
     
-    print("All Relic tests passed!")
+    print("All Nugget tests passed!")

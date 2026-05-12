@@ -150,19 +150,24 @@ class LiquidEngine:
         """
         return self.render(template_source, {"binder": binder_data})
 
-    def render_relic(
+    def render_usx(
         self,
         template_source: str,
-        relic_data: Dict[str, Any],
+        usx_data: Dict[str, Any],
     ) -> str:
         """
-        Render a Liquid template with relic data.
+        Render a Liquid template with USX document data.
+
+        USX (Universal Surface eXchange) is the human-readable surface
+        format that combines Liquid templates with structured data to
+        define how a surface looks and behaves. This is the "open-box"
+        part of the system — making surface theme files human readable.
 
         Args:
             template_source: Liquid template string.
-            relic_data: Relic data.
+            usx_data: USX document data.
 
         Returns:
             Rendered string output.
         """
-        return self.render(template_source, {"relic": relic_data})
+        return self.render(template_source, {"usx": usx_data})

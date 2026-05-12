@@ -1,4 +1,4 @@
-# uCode1 Python Core
+ # uCode1 Python Core
 #
 # This package contains the Python implementation of uCode1 core functionality,
 # replacing the Rust core implementation as part of the downgrade plan.
@@ -15,8 +15,8 @@ from . import (
     grid,  # Python grid-core (NEW)
     mcp_client,  # MCP client for uCode2 communication (NEW)
     mdx,  # MDX Runtime with Snack shortcode support (NEW)
+    nugget,  # Nugget module — binary executable units (renamed from relic)
     plugin,  # Plugin system (NEW)
-    relic,  # Relic module implemented
     seed,  # Seed Pod — default data & location handling (NEW)
     snack,
     text,  # Python text/md tools (NEW)
@@ -55,6 +55,15 @@ from .mcp_client import (
     test_connection,
 )
 
+# Nugget System
+from .nugget.models import (
+    Nugget,
+    NuggetBinaryFormat,
+    NuggetMetadata,
+    NuggetRegistry,
+    NuggetResource,
+)
+
 # Plugin System
 from .plugin import (
     PluginDiscovery,
@@ -70,13 +79,6 @@ from .plugin.exceptions import (
     PluginError,
     PluginLoadError,
     PluginNotFoundError,
-)
-from .relic.models import (
-    Relic,
-    RelicBinaryFormat,
-    RelicMetadata,
-    RelicRegistry,
-    RelicResource,
 )
 from .snack.dependency import (
     DependencyResolver,
@@ -145,7 +147,7 @@ from .usxd.models import (
 
 __all__ = [
     "snack",
-    "relic",  # Relic module implemented
+    "nugget",  # Nugget module — binary executable units
     "binder",  # Binder module implemented
     "usxd",    # USXD module implemented
     "plugin",  # Plugin system (NEW)
@@ -164,11 +166,11 @@ __all__ = [
     "validate_snack_schema",
     "SnackExecutionError",
     "CircularDependencyError",
-    "Relic",
-    "RelicMetadata",
-    "RelicResource",
-    "RelicBinaryFormat",
-    "RelicRegistry",
+    "Nugget",
+    "NuggetMetadata",
+    "NuggetResource",
+    "NuggetBinaryFormat",
+    "NuggetRegistry",
     "Binder",
     "BinderMetadata",
     "BinderEntry",
