@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# udo-wrapper - Run udo commands from any directory
+# Usage: udo <command> [args...]
+
+# Project root directory (hardcoded for now)
+PROJECT_ROOT="/Users/fredbook/code-vault/uDosConnect"
+UDO_PATH="$PROJECT_ROOT/core/dist/cli.js"
+
+# If not found in project directory, try to find it
+if [ ! -f "$UDO_PATH" ]; then
+  # Try alternative location
+  UDO_PATH="/Users/fredbook/code-vault/uDosConnect/core/bin/udo.mjs"
+fi
+
+if [ ! -f "$UDO_PATH" ]; then
+  echo "❌ udo.mjs not found. Please build first:"
+  echo "   cd /Users/fredbook/code-vault/uDosConnect/core && npm run build"
+  exit 1
+fi
+
+# Run the command
+node "$UDO_PATH" "$@"

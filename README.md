@@ -1,36 +1,48 @@
-# uCode1 — BBC BASIC Runtime + Grid/Cell System
+# uCode1 — Grid/Cell Foundation Layer
 
 **Ownership:** uDosGo  
 **Core Language:** Python  
 **CLI Command:** `ucode` (runtime/educational)  
-**Status:** 🟢 Active
+**Status:** 🟢 Active  
+**Size:** ~8M / 25K lines
 
 ---
 
 ## Overview
 
-uCode1 is the **Text/ASCII/Teletext layer** of the uDos ecosystem. It provides a modern BBC BASIC-inspired scripting runtime with a spatial grid/cell system.
+uCode1 is the **foundation layer** of the uDos ecosystem. It provides the spatial grid/cell coordinate system and a BBC BASIC-inspired scripting runtime. Higher layers (uCode2-4) may import from uCode1, but uCode1 never imports from them.
 
 ### What uCode1 Owns
 
 - **BBC BASIC interpreter** — Run `.bas` scripts with modern extensions
-- **Grid/Cell system** — Spatial coordinate addressing, cell storage (SQLite)
+- **Grid/Cell coordinate system** — Spatial addressing format (`L100-AA10-0317-2`)
 - **Teletext/MODE 7 graphics** — Character-based rendering
-- **Vault filesystem** — Secure document storage
-- **Feed spool** — Time-ordered event management
+- **Cell storage** — SQLite-backed cell database
 
 ### What Belongs to Other Layers
 
-| Feature | Layer | CLI |
+| Feature | Layer | Why |
 |---------|-------|-----|
-| Sprites & BOBs (visual rendering) | uCode2 | `ucode` |
-| Vector/SVG, HomeNest | uCode3 | `ucode` |
-| Spatial/3D, virtual worlds | uCode4 | `ucode` |
-| System operations (daemons, containers) | System | `udo` |
+| Vault Bridge (filesystem ops) | uCode2 | I/O services layer |
+| Feed Spool (event management) | uCode2 | I/O services layer |
+| MCP Gateway (IPC) | uCode2 | I/O services layer |
+| Sprites & BOBs (visual rendering) | uCode2 | Consumes uCode1 grid format |
+| Spatial primitives | uCode2 | Consumes uCode1 grid format |
+| Home media, automation | uCode3 | Application layer |
+| 3D worlds, portals | uCode4 | Application layer |
 
-### CLI: `ucode` (Runtime/Educational)
+### Dependency Rule
 
-All uCode layers use the `ucode` command. System operations use `udo` (see [Connect/udo](https://github.com/uDosGo/Connect)).
+```
+uCode1 ──► uCode2 ──► uCode3 ──► uCode4
+  (none)    (uses 1)   (uses 2)   (uses 2,1)
+```
+
+Each layer may only depend on layers below it. uCode1 has zero dependencies.
+
+---
+
+## CLI: `ucode` (Runtime/Educational)
 
 ```
 ucode <command> [arguments] [flags]
@@ -54,45 +66,7 @@ ucode <command> [arguments] [flags]
 | `print` | Output to console | `ucode print "Hello, uDos!"` |
 | `input` | Read user input | `ucode input "Your name? " name$` |
 | `let` | Variable assignment | `ucode let score = 100` |
-| `feed` | Feed spool operations | `ucode feed recent --limit 10` |
 | `wait` | Delay execution | `ucode wait 50` |
-
-### Global Flags
-
-| Flag | Description |
-|------|-------------|
-| `--line <n>` | Start at specific line number |
-| `--quiet` | Suppress output (except PRINT) |
-| `--trace` | Trace execution (debugging) |
-| `--profile` | Profile performance |
-
----
-
-## Quick Start
-
-### Install
-```bash
-pip install ucode1
-```
-
-### Run a BASIC script
-```bash
-ucode run examples/hello.bas
-```
-
-### Interactive REPL
-```bash
-ucode
-OK> PRINT "Hello, World!"
-OK> RUN
-```
-
-### Create a cell
-```basic
-OK> cell create L100-AA10-0000-0
-OK> cell edit L100-AA10-0000-0 --resource script.ucode
-OK> cell neighbours L100-AA10-0000-0 --radius 5
-```
 
 ---
 
@@ -104,9 +78,11 @@ uCode1 (Python)
 ├── Grid Engine       — Spatial coordinate system (24×24 cells)
 ├── Cell Storage      — SQLite-backed cell database
 ├── Teletext Renderer — MODE 7 character graphics
-├── Vault Bridge      — Secure document storage
-├── Feed Spool        — Time-ordered event management
-└── Cube Manager      — 6-cell stack (display, storage, physical)
+├── Ceefax Bridge     — Teletext grid rendering + CEETEX RSS reader
+├── Snack System      — Pluggable app runner (textual-based)
+├── LENS/SKIN/MCP     — State capture, theme hot-reload, remote control
+├── UDO Runtime       — Agentic workflow engine (skills, tasks, agents)
+└── CLI               — Command-line interface
 ```
 
 ### Spatial Hierarchy
@@ -149,11 +125,6 @@ pip install -e ".[dev]"
 pytest tests/
 ```
 
-### Build
-```bash
-python -m build
-```
-
 ---
 
 ## License
@@ -162,4 +133,4 @@ MIT
 
 ---
 
-*Part of the uDos ecosystem. See [uCode4](https://github.com/uDosGo/uCode4) for Spatial/3D documentation.*
+*Part of the uDos ecosystem. See [uCode2](https://github.com/uDosGo/uCode2) for services layer.*

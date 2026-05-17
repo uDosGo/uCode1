@@ -9,6 +9,10 @@ Key components:
     - GameToTeletextBridge: Converts game output to teletext grid
     - TeletextGrid: 40x25 character grid with colour attributes
     - ColourMapper: Maps game colours to teletext palette
+    - CeetexUCodeApp: Textual-based CEETEX teletext RSS reader app
+    - CeetexLENSAdapter: LENS state capture for CEETEX
+    - CeetexSKINAdapter: SKIN hot-reload for CEETEX
+    - CeetexMCPController: MCP remote control for CEETEX
 """
 
 from .bridge import (
@@ -20,11 +24,28 @@ from .bridge import (
     create_bridge,
 )
 
+from .ceetex_app import (
+    CeetexUCodeApp,
+    CeetexLENSAdapter,
+    CeetexSKINAdapter,
+    CeetexMCPController,
+    CEETEX_SKINS,
+    run_ceetex,
+)
+
 __all__ = [
+    # Bridge
     "GameToTeletextBridge",
     "TeletextGrid",
     "TeletextCell",
     "ColourMapper",
     "TeletextColour",
     "create_bridge",
+    # CEETEX Integration
+    "CeetexUCodeApp",
+    "CeetexLENSAdapter",
+    "CeetexSKINAdapter",
+    "CeetexMCPController",
+    "CEETEX_SKINS",
+    "run_ceetex",
 ]

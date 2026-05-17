@@ -29,6 +29,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core_py.thinui import ThinUIGridBridge, ThinUIGridData
 from core_py.thinui.formats import ThinUILayout, ThinUIComponent, ThinUIComponentType
+from core_py.udo_runtime.api import create_udo_blueprint
 
 # Project storage (in-memory for now)
 _PROJECTS: Dict[str, Any] = {}
@@ -43,6 +44,9 @@ def create_api_server(host: str = "127.0.0.1", port: int = 8001):
         return None
     
     app = Flask(__name__)
+    
+    # Register UDO blueprint
+    app.register_blueprint(create_udo_blueprint())
     
     # Initialize bridge
     bridge = ThinUIGridBridge()
@@ -305,6 +309,18 @@ def run_api_server(host: str = "127.0.0.1", port: int = 8001):
     print(f"  POST http://{host}:{port}/api/thinui/layout")
     print(f"  GET  http://{host}:{port}/api/thinui/projects")
     print(f"  POST http://{host}:{port}/api/thinui/project")
+    print(f"  UDO Runtime endpoints at /api/udo/*")
+    print(f"  GET  http://{host}:{port}/api/udo/health")
+    print(f"  GET  http://{host}:{port}/api/udo/skills")
+    print(f"  GET  http://{host}:{port}/api/udo/tasks")
+    print(f"  GET  http://{host}:{port}/api/udo/variables")
+    print(f"  GET  http://{host}:{port}/api/udo/agents")
+    print(f"  GET  http://{host}:{port}/api/udo/workflows")
+    print(f"  GET  http://{host}:{port}/api/udo/publish/targets")
+    print(f"  GET  http://{host}:{port}/api/udo/vault")
+    print(f"  GET  http://{host}:{port}/api/udo/mcp/status")
+    print(f"  GET  http://{host}:{port}/api/udo/checks")
+    print(f"  POST http://{host}:{port}/api/udo/exec")
     
     app.run(host=host, port=port, debug=True)
 

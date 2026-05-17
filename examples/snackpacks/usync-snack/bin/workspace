@@ -1,0 +1,74 @@
+#!/bin/bash
+# Workspace Management CLI for uDosGo
+
+COMMAND=$1
+WORKSPACE_NAME=$2
+
+case $COMMAND in
+  create)
+    if [ -z "$WORKSPACE_NAME" ]; then
+      echo "Usage: workspace create <name>"
+      exit 1
+    fi
+    
+    WORKSPACE_PATH="~/uDos/@workspace-$WORKSPACE_NAME"
+    
+    if [ -d "$WORKSPACE_PATH" ]; then
+      echo "❌ Workspace already exists: $WORKSPACE_NAME"
+      exit 1
+    fi
+    
+    mkdir -p "$WORKSPACE_PATH"
+    echo "✅ Created workspace: $WORKSPACE_NAME"
+    ;;
+  
+  list)
+    echo "📋 Active Workspaces:"
+    find ~/uDos -type d -name "@workspace-*" | sed "s|~/uDos/@workspace-||g"
+    ;;
+  
+  destroy)
+    if [ -z "$WORKSPACE_NAME" ]; then
+      echo "Usage: workspace destroy <name>"
+      exit 1
+    fi
+    
+    WORKSPACE_PATH="~/uDos/@workspace-$WORKSPACE_NAME"
+    
+    if [ ! -d "$WORKSPACE_PATH" ]; then
+      echo "❌ Workspace not found: $WORKSPACE_NAME"
+      exit 1
+    fi
+    
+    read -p "Are you sure you want to destroy $WORKSPACE_NAME? (y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      rm -rf "$WORKSPACE_PATH"
+      echo "✅ Destroyed workspace: $WORKSPACE_NAME"
+    fi
+    ;;
+  
+  archive)
+    if [ -z "$WORKSPACE_NAME" ]; then
+      echo "Usage: workspace archive <name>"
+      exit 1
+    fi
+    
+    WORKSPACE_PATH="~/uDos/@workspace-$WORKSPACE_NAME"
+    
+    if [ ! -d "$WORKSPACE_PATH" ]; then
+      echo "❌ Workspace not found: $WORKSPACE_NAME"
+      exit 1
+    fi
+    
+    # Move to compost
+    mkdir -p ~/uDosGo/Memory/State/Compost/.archive/workspaces
+    mv "$WORKSPACE_PATH" ~/uDosGo/Memory/State/Compost/.archive/workspaces/
+    echo "✅ Archived workspace: $WORKSPACE_NAME"
+    ;;
+  
+  *)
+    echo "Usage: workspace {create|list|destroy|archive} [name]"
+    exit 1
+    ;;
+esac
