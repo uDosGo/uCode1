@@ -1,0 +1,22 @@
+#!/bin/bash
+# Handoff CLI for agent-to-agent communication
+
+COMMAND=$1
+MESSAGE=$2
+
+case $COMMAND in
+  send)
+    echo "[$(date)] Sending handoff: $MESSAGE" >> ~/Vault/handoff/shared/handshake.log
+    cd ~/Vault && git add . && git commit -m "Handoff: $MESSAGE" && git push
+    ;;
+  status)
+    cat ~/Vault/handoff/swarm/peers.json | jq '.agents[] | {id, last_seen, status}'
+    ;;
+  sync)
+    cd ~/Vault && git pull
+    echo "✓ Handoff state synced"
+    ;;
+  *)
+    echo "Usage: handoff {send|status|sync} [message]"
+    ;;
+esac

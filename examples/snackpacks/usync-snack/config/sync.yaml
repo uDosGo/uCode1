@@ -1,0 +1,26 @@
+version: "2.0"
+domains:
+  place: udo.place
+  guide: udo.guide
+  
+# No archive paths anywhere
+sync_paths:
+  - source: $UDOS_VAULT/
+    dest: git@github.com:fredporter/vault.git
+    interval: 300
+    exclude: [".compost", "*.tmp"]
+    
+  - source: ~/uDos/@inbox/
+    dest: cloud://udo.place/x/inbox
+    interval: 5
+    
+  - source: $UDOS_APPS/
+    dest: git@github.com:AgentDigitalCo
+    interval: 900
+    private: true
+
+# Compost handling - never sync
+exclude_patterns:
+  - "**/.compost/**"
+  - "**/*.tmp"
+  - "**/*.log"

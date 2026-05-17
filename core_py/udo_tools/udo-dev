@@ -1,0 +1,106 @@
+#!/bin/bash
+
+# uDo Dev Mode CLI
+# Usage: udo dev [start|stop|status|exec]
+
+DEV_MODE_FILE="$HOME/.udos/dev_mode"
+DEV_MODE_DIR="$HOME/.udos"
+
+# Ensure the .udos directory exists
+mkdir -p "$DEV_MODE_DIR"
+
+# Check if dev_mode file exists and read its state
+check_dev_mode() {
+    if [ -f "$DEV_MODE_FILE" ]; then
+        cat "$DEV_MODE_FILE"
+    else
+        echo "OFF"
+    fi
+}
+
+# Start Dev Mode
+start_dev_mode() {
+    echo "ON" > "$DEV_MODE_FILE"
+    echo "✅ Dev Mode is now ON. All dev features are enabled."
+}
+
+# Stop Dev Mode
+stop_dev_mode() {
+    rm -f "$DEV_MODE_FILE"
+    echo "✅ Dev Mode is now OFF. Dev features are hidden."
+}
+
+# Show Dev Mode Status
+show_status() {
+    STATUS=$(check_dev_mode)
+    if [ "$STATUS" == "ON" ]; then
+        echo "🔧 Dev Mode: ON (All dev features enabled)"
+    else
+        echo "🔒 Dev Mode: OFF (Dev features hidden)"
+    fi
+}
+
+# Execute Dev Action
+exec_dev_action() {
+    if [ "$#" -lt 1 ]; then
+        echo "Error: No action specified for 'exec'."
+        echo "Usage: udo dev exec <action> [--tool=<tool_name>]"
+        exit 1
+    fi
+    
+    ACTION=$1
+    shift
+    
+    case "$ACTION" in
+        mistral-prompt-edit)
+            TOOL=""
+            while [ "$#" -gt 0 ]; do
+                case "$1" in
+                    --tool=*)
+                        TOOL="${1#*=}"
+                        shift
+                        ;;
+                    *)
+                        echo "Error: Unknown option $1"
+                        exit 1
+                        ;;
+                esac
+            done
+            
+            if [ -z "$TOOL" ]; then
+                echo "Error: --tool=<tool_name> is required for mistral-prompt-edit."
+                exit 1
+            fi
+            
+            echo "Executing Mistral prompt edit for tool: $TOOL"
+            # Add your Mistral prompt editing logic here
+            ;;
+        *)
+            echo "Error: Unknown action '$ACTION'."
+            exit 1
+            ;;
+    esac
+}
+
+# Main Command Handling
+case "$1" in
+    start)
+        start_dev_mode
+        ;;
+    stop)
+        stop_dev_mode
+        ;;
+    status)
+        show_status
+        ;;
+    exec)
+        shift
+        exec_dev_action "$@"
+        ;;
+    *)
+        echo "Usage: udo dev [start|stop|status|exec <action> [--tool=<tool_name>]]"
+        exit 1
+        ;;
+esac
+
+exit 0

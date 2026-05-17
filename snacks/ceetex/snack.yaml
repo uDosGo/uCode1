@@ -1,0 +1,111 @@
+# CEETEX Teletext Snack — uCode1 Snack Definition
+#
+# Launches the CEETEX teletext RSS reader as a uCode1 Snack.
+# Integrates with LENS (state capture), SKIN (theme hot-reload),
+# and MCP (remote control) via the uCode1 bridge system.
+#
+# Usage:
+#   ucode1 snack run snacks/ceetex/snack.yaml
+#   ucode1 snack run ceetex
+
+name: ceetex
+display_name: "CEETEX Teletext"
+description: "RSS teletext reader — broadcast-style news, sport, weather & more"
+version: "1.0.0"
+author: "ViciousSquid / uCode1"
+
+type: textual
+entry: "ucode1.ceefax.ceetex_app:CeetexUCodeApp"
+
+# ── Runtime Requirements ────────────────────────────────────────────
+
+requirements:
+  python:
+    - textual>=0.41.0
+    - feedparser>=6.0.0
+    - rich>=13.0.0
+
+# ── uCode1 Bridge Integration ───────────────────────────────────────
+
+bridges:
+  lens:
+    enabled: true
+    adapter: "ucode1.ceefax.ceetex_app:CeetexLENSAdapter"
+    capture_interval: 5.0  # seconds
+    fields:
+      - current_page
+      - view_mode
+      - headline_count
+      - headlines
+      - ticker
+      - timestamp
+
+  skin:
+    enabled: true
+    adapter: "ucode1.ceefax.ceetex_app:CeetexSKINAdapter"
+    default: "teletext_classic"
+    options:
+      - teletext_classic
+      - paper_retro
+      - dark_mode
+      - high_vis
+      - amiga_workbench
+
+  mcp:
+    enabled: true
+    controller: "ucode1.ceefax.ceetex_app:CeetexMCPController"
+    commands:
+      - name: PAGE
+        description: "Navigate to a teletext page"
+        args:
+          page: { type: string, required: true }
+      - name: NEXT
+        description: "Next page in sequence"
+      - name: PREV
+        description: "Previous page in sequence"
+      - name: REVEAL
+        description: "Toggle concealed text"
+      - name: SUBTITLE
+        description: "Toggle subtitle mode"
+      - name: SKIN
+        description: "Change visual skin"
+        args:
+          name: { type: string, required: true }
+      - name: STATUS
+        description: "Get current CEETEX state"
+
+# ── Display Configuration ───────────────────────────────────────────
+
+display:
+  width: 80
+  height: 24
+  title: "CEETEX — Broadcast Service"
+  icon: "📺"
+
+# ── Key Bindings ────────────────────────────────────────────────────
+
+bindings:
+  - key: escape
+    action: back_to_list
+    description: "Index/Back"
+  - key: home
+    action: go_home
+    description: "Home"
+  - key: o
+    action: open_browser
+    description: "Open Link"
+  - key: q
+    action: quit
+    description: "Quit"
+  - key: s
+    action: cycle_skin
+    description: "Cycle Skin"
+
+# ── Pages Configuration ─────────────────────────────────────────────
+
+pages:
+  config: "ceetex/pages.json"  # relative to snack directory
+  # Or inline:
+  # 100: ["INDEX", ""]
+  # 101: ["NEWS HEADLINES", "https://feeds.bbci.co.uk/news/rss.xml"]
+  # ...
