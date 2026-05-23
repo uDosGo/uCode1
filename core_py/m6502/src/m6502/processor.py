@@ -306,6 +306,36 @@ class Processor:  # noqa: PLR904
             )
             getattr(self, method_name)()
 
+    def _ins_brk_imp(self) -> None:
+        """
+        BRK (0x00) - Force Interrupt.
+
+        Pushes PC+2 and status register to stack, then sets I flag.
+        :return: None
+        """
+        pc_hi = ((self.program_counter + 2) >> 8) & 0xFF
+        pc_lo = (self.program_counter + 2) & 0xFF
+        self.push(pc_hi)
+        self.push(pc_lo)
+        flags = 0x00
+        if self.flag_n:
+            flags |= (1 << 7)
+        if self.flag_v:
+            flags |= (1 << 6)
+        if self.flag_b:
+            flags |= (1 << 4)
+        if self.flag_d:
+            flags |= (1 << 3)
+        if self.flag_i:
+            flags |= (1 << 2)
+        if self.flag_z:
+            flags |= (1 << 1)
+        if self.flag_c:
+            flags |= (1 << 0)
+        self.push(flags)
+        self.flag_i = True
+        self.cycles += 7
+
     def _ins_nop_imp(self) -> None:
         """
         NOP - No Operation.

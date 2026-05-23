@@ -377,7 +377,7 @@ class ACSMemoryMap:
 
     # ── Tile Type Constants ────────────────────────────────────────
 
-    TILE_TYPES: Dict[int, str] = {
+    TILE_TYPES: Dict[int, str] = field(default_factory=lambda: {
         0x00: "empty",
         0x01: "wall",
         0x02: "floor",
@@ -442,11 +442,11 @@ class ACSMemoryMap:
         0x3D: "pit",
         0x3E: "spikes",
         0x3F: "exit",
-    }
+    })
 
     # ── Item Type Constants ────────────────────────────────────────
 
-    ITEM_TYPES: Dict[int, str] = {
+    ITEM_TYPES: Dict[int, str] = field(default_factory=lambda: {
         0x00: "none",
         0x01: "sword",
         0x02: "axe",
@@ -503,11 +503,11 @@ class ACSMemoryMap:
         0x35: "quest_item",
         0x36: "treasure",
         0x37: "container",
-    }
+    })
 
     # ── Creature Type Constants ────────────────────────────────────
 
-    CREATURE_TYPES: Dict[int, str] = {
+    CREATURE_TYPES: Dict[int, str] = field(default_factory=lambda: {
         0x00: "none",
         0x01: "rat",
         0x02: "bat",
@@ -560,7 +560,7 @@ class ACSMemoryMap:
         0x31: "bard",
         0x32: "monk",
         0x33: "barbarian",
-    }
+    })
 
     def get_tile_name(self, tile_id: int) -> str:
         """Get the human-readable name for a tile type ID"""
