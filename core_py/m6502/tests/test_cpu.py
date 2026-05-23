@@ -1,0 +1,3335 @@
+"""Verifies that the processor class works as expected."""
+
+import sys
+from random import choice
+
+import pytest
+
+from m6502 import Memory, Processor
+
+# Opcodes for the 6502 processor.
+INS_CLC_IMP = 0x18  # Clear Carry Flag.
+
+INS_CLD_IMP = 0xD8  # Clear Decimal Mode.
+
+INS_CLI_IMP = 0x58  # Clear Interrupt Disable.
+
+INS_CLV_IMP = 0xB8  # Clear Overflow Flag.
+
+INS_DEC_ZP = 0xC6  # Decrement Memory, Zero Page.
+INS_DEC_ZPX = 0xD6  # Decrement Memory, Zero Page, X.
+INS_DEC_ABS = 0xCE  # Decrement Memory, Absolute.
+INS_DEC_ABX = 0xDE  # Decrement Memory, Absolute, X.
+
+INS_DEX_IMP = 0xCA  # Decrement X Register.
+
+INS_DEY_IMP = 0x88  # Decrement Y Register.
+
+INS_INC_ZP = 0xE6  # Increment Memory, Zero Page.
+INS_INC_ZPX = 0xF6  # Increment Memory, Zero Page, X.
+INS_INC_ABS = 0xEE  # Increment Memory, Absolute.
+INS_INC_ABX = 0xFE  # Increment Memory, Absolute, X.
+
+INS_INX_IMP = 0xE8  # Increment X Register.
+
+INS_INY_IMP = 0xC8  # Increment Y Register.
+
+INS_LDA_IMM = 0xA9  # Load Accumulator, Immediate.
+INS_LDA_ZP = 0xA5  # Load Accumulator, Zero Page.
+INS_LDA_ZPX = 0xB5  # Load Accumulator, Zero Page, X.
+INS_LDA_ABS = 0xAD  # Load Accumulator, Absolute.
+INS_LDA_ABX = 0xBD  # Load Accumulator, Absolute, X.
+INS_LDA_ABY = 0xB9  # Load Accumulator, Absolute, Y.
+INS_LDA_INX = 0xA1  # Load Accumulator, Indexed Indirect.
+INS_LDA_INY = 0xB1  # Load Accumulator, Indirect Indexed.
+
+INS_LDX_IMM = 0xA2  # Load X Register, Immediate.
+INS_LDX_ZP = 0xA6  # Load X Register, Zero Page.
+INS_LDX_ZPY = 0xB6  # Load X Register, Zero Page, Y.
+INS_LDX_ABS = 0xAE  # Load X Register, Absolute.
+INS_LDX_ABY = 0xBE  # Load X Register, Absolute, Y.
+INS_LDY_IMM = 0xA0  # Load Y Register, Immediate.
+
+INS_LDY_ZP = 0xA4  # Load Y Register, Zero Page.
+INS_LDY_ZPX = 0xB4  # Load Y Register, Zero Page, X.
+INS_LDY_ABS = 0xAC  # Load Y Register, Absolute.
+INS_LDY_ABX = 0xBC  # Load Y Register, Absolute, X.
+
+INS_SEC_IMP = 0x38  # Set Carry Flag.
+
+INS_SED_IMP = 0xF8  # Set Decimal Flag.
+
+INS_SEI_IMP = 0x78  # Set Interrupt Disable.
+
+INS_STA_ZP = 0x85  # Store Accumlator, Zero Page.
+INS_STA_ZPX = 0x95  # Store Accumlator, Zero Page, X.
+INS_STA_ABS = 0x8D  # Store Accumlator, Absolute.
+INS_STA_ABX = 0x9D  # Store Accumlator, Absolute, X.
+INS_STA_ABY = 0x99  # Store Accumlator, Absolute, Y.
+INS_STA_INX = 0x81  # Store Accumlator, Indexed Indirect.
+INS_STA_INY = 0x91  # Store Accumlator, Indirect Indexed.
+
+INS_STX_ZP = 0x86  # Store X Register, Zero Page.
+INS_STX_ZPY = 0x96  # Store X Register, Zero Page, Y.
+INS_STX_ABS = 0x8E  # Store X Register, Absolute.
+
+INS_STY_ZP = 0x84  # Store Y Register, Zero Page.
+INS_STY_ZPX = 0x94  # Store Y Register, Zero Page, X.
+INS_STY_ABS = 0x8C  # Store Y Register, Absolute.
+
+INS_TAX_IMP = 0xAA  # Transfer Accumulator to X Register, Implied.
+
+INS_TAY_IMP = 0xA8  # Transfer Accumulator to Y Register, Implied.
+
+INS_TXA_IMP = 0x8A  # Transfer X Register to Accumulator, Implied.
+
+INS_TYA_IMP = 0x98  # Transfer Y Register to Accumulator, Implied.
+
+# Values for the 6502 processor with different flags set.
+VALUE8_EMPTY = 0x00
+VALUE8_0000_0000 = 0x00  # Z=T, N=F
+VALUE8_0000_1111 = 0x0F  # Z=F, N=F
+VALUE8_0101_1010 = 0x5A  # Z=F, N=F
+VALUE8_1010_0101 = 0xA5  # Z=F, N=T
+VALUE8_1111_0000 = 0xF0  # Z=F, N=T
+VALUE8_1111_1111 = 0xFF  # Z=F, N=T
+
+
+def _random_value(value: int) -> int:
+    """
+    Generate a random value for testing that is not equal to the given value.
+
+    :param int value: Value to avoid in the random selection.
+    :rtype: int
+    :return: Random value between 0 and 255.
+    """
+    return choice([i for i in range(0, 255) if i not in [value]])
+
+
+def _write_word(memory: Memory, address: int, value: int) -> None:
+    """
+    Write a word to memory at the specified address.
+
+    :param Memory memory: Memory instance to write to.
+    :param int address: Address to write the word to.
+    :param int value: Value to write as a word.
+    """
+    if sys.byteorder == "little":
+        memory[address] = value & 0xFF
+        memory[address + 1] = (value >> 8) & 0xFF
+    else:
+        memory[address] = (value >> 8) & 0xFF
+        memory[address + 1] = value & 0xFF
+
+
+def test_cpu_reset() -> None:
+    """
+    Verify CPU state after CPU Reset.
+
+    :return: None
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_b,
+        cpu.flag_d,
+        cpu.flag_i,
+    ) == (Processor.PC_INIT, Processor.SP_INIT, 0, True, False, True)
+
+
+def test_cpu_read_byte() -> None:
+    """
+    Verify CPU can read a byte from memory.
+
+    The cost of the read operation is 1 cycle, and the state of the CPU is
+    not changed.
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    memory[0x0001] = 0xA5
+    value = cpu._read_byte(0x0001)  # noqa: PLW212
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_b,
+        cpu.flag_d,
+        cpu.flag_i,
+        value,
+    ) == (Processor.PC_INIT, Processor.SP_INIT, 1, True, False, True, 0xA5)
+
+
+def test_cpu_read_word() -> None:
+    """
+    Verify CPU can read a word from memory.
+
+    The cost of the read operation is 2 cycles, and the state of the CPU is
+    not changed.
+
+    :return: None
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    memory[0x0001] = 0xA5
+    memory[0x0002] = 0x5A
+    value = cpu._read_word(0x0001)  # noqa: PLW212
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_b,
+        cpu.flag_d,
+        cpu.flag_i,
+        value,
+    ) == (Processor.PC_INIT, Processor.SP_INIT, 2, True, False, True, 0x5AA5)
+
+
+def test_cpu_write_byte() -> None:
+    """
+    Verify CPU can write a byte to memory.
+
+    The cost of the write operation is 1 cycle, and the state of the CPU is
+    not changed.
+
+    :return: None
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu._write_byte(0x0001, 0xA5)  # noqa: PLW212
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_b,
+        cpu.flag_d,
+        cpu.flag_i,
+        memory[0x0001],
+    ) == (Processor.PC_INIT, Processor.SP_INIT, 1, True, False, True, 0xA5)
+
+
+def test_cpu_write_word() -> None:
+    """
+    Verify CPU can write a byte to memory.
+
+    The cost of the write operation is 1 cycle, and the state of the CPU is
+    not changed.
+
+    :return: None
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu._write_word(0x0001, 0x5AA5)  # noqa: PLW212
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_b,
+        cpu.flag_d,
+        cpu.flag_i,
+        memory[0x0001],
+        memory[0x0002],
+    ) == (Processor.PC_INIT, Processor.SP_INIT, 2, True, False, True, 0xA5, 0x5A)
+
+
+def test_cpu_read_write_byte() -> None:
+    """
+    Verify CPU can read and write a byte from memory.
+
+    The cost of the read operation is 1 cycle, and the state of the CPU is
+    not changed.
+
+    :return: None
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu._write_byte(0x0001, 0xA5)  # noqa: PLW212
+    value = cpu._read_byte(0x0001)  # noqa: PLW212
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_b,
+        cpu.flag_d,
+        cpu.flag_i,
+        value,
+    ) == (Processor.PC_INIT, Processor.SP_INIT, 2, True, False, True, 0xA5)
+
+
+def test_cpu_read_write_word() -> None:
+    """
+    Verify CPU can read and write a byte from memory.
+
+    The cost of the read operation is 1 cycle, and the state of the CPU is
+    not changed.
+
+    :return: None
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu._write_word(0x0001, 0x5AA5)  # noqa: PLW212
+    value = cpu._read_word(0x0001)  # noqa: PLW212
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_b,
+        cpu.flag_d,
+        cpu.flag_i,
+        value,
+    ) == (Processor.PC_INIT, Processor.SP_INIT, 4, True, False, True, 0x5AA5)
+
+
+def test_cpu_fetch_byte() -> None:
+    """
+    Verify CPU can fetch a byte from memory.
+
+    The cost of the fetch operation is 1 cycle, and increases the program
+    counter by 1. The state of the CPU is not changed further.
+
+    :return: None
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    memory[Processor.PC_INIT] = 0xA5
+    value = cpu._fetch_byte()  # noqa: PLW212
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_b,
+        cpu.flag_d,
+        cpu.flag_i,
+        value,
+    ) == (Processor.PC_INIT + 1, Processor.SP_INIT, 1, True, False, True, 0xA5)
+
+
+def test_cpu_fetch_word() -> None:
+    """
+    Verify CPU can fetch a word from memory.
+
+    The cost of the fetch operation is 2 cycle, and increases the program
+    counter by 2. The state of the CPU is not changed further.
+
+    :return: None
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    memory[Processor.PC_INIT] = 0xA5
+    memory[Processor.PC_INIT + 1] = 0x5A
+    value = cpu._fetch_word()  # noqa: PLW212
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_b,
+        cpu.flag_d,
+        cpu.flag_i,
+        value,
+    ) == (Processor.PC_INIT + 2, Processor.SP_INIT, 2, True, False, True, 0x5AA5)
+
+
+def test_cpu_ins_clc_imp() -> None:
+    """
+    CLC (0x18) - Clear Carry Flag.
+
+    Sets the carry flag to 0.
+
+    Assembly example:
+    ```
+    CLC
+    ```
+
+    Affected flags:
+    - Carry Flag: Set to 0
+
+    The instruction costs 1 byte and 2 cycles to complete.
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.flag_c = True
+    memory[Processor.PC_INIT] = INS_CLC_IMP
+    cpu.execute(2)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_c,
+    ) == (Processor.PC_INIT + 1, Processor.SP_INIT, 2, False)
+
+
+def test_cpu_ins_cld_imp() -> None:
+    """
+    CLD (0xD8) - Clear Decimal Mode.
+
+    Sets the decimal mode flag to 0.
+
+    The instruction costs 1 byte and 2 cycles to complete.
+
+    Assembly example:
+    ```
+    CLD
+    ```
+
+    Affected flags:
+    - Decimal Flag: Set to 0
+
+    The instruction costs 1 byte and 2 cycles to complete.
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.flag_d = True
+    memory[Processor.PC_INIT] = INS_CLD_IMP
+    cpu.execute(2)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_d,
+    ) == (Processor.PC_INIT + 1, Processor.SP_INIT, 2, False)
+
+
+def test_cpu_ins_cli_imp() -> None:
+    """
+    CLI (0x58) - Clear Interrupt Disable.
+
+    Sets the interrupt disable flag to 0.
+
+    The instruction costs 1 byte and 2 cycles to complete.
+
+    Assembly example:
+    ```
+    CLI
+    ```
+
+    Affected flags:
+    - Interrupt Disable Flag: Set to 0
+
+    The instruction costs 1 byte and 2 cycles to complete.
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.flag_i = True
+    memory[Processor.PC_INIT] = INS_CLI_IMP
+    cpu.execute(2)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_i,
+    ) == (Processor.PC_INIT + 1, Processor.SP_INIT, 2, False)
+
+
+def test_cpu_ins_clv_imp() -> None:
+    """
+    CLV (0xB8) - Clear Overflow Flag.
+
+    Sets the overflow flag to 0.
+
+    The instruction costs 1 byte and 2 cycles to complete.
+
+    Assembly example:
+    ```
+    CLV
+    ```
+
+    Affected flags:
+    - Overflow Flag: Set to 0
+
+    The instruction costs 1 byte and 2 cycles to complete.
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.flag_v = True
+    memory[Processor.PC_INIT] = INS_CLV_IMP
+    cpu.execute(2)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_v,
+    ) == (Processor.PC_INIT + 1, Processor.SP_INIT, 2, False)
+
+
+@pytest.mark.parametrize(
+    ("value", "expected", "flag_z", "flag_n"),
+    [
+        (-1, -2, False, True),
+        (0, -1, False, True),
+        (1, 0, True, False),
+        (2, 1, False, False),
+    ],
+)
+def test_cpu_ins_dec_zp(value: int, expected: int, flag_z: bool, flag_n: bool) -> None:
+    """
+    DEC (0xC6) - Decrement Memory, Zero Page.
+
+    Subtract 1 from the value stored at the memory location that is after the opcode
+    and then evaluate the result for flags Zero and Negative. The memory
+    location is a single byte and within the Zero Page memory range of 0-255.
+
+    Assembly example:
+    ```
+    DEC nn
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if the result of the decrement operation is 0
+    - Negative Flag: Set if bit 7 of the result of the decrement operation is set
+
+    The instruction costs 2 bytes and 5 cycles to complete.
+
+    :param int value: The value to be decremented.
+    :param int expected: The expected result after decrementing the value.
+    :param bool flag_z: The expected state of the zero flag after decrementing the value.
+    :param bool flag_n: The expected state of the negative flag after decrementing the value.
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    memory[Processor.PC_INIT] = INS_DEC_ZP
+    memory[Processor.PC_INIT + 1] = 0xFC
+    memory[0xFC] = value
+    cpu.execute(5)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_z,
+        cpu.flag_n,
+        memory[0xFC],
+    ) == (Processor.PC_INIT + 2, Processor.SP_INIT, 5, flag_z, flag_n, expected)
+
+
+@pytest.mark.parametrize(
+    ("value", "expected", "flag_z", "flag_n", "reg_x", "memory_location"),
+    [
+        (-1, -2, False, True, 0x0F, 0x8F),
+        (0, -1, False, True, 0x0F, 0x8F),
+        (1, 0, True, False, 0x0F, 0x8F),
+        (2, 1, False, False, 0x0F, 0x8F),
+        (-1, -2, False, True, 0xFF, 0x7F),
+        (0, -1, False, True, 0xFF, 0x7F),
+        (1, 0, True, False, 0xFF, 0x7F),
+        (2, 1, False, False, 0xFF, 0x7F),
+    ],
+)
+def test_cpu_ins_dec_zpx(
+    value: int,
+    expected: int,
+    flag_z: bool,
+    flag_n: bool,
+    reg_x: int,
+    memory_location: int,
+) -> None:
+    """
+    DEC (0xD6) - Decrement Memory, Zero Page, X.
+
+    The Zero Page address may not exceed beyond 0xFF:
+
+    - 0x80 + 0x0F => 0x8F
+    - 0x80 + 0xFF => 0x7F (0x017F)
+
+    The instruction costs 2 bytes and 6 cycles to complete.
+
+    :param int value: The value to be decremented.
+    :param int expected: The expected result after decrementing the value.
+    :param bool flag_z: The expected state of the zero flag after decrementing the value.
+    :param bool flag_n: The expected state of the negative flag after decrementing the value.
+    :param int reg_x: The value of the X register.
+    :param int memory_location: The memory location to be decremented.
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_x = reg_x
+    memory[Processor.PC_INIT] = INS_DEC_ZPX
+    memory[Processor.PC_INIT + 1] = 0x80
+    memory[memory_location] = value
+    cpu.execute(6)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_z,
+        cpu.flag_n,
+        memory[memory_location],
+    ) == (Processor.PC_INIT + 2, Processor.SP_INIT, 6, flag_z, flag_n, expected)
+
+
+@pytest.mark.parametrize(
+    ("value", "expected", "flag_z", "flag_n"),
+    [
+        (-1, -2, False, True),
+        (0, -1, False, True),
+        (1, 0, True, False),
+        (2, 1, False, False),
+    ],
+)
+def test_cpu_ins_dec_abs(value: int, expected: int, flag_z: bool, flag_n: bool) -> None:
+    """
+    DEC (0xCE) - Decrement Memory, Absolute.
+
+    Subtract 1 from the value stored at the memory location that is after the opcode
+    and then evaluate the result for flags Zero and Negative. The memory
+    location is a two-byte address.
+
+    The instruction costs 3 bytes and 6 cycles to complete.
+
+    :param int value: The value to be decremented.
+    :param int expected: The expected result after decrementing the value.
+    :param bool flag_z: The expected state of the zero flag after decrementing the value.
+    :param bool flag_n: The expected state of the negative flag after decrementing the value.
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    memory[Processor.PC_INIT] = INS_DEC_ABS
+    memory[Processor.PC_INIT + 1] = 0xFC
+    memory[Processor.PC_INIT + 2] = 0xFA
+    memory[0xFAFC] = value
+    cpu.execute(6)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_z,
+        cpu.flag_n,
+        memory[0xFAFC],
+    ) == (0xFCE5, Processor.SP_INIT, 6, flag_z, flag_n, expected)
+
+
+@pytest.mark.parametrize(
+    ("value", "expected", "flag_z", "flag_n"),
+    [
+        (-1, -2, False, True),
+        (0, -1, False, True),
+        (1, 0, True, False),
+        (2, 1, False, False),
+    ],
+)
+def test_cpu_ins_dec_abx(value: int, expected: int, flag_z: bool, flag_n: bool) -> None:
+    """
+    DEC (0xDE) - Decrement Memory, Absolute, X.
+
+    Subtract 1 from the value stored at the memory location that is after the opcode
+    and then evaluate the result for flags Zero and Negative. The memory
+    location is a two-byte address.
+
+    Assembly example:
+    ```
+    DEC nnnn,X
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if the result of the decrement operation is 0
+    - Negative Flag: Set if bit 7 of the result of the decrement operation is set
+
+    The instruction costs 3 bytes and 7 cycles to complete.
+
+    :param int value: The value to be decremented.
+    :param int expected: The expected result after decrementing the value.
+    :param bool flag_z: The expected state of the zero flag after decrementing the value.
+    :param bool flag_n: The expected state of the negative flag after decrementing the value.
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_x = 1
+    memory[Processor.PC_INIT] = INS_DEC_ABX
+    memory[Processor.PC_INIT + 1] = 0xFC
+    memory[Processor.PC_INIT + 2] = 0xFA
+    memory[0xFAFC + cpu.reg_x] = value
+    cpu.execute(7)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_z,
+        cpu.flag_n,
+        memory[0xFAFC + cpu.reg_x],
+    ) == (0xFCE5, Processor.SP_INIT, 7, flag_z, flag_n, expected)
+
+
+@pytest.mark.parametrize(
+    ("value", "expected", "flag_z", "flag_n"),
+    [
+        (-1, -2, False, True),
+        (0, -1, False, True),
+        (1, 0, True, False),
+        (2, 1, False, False),
+    ],
+)
+def test_cpu_ins_dex_imp(value: int, expected: int, flag_z: bool, flag_n: bool) -> None:
+    """
+    DEX (0xCA) - Decrement X Register.
+
+    Subtract 1 from the value stored in the X register and then evaluate the result for flags Zero and Negative.
+
+    Assembly example:
+    ```
+    DEX
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if the result of the decrement operation is 0
+    - Negative Flag: Set if bit 7 of the result of the decrement operation is set
+
+    The instruction costs 1 byte and 2 cycles to complete.
+
+    :param int value: The value to be decremented.
+    :param int expected: The expected result after decrementing the value.
+    :param bool flag_z: The expected state of the zero flag after decrementing the value.
+    :param bool flag_n: The expected state of the negative flag after decrementing the value.
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_x = value
+    memory[Processor.PC_INIT] = INS_DEX_IMP
+    cpu.execute(2)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_z,
+        cpu.flag_n,
+        cpu.reg_x,
+    ) == (Processor.PC_INIT + 1, Processor.SP_INIT, 2, flag_z, flag_n, expected)
+
+
+@pytest.mark.parametrize(
+    ("value", "expected", "flag_z", "flag_n"),
+    [
+        (-1, -2, False, True),
+        (0, -1, False, True),
+        (1, 0, True, False),
+        (2, 1, False, False),
+    ],
+)
+def test_cpu_ins_dey_imp(value: int, expected: int, flag_z: bool, flag_n: bool) -> None:
+    """
+    DEY (0x88) - Decrement Y Register.
+
+    Subtract 1 from the value stored in the Y register and then evaluate the result for flags Zero and Negative.
+
+    Assembly example:
+    ```
+    DEY
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if the result of the decrement operation is 0
+    - Negative Flag: Set if bit 7 of the result of the decrement operation is set
+
+    The instruction costs 1 byte and 2 cycles to complete.
+
+    :param int value: The value to be decremented.
+    :param int expected: The expected result after decrementing the value.
+    :param bool flag_z: The expected state of the zero flag after decrementing the value.
+    :param bool flag_n: The expected state of the negative flag after decrementing the value.
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_y = value
+    memory[Processor.PC_INIT] = INS_DEY_IMP
+    cpu.execute(2)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_z,
+        cpu.flag_n,
+        cpu.reg_y,
+    ) == (Processor.PC_INIT + 1, Processor.SP_INIT, 2, flag_z, flag_n, expected)
+
+
+@pytest.mark.parametrize(
+    ("value", "expected", "flag_z", "flag_n"),
+    [
+        (-2, -1, False, True),
+        (-1, 0, True, False),
+        (0, 1, False, False),
+        (1, 2, False, False),
+    ],
+)
+def test_cpu_ins_inc_zp(value: int, expected: int, flag_z: bool, flag_n: bool) -> None:
+    """
+    INC (0xE6) - Increment Memory, Zero Page.
+
+    Add 1 to the value stored at the memory location that is after the opcode
+    and then evaluate the result for flags Zero and Negative. The memory
+    location is a single byte and within the Zero Page memory range of 0-255.
+
+    Assembly example:
+    ```
+    INC nn
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if the result of the increment operation is 0
+    - Negative Flag: Set if bit 7 of the result of the increment operation is set
+
+    The instruction costs 2 bytes and 5 cycles to complete.
+
+    :param int value: The value to be incremented.
+    :param int expected: The expected result after incrementing the value.
+    :param bool flag_z: The expected state of the zero flag after incrementing the value.
+    :param bool flag_n: The expected state of the negative flag after incrementing the value.
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    memory[Processor.PC_INIT] = INS_INC_ZP
+    memory[Processor.PC_INIT + 1] = 0xFC
+    memory[0xFC] = value
+    cpu.execute(5)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_z,
+        cpu.flag_n,
+        memory[0xFC],
+    ) == (Processor.PC_INIT + 2, Processor.SP_INIT, 5, flag_z, flag_n, expected)
+
+
+@pytest.mark.parametrize(
+    ("value", "expected", "flag_z", "flag_n", "reg_x", "memory_location"),
+    [
+        (-2, -1, False, True, 0x0F, 0x8F),
+        (-1, 0, True, False, 0x0F, 0x8F),
+        (0, 1, False, False, 0x0F, 0x8F),
+        (1, 2, False, False, 0x0F, 0x8F),
+        (-2, -1, False, True, 0xFF, 0x7F),
+        (-1, 0, True, False, 0xFF, 0x7F),
+        (0, 1, False, False, 0xFF, 0x7F),
+        (1, 2, False, False, 0xFF, 0x7F),
+    ],
+)
+def test_cpu_ins_inc_zpx(
+    value: int,
+    expected: int,
+    flag_z: bool,
+    flag_n: bool,
+    reg_x: int,
+    memory_location: int,
+) -> None:
+    """
+    Increment Memory, Zero Page, X.
+
+    Add 1 to the value stored at the memory location that is after the opcode
+    and then evaluate the result for flags Zero and Negative. The memory
+    location is a single byte and within the Zero Page memory range of 0-255.
+
+    The Zero Page address may not exceed beyond 0xFF:
+
+    - 0x80 + 0x0F => 0x8F
+    - 0x80 + 0xFF => 0x7F (0x017F)
+
+    Assembly example:
+    ```
+    INC nn,X
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if the result of the increment operation is 0
+    - Negative Flag: Set if bit 7 of the result of the increment operation is set
+
+    The instruction costs 2 bytes and 6 cycles to complete.
+
+    :param int value: The value to be incremented.
+    :param int expected: The expected result after incrementing the value.
+    :param bool flag_z: The expected state of the zero flag after incrementing the value.
+    :param bool flag_n: The expected state of the negative flag after incrementing the value.
+    :param int reg_x: The value to be set in the X register.
+    :param int memory_location: The memory location to be incremented.
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_x = reg_x
+    memory[Processor.PC_INIT] = INS_INC_ZPX
+    memory[Processor.PC_INIT + 1] = 0x80
+    memory[memory_location] = value
+    cpu.execute(6)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_z,
+        cpu.flag_n,
+        memory[memory_location],
+    ) == (Processor.PC_INIT + 2, Processor.SP_INIT, 6, flag_z, flag_n, expected)
+
+
+@pytest.mark.parametrize(
+    ("value", "expected", "flag_z", "flag_n"),
+    [
+        (-2, -1, False, True),
+        (-1, 0, True, False),
+        (0, 1, False, False),
+        (1, 2, False, False),
+    ],
+)
+def test_cpu_ins_inc_abs(value: int, expected: int, flag_z: bool, flag_n: bool) -> None:
+    """
+    Increment Memory, Absolute.
+
+    Add 1 to the value stored at the memory location that is after the opcode
+    and then evaluate the result for flags Zero and Negative. The memory location
+    is a two-byte address and can be anywhere in the memory range.
+
+    Assembly example:
+    ```
+    INC nnnn
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if the result of the increment operation is 0
+    - Negative Flag: Set if bit 7 of the result of the increment operation is set
+
+    The instruction costs 3 bytes and 6 cycles to complete.
+
+    :param int value: The value to be incremented.
+    :param int expected: The expected result after incrementing the value.
+    :param bool flag_z: The expected state of the zero flag after incrementing the value.
+    :param bool flag_n: The expected state of the negative flag after incrementing the value.
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    memory[Processor.PC_INIT] = INS_INC_ABS
+    memory[Processor.PC_INIT + 1] = 0xFC
+    memory[Processor.PC_INIT + 2] = 0xFA
+    memory[0xFAFC] = value
+    cpu.execute(6)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_z,
+        cpu.flag_n,
+        memory[0xFAFC],
+    ) == (0xFCE5, Processor.SP_INIT, 6, flag_z, flag_n, expected)
+
+
+@pytest.mark.parametrize(
+    ("value", "expected", "flag_z", "flag_n"),
+    [
+        (-2, -1, False, True),
+        (-1, 0, True, False),
+        (0, 1, False, False),
+        (1, 2, False, False),
+    ],
+)
+def test_cpu_ins_inc_abx(value: int, expected: int, flag_z: bool, flag_n: bool) -> None:
+    """
+    Increment Memory, Absolute, X.
+
+    Add 1 to the value stored at the memory location that is after the opcode
+    and then evaluate the result for flags Zero and Negative. The memory location
+    is a two-byte address and can be anywhere in the memory range.
+
+    Assembly example:
+    ```
+    INC nnnn,X
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if the result of the increment operation is 0
+    - Negative Flag: Set if bit 7 of the result of the increment operation is set
+
+    The instruction costs 3 bytes and 7 cycles to complete.
+
+    :param int value: The value to be incremented.
+    :param int expected: The expected result after incrementing the value.
+    :param bool flag_z: The expected state of the zero flag after incrementing the value.
+    :param bool flag_n: The expected state of the negative flag after incrementing the value.
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_x = 1
+    memory[Processor.PC_INIT] = INS_INC_ABX
+    memory[Processor.PC_INIT + 1] = 0xFC
+    memory[Processor.PC_INIT + 2] = 0xFA
+    memory[0xFAFC + cpu.reg_x] = value
+    cpu.execute(7)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_z,
+        cpu.flag_n,
+        memory[0xFAFC + cpu.reg_x],
+    ) == (0xFCE5, Processor.SP_INIT, 7, flag_z, flag_n, expected)
+
+
+@pytest.mark.parametrize(
+    ("value", "expected", "flag_z", "flag_n"),
+    [
+        (-2, -1, False, True),
+        (-1, 0, True, False),
+        (0, 1, False, False),
+        (1, 2, False, False),
+    ],
+)
+def test_cpu_ins_inx_imp(value: int, expected: int, flag_z: bool, flag_n: bool) -> None:
+    """
+    Increment X Register.
+
+    Add 1 to the value stored in the X register and then evaluate the result for flags Zero and Negative.
+
+    Assembly example:
+    ```
+    INX
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if the result of the increment operation is 0
+    - Negative Flag: Set if bit 7 of the result of the increment operation is set
+
+    The instruction costs 1 byte and 2 cycles to complete.
+
+    :param int value: The value to be incremented.
+    :param int expected: The expected result after incrementing the value.
+    :param bool flag_z: The expected state of the zero flag after incrementing the value.
+    :param bool flag_n: The expected state of the negative flag after incrementing the value.
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_x = value
+    memory[Processor.PC_INIT] = INS_INX_IMP
+    cpu.execute(2)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_z,
+        cpu.flag_n,
+        cpu.reg_x,
+    ) == (Processor.PC_INIT + 1, Processor.SP_INIT, 2, flag_z, flag_n, expected)
+
+
+@pytest.mark.parametrize(
+    ("value", "expected", "flag_z", "flag_n"),
+    [
+        (-2, -1, False, True),
+        (-1, 0, True, False),
+        (0, 1, False, False),
+        (1, 2, False, False),
+    ],
+)
+def test_cpu_ins_iny_imp(value: int, expected: int, flag_z: bool, flag_n: bool) -> None:
+    """
+    Increment Y Register.
+
+    Add 1 to the value stored in the Y register and then evaluate the result for flags Zero and Negative.
+
+    Assembly example:
+    ```
+    INY
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if the result of the increment operation is 0
+    - Negative Flag: Set if bit 7 of the result of the increment operation is set
+
+    The instruction costs 1 byte and 2 cycles to complete.
+
+    :param int value: The value to be incremented.
+    :param int expected: The expected result after incrementing the value.
+    :param bool flag_z: The expected state of the zero flag after incrementing the value.
+    :param bool flag_n: The expected state of the negative flag after incrementing the value.
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_y = value
+    memory[Processor.PC_INIT] = INS_INY_IMP
+    cpu.execute(2)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_z,
+        cpu.flag_n,
+        cpu.reg_y,
+    ) == (Processor.PC_INIT + 1, Processor.SP_INIT, 2, flag_z, flag_n, expected)
+
+
+@pytest.mark.parametrize(
+    ("size", "cycles", "value", "flag_z", "flag_n"),
+    [
+        (2, 2, VALUE8_0000_0000, True, False),
+        (2, 2, VALUE8_0000_1111, False, False),
+        (2, 2, VALUE8_0101_1010, False, False),
+        (2, 2, VALUE8_1010_0101, False, True),
+        (2, 2, VALUE8_1111_0000, False, True),
+        (2, 2, VALUE8_1111_1111, False, True),
+    ],
+)
+def test_cpu_ins_lda_imm(
+    size: int, cycles: int, value: int, flag_z: bool, flag_n: bool
+) -> None:
+    """
+    LDA (0xA9) - Load Accumulator, Immediate.
+
+    Load the value stored after the opcode directly into accumulator
+    and then evaluate accumulator for flags Zero and Negative.
+
+    Assembly example:
+    ```
+    LDA #nn
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if A = 0
+    - Negative Flag: Set if bit 7 of A is set
+
+    The instruction costs 2 bytes and 2 cycles to complete.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param bool flag_z: State of the Zero Flag
+    :param bool flag_n: State of the Negative Flag
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_a = _random_value(value)
+    memory[Processor.PC_INIT] = INS_LDA_IMM
+    memory[Processor.PC_INIT + 1] = value
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.reg_a,
+        cpu.flag_z,
+        cpu.flag_n,
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value, flag_z, flag_n)
+
+
+@pytest.mark.parametrize(
+    ("size", "cycles", "value", "memory_zp", "flag_z", "flag_n"),
+    [
+        (2, 3, VALUE8_0000_0000, 0x80, True, False),
+        (2, 3, VALUE8_0000_1111, 0x80, False, False),
+        (2, 3, VALUE8_0101_1010, 0x80, False, False),
+        (2, 3, VALUE8_1010_0101, 0x80, False, True),
+        (2, 3, VALUE8_1111_0000, 0x80, False, True),
+        (2, 3, VALUE8_1111_1111, 0x80, False, True),
+    ],
+)
+def test_cpu_ins_lda_zp(
+    size: int, cycles: int, value: int, memory_zp: int, flag_z: bool, flag_n: bool
+) -> None:
+    """
+    LDA (0xA5) - Load Accumulator, Zero Page.
+
+    Load the value stored at the memory location that is after the opcode
+    directly into accumulator and then evaluate accumulator for flags Zero
+    and Negative. The memory location is a single byte and within the Zero
+    Page memory range of 0-255.
+
+    Assembly example:
+    ```
+    LDA nn
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if A = 0
+    - Negative Flag: Set if bit 7 of A is set
+
+    The instruction costs 2 bytes and 3 cycles to complete.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param int memory_zp: Value used for the test
+    :param bool flag_z: State of the Zero Flag
+    :param bool flag_n: State of the Negative Flag
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_a = _random_value(value)
+    memory[Processor.PC_INIT] = INS_LDA_ZP
+    memory[Processor.PC_INIT + 1] = memory_zp
+    memory[memory_zp] = value
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.reg_a,
+        cpu.flag_z,
+        cpu.flag_n,
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value, flag_z, flag_n)
+
+
+@pytest.mark.parametrize(
+    ("size", "cycles", "value", "reg_x", "memory_zp", "flag_z", "flag_n"),
+    [
+        (2, 5, VALUE8_0000_0000, 0x00, 0x80, True, False),
+        (2, 5, VALUE8_0000_1111, 0x00, 0x80, False, False),
+        (2, 5, VALUE8_0101_1010, 0x00, 0x80, False, False),
+        (2, 5, VALUE8_1010_0101, 0x00, 0x80, False, True),
+        (2, 5, VALUE8_1111_0000, 0x00, 0x80, False, True),
+        (2, 5, VALUE8_1111_1111, 0x00, 0x80, False, True),
+        (2, 5, VALUE8_0000_0000, 0x0F, 0x80, True, False),
+        (2, 5, VALUE8_0000_1111, 0x0F, 0x80, False, False),
+        (2, 5, VALUE8_0101_1010, 0x0F, 0x80, False, False),
+        (2, 5, VALUE8_1010_0101, 0x0F, 0x80, False, True),
+        (2, 5, VALUE8_1111_0000, 0x0F, 0x80, False, True),
+        (2, 5, VALUE8_1111_1111, 0x0F, 0x80, False, True),
+        (2, 5, VALUE8_0000_0000, 0xF0, 0x80, True, False),
+        (2, 5, VALUE8_0000_1111, 0xF0, 0x80, False, False),
+        (2, 5, VALUE8_0101_1010, 0xF0, 0x80, False, False),
+        (2, 5, VALUE8_1010_0101, 0xF0, 0x80, False, True),
+        (2, 5, VALUE8_1111_0000, 0xF0, 0x80, False, True),
+        (2, 5, VALUE8_1111_1111, 0xF0, 0x80, False, True),
+        (2, 5, VALUE8_0000_0000, 0xFF, 0x80, True, False),
+        (2, 5, VALUE8_0000_1111, 0xFF, 0x80, False, False),
+        (2, 5, VALUE8_0101_1010, 0xFF, 0x80, False, False),
+        (2, 5, VALUE8_1010_0101, 0xFF, 0x80, False, True),
+        (2, 5, VALUE8_1111_0000, 0xFF, 0x80, False, True),
+        (2, 5, VALUE8_1111_1111, 0xFF, 0x80, False, True),
+    ],
+)
+def test_cpu_ins_lda_zpx(
+    size: int,
+    cycles: int,
+    value: int,
+    reg_x: int,
+    memory_zp: int,
+    flag_z: bool,
+    flag_n: bool,
+) -> None:
+    """
+    LDA (0xB5) - Load Accumulator, Zero Page, X.
+
+    Load the value stored at the memory location that is after the opcode
+    directly into accumulator and then evaluate accumulator for flags Zero
+    and Negative. The memory location is a single byte and within the Zero
+    Page memory range of 0-255.
+
+    The Zero Page address may not exceed beyond 0xFF and is calculated by
+    adding the value of the X register to the memory location specified by
+    the instruction. The result is wrapped around to fit within the Zero Page
+    memory range (0-255). For example:
+
+    - 0x80 + 0x0F => 0x8F
+    - 0x80 + 0xFF => 0x7F (0x017F)
+
+    Assembly example:
+    ```
+    LDA nn, X
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if A = 0
+    - Negative Flag: Set if bit 7 of A is set
+
+    The instruction costs 2 bytes and 5 cycles to complete.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param int memory_zp: Value used for the test
+    :param bool flag_z: State of the Zero Flag
+    :param bool flag_n: State of the Negative Flag
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_a = _random_value(value)
+    cpu.reg_x = reg_x
+    memory[Processor.PC_INIT] = INS_LDA_ZPX
+    memory[Processor.PC_INIT + 1] = memory_zp
+    memory[(memory_zp + reg_x) & 0xFF] = value
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.reg_a,
+        cpu.flag_z,
+        cpu.flag_n,
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value, flag_z, flag_n)
+
+
+@pytest.mark.parametrize(
+    ("size", "cycles", "value", "memory_location", "flag_z", "flag_n"),
+    [
+        (3, 4, VALUE8_0000_0000, 0xFAFA, True, False),
+        (3, 4, VALUE8_0000_1111, 0xFAFA, False, False),
+        (3, 4, VALUE8_0101_1010, 0xFAFA, False, False),
+        (3, 4, VALUE8_1010_0101, 0xFAFA, False, True),
+        (3, 4, VALUE8_1111_0000, 0xFAFA, False, True),
+        (3, 4, VALUE8_1111_1111, 0xFAFA, False, True),
+        (3, 4, VALUE8_0000_0000, 0xAFAF, True, False),
+        (3, 4, VALUE8_0000_1111, 0xAFAF, False, False),
+        (3, 4, VALUE8_0101_1010, 0xAFAF, False, False),
+        (3, 4, VALUE8_1010_0101, 0xAFAF, False, True),
+        (3, 4, VALUE8_1111_0000, 0xAFAF, False, True),
+        (3, 4, VALUE8_1111_1111, 0xAFAF, False, True),
+    ],
+)
+def test_cpu_ins_lda_abs(
+    size: int, cycles: int, value: int, memory_location: int, flag_z: bool, flag_n: bool
+) -> None:
+    """
+    LDA (0xAD) - Load Accumulator, Absolute.
+
+    Load the value stored at the memory location that is after the opcode
+    directly into accumulator and then evaluate accumulator for flags Zero
+    and Negative. The memory location is a two-byte address that can range
+    from 0x0000 to 0xFFFF.
+
+    Assembly example:
+    ```
+    LDA nnnn
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if A = 0
+    - Negative Flag: Set if bit 7 of A is set
+
+    The instruction costs 3 bytes and 4 cycles to complete.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param int memory_location: Memory location to load the value from
+    :param bool flag_z: State of the Zero Flag
+    :param bool flag_n: State of the Negative Flag
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_a = _random_value(value)
+    memory[Processor.PC_INIT] = INS_LDA_ABS
+    if sys.byteorder == "little":
+        memory[Processor.PC_INIT + 1] = memory_location & 0xFF
+        memory[Processor.PC_INIT + 2] = (memory_location >> 8) & 0xFF
+    else:
+        memory[Processor.PC_INIT + 1] = (memory_location >> 8) & 0xFF
+        memory[Processor.PC_INIT + 2] = memory_location & 0xFF
+    memory[memory_location] = value
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.reg_a,
+        cpu.flag_z,
+        cpu.flag_n,
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value, flag_z, flag_n)
+
+
+@pytest.mark.parametrize(
+    ("size", "cycles", "value", "reg_x", "memory_location", "flag_z", "flag_n"),
+    [
+        (3, 4, VALUE8_0000_0000, 0x04, 0x8000, True, False),
+        (3, 4, VALUE8_0000_1111, 0x04, 0x8000, False, False),
+        (3, 4, VALUE8_0101_1010, 0x04, 0x8000, False, False),
+        (3, 4, VALUE8_1010_0101, 0x04, 0x8000, False, True),
+        (3, 4, VALUE8_1111_0000, 0x04, 0x8000, False, True),
+        (3, 4, VALUE8_1111_1111, 0x04, 0x8000, False, True),
+        (3, 5, VALUE8_0000_0000, 0x04, 0x80FE, True, False),
+        (3, 5, VALUE8_0000_1111, 0x04, 0x80FE, False, False),
+        (3, 5, VALUE8_0101_1010, 0x04, 0x80FE, False, False),
+        (3, 5, VALUE8_1010_0101, 0x04, 0x80FE, False, True),
+        (3, 5, VALUE8_1111_0000, 0x04, 0x80FE, False, True),
+        (3, 5, VALUE8_1111_1111, 0x04, 0x80FE, False, True),
+    ],
+)
+def test_cpu_ins_lda_abx(
+    size: int,
+    cycles: int,
+    value: int,
+    reg_x: int,
+    memory_location: int,
+    flag_z: bool,
+    flag_n: bool,
+) -> None:
+    """
+    LDA (0xBD) - Load Accumulator, Absolute, X.
+
+    Load the value stored at the memory location that is after the opcode
+    directly into accumulator and then evaluate accumulator for flags Zero
+    and Negative. The memory location is a two-byte address that can range
+    from 0x0000 to 0xFFFF. The address is calculated by adding the
+    value of the X register to the memory location specified by the
+    instruction. The result is wrapped around to fit within the memory
+    range (0-65535). For example:
+
+    - 0xFF04 + 0x04 => 0xFF08
+    - 0xFF04 + 0xFF => 0x0004 (0x010004)
+
+    Assembly example:
+    ```
+    LDA nnnn, X
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if A = 0
+    - Negative Flag: Set if bit 7 of A is set
+
+    The instruction costs 3 bytes and 4 (or 5 when a page boundary is crossed) cycles to complete.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param int reg_x: Value of the X register
+    :param int memory_location: Memory location to load the value from
+    :param bool flag_z: State of the Zero Flag
+    :param bool flag_n: State of the Negative Flag
+
+    TODO: Add test cases for page boundary crossing if memory_location + reg_x crosses 0xFFFF
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_a = _random_value(value)
+    cpu.reg_x = reg_x
+    memory[Processor.PC_INIT] = INS_LDA_ABX
+    if sys.byteorder == "little":
+        memory[Processor.PC_INIT + 1] = memory_location & 0xFF
+        memory[Processor.PC_INIT + 2] = (memory_location >> 8) & 0xFF
+    else:
+        memory[Processor.PC_INIT + 1] = (memory_location >> 8) & 0xFF
+        memory[Processor.PC_INIT + 2] = memory_location & 0xFF
+    memory[memory_location + reg_x] = value
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.reg_a,
+        cpu.flag_z,
+        cpu.flag_n,
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value, flag_z, flag_n)
+
+
+@pytest.mark.parametrize(
+    ("size", "cycles", "value", "reg_y", "memory_location", "flag_z", "flag_n"),
+    [
+        (3, 4, VALUE8_0000_0000, 0x04, 0x8000, True, False),
+        (3, 4, VALUE8_0000_1111, 0x04, 0x8000, False, False),
+        (3, 4, VALUE8_1111_0000, 0x04, 0x8000, False, True),
+        (3, 4, VALUE8_1111_1111, 0x04, 0x8000, False, True),
+        (3, 5, VALUE8_0000_0000, 0x04, 0x80FE, True, False),
+        (3, 5, VALUE8_0000_1111, 0x04, 0x80FE, False, False),
+        (3, 5, VALUE8_1111_0000, 0x04, 0x80FE, False, True),
+        (3, 5, VALUE8_1111_1111, 0x04, 0x80FE, False, True),
+    ],
+)
+def test_cpu_ins_lda_aby(
+    size: int,
+    cycles: int,
+    value: int,
+    reg_y: int,
+    memory_location: int,
+    flag_z: bool,
+    flag_n: bool,
+) -> None:
+    """
+    LDA (0xB9) - Load Accumulator, Absolute, Y.
+
+    Load the value stored at the memory location that is after the opcode
+    directly into accumulator and then evaluate accumulator for flags Zero
+    and Negative. The memory location is a two-byte address that can range
+    from 0x0000 to 0xFFFF. The address is calculated by adding the
+    value of the Y register to the memory location specified by the
+    instruction. The result is wrapped around to fit within the memory
+    range (0-65535). For example:
+
+    - 0xFF04 + 0x04 => 0xFF08
+    - 0xFF04 + 0xFF => 0x0004 (0x010004)
+
+    Assembly example:
+    ```
+    LDA nnnn, Y
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if A = 0
+    - Negative Flag: Set if bit 7 of A is set
+
+    The instruction costs 3 bytes and 4 (or 5 when a page boundary is crossed) cycles to complete.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param int reg_y: Value of the Y register
+    :param int memory_location: Memory location to load the value from
+    :param bool flag_z: State of the Zero Flag
+    :param bool flag_n: State of the Negative Flag
+
+    TODO: Add test cases for page boundary crossing if memory_location + reg_y crosses 0xFFFF
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_a = _random_value(value)
+    cpu.reg_y = reg_y
+    memory[Processor.PC_INIT] = INS_LDA_ABY
+    if sys.byteorder == "little":
+        memory[Processor.PC_INIT + 1] = memory_location & 0xFF
+        memory[Processor.PC_INIT + 2] = (memory_location >> 8) & 0xFF
+    else:
+        memory[Processor.PC_INIT + 1] = (memory_location >> 8) & 0xFF
+        memory[Processor.PC_INIT + 2] = memory_location & 0xFF
+    memory[memory_location + reg_y] = value
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.reg_a,
+        cpu.flag_z,
+        cpu.flag_n,
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value, flag_z, flag_n)
+
+
+@pytest.mark.parametrize(
+    (
+        "size",
+        "cycles",
+        "value",
+        "reg_x",
+        "memory_zp",
+        "memory_location",
+        "flag_z",
+        "flag_n",
+    ),
+    [
+        (2, 6, VALUE8_0000_0000, 0x04, 0x02, 0x8000, True, False),
+        (2, 6, VALUE8_0000_1111, 0x04, 0x02, 0x8000, False, False),
+        (2, 6, VALUE8_0101_1010, 0x04, 0x02, 0x8000, False, False),
+        (2, 6, VALUE8_1010_0101, 0x04, 0x02, 0x8000, False, True),
+        (2, 6, VALUE8_1111_0000, 0x04, 0x02, 0x8000, False, True),
+        (2, 6, VALUE8_1111_1111, 0x04, 0x02, 0x8000, False, True),
+    ],
+)
+def test_cpu_ins_lda_inx(
+    size: int,
+    cycles: int,
+    value: int,
+    reg_x: int,
+    memory_zp: int,
+    memory_location: int,
+    flag_z: bool,
+    flag_n: bool,
+) -> None:
+    """
+    LDA (0xA1) - Load Accumulator, Indexed Indirect.
+
+    Load the value stored at the memory location that is after the opcode
+    directly into accumulator and then evaluate accumulator for flags Zero
+    and Negative. The memory location is a two-byte address that is
+    calculated by adding the value of the X register to the memory location
+    specified by the instruction. The result is wrapped around to fit within
+    the memory range (0-65535). For example:
+
+    - 0x02 + 0x04 => 0x06
+    - 0x02 + 0xFF => 0x01 (0x0101)
+
+    ```
+    X = $04
+    IMM = $02
+    [$06] = 00
+    [$07] = 80
+    A = [$8000]
+    ```
+
+    Assembly example:
+    ```
+    LDA ($nn, X)
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if A = 0
+    - Negative Flag: Set if bit 7 of A is set
+
+    The instruction costs 2 bytes and 6 cycles to complete.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param int reg_x: Value of the X register
+    :param int memory_location: Memory location to load the value from
+    :param bool flag_z: State of the Zero Flag
+    :param bool flag_n: State of the Negative Flag
+
+    TODO: Add test cases for page boundary crossing if memory_zp + reg_x crosses 0xFF
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_a = _random_value(value)
+    cpu.reg_x = reg_x
+    memory[Processor.PC_INIT] = INS_LDA_INX
+    memory[Processor.PC_INIT + 1] = memory_zp
+    if sys.byteorder == "little":
+        memory[memory_zp + reg_x] = memory_location & 0xFF
+        memory[memory_zp + reg_x + 1] = (memory_location >> 8) & 0xFF
+    else:
+        memory[memory_zp + reg_x] = (memory_location >> 8) & 0xFF
+        memory[memory_zp + reg_x + 1] = memory_location & 0xFF
+    memory[memory_location] = value
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.reg_a,
+        cpu.flag_z,
+        cpu.flag_n,
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value, flag_z, flag_n)
+
+
+@pytest.mark.parametrize(
+    (
+        "size",
+        "cycles",
+        "value",
+        "reg_y",
+        "memory_zp",
+        "memory_location",
+        "flag_z",
+        "flag_n",
+    ),
+    [
+        (2, 5, VALUE8_0000_0000, 0x04, 0x02, 0x8000, True, False),
+        (2, 5, VALUE8_0000_1111, 0x04, 0x02, 0x8000, False, False),
+        (2, 5, VALUE8_1111_0000, 0x04, 0x02, 0x8000, False, True),
+        (2, 5, VALUE8_1111_1111, 0x04, 0x02, 0x8000, False, True),
+        (2, 6, VALUE8_0000_0000, 0x04, 0x02, 0x80FE, True, False),
+        (2, 6, VALUE8_0000_1111, 0x04, 0x02, 0x80FE, False, False),
+        (2, 6, VALUE8_1111_0000, 0x04, 0x02, 0x80FE, False, True),
+        (2, 6, VALUE8_1111_1111, 0x04, 0x02, 0x80FE, False, True),
+    ],
+)
+def test_cpu_ins_lda_iny(
+    size: int,
+    cycles: int,
+    value: int,
+    reg_y: int,
+    memory_zp: int,
+    memory_location: int,
+    flag_z: bool,
+    flag_n: bool,
+) -> None:
+    """
+    LDA (0xB1) - Load Accumulator, Indirect Indexed.
+
+    Load the value stored at the memory location that is after the opcode
+    directly into accumulator and then evaluate accumulator for flags Zero
+    and Negative. The memory location is a two-byte address that is
+    calculated by adding the value of the Y register to the memory location
+    specified by the instruction. The result is wrapped around to fit within
+    the memory range (0-65535). For example:
+
+    - 0x02 + 0x04 => 0x06
+    - 0x02 + 0xFF => 0x01 (0x0101)
+
+    ```
+    Y = $04
+    IMM = $02
+    [$02] = 00
+    [$03] = 80
+    A = [$8000 + Y]
+    ```
+
+    Assembly example:
+    ```
+    LDA ($nn), Y
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if A = 0
+    - Negative Flag: Set if bit 7 of A is set
+
+    The instruction costs 2 bytes and 5 (or 6 when a page boundary is crossed) cycles to complete.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param int reg_y: Value of the Y register
+    :param int memory_location: Memory location to load the value from
+    :param bool flag_z: State of the Zero Flag
+    :param bool flag_n: State of the Negative Flag
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_a = _random_value(value)
+    cpu.reg_y = reg_y
+    memory[Processor.PC_INIT] = INS_LDA_INY
+    memory[Processor.PC_INIT + 1] = memory_zp
+    if sys.byteorder == "little":
+        memory[memory_zp] = memory_location & 0xFF
+        memory[memory_zp + 1] = (memory_location >> 8) & 0xFF
+    else:
+        memory[memory_zp] = (memory_location >> 8) & 0xFF
+        memory[memory_zp + 1] = memory_location & 0xFF
+    memory[memory_location + reg_y] = value
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.reg_a,
+        cpu.flag_z,
+        cpu.flag_n,
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value, flag_z, flag_n)
+
+
+@pytest.mark.parametrize(
+    ("size", "cycles", "value", "flag_z", "flag_n"),
+    [
+        (2, 2, VALUE8_0000_0000, True, False),
+        (2, 2, VALUE8_0000_1111, False, False),
+        (2, 2, VALUE8_0101_1010, False, False),
+        (2, 2, VALUE8_1010_0101, False, True),
+        (2, 2, VALUE8_1111_0000, False, True),
+        (2, 2, VALUE8_1111_1111, False, True),
+    ],
+)
+def test_cpu_ins_ldx_imm(
+    size: int, cycles: int, value: int, flag_z: bool, flag_n: bool
+) -> None:
+    """
+    LDX (0xA2) - Load X Register, Immediate.
+
+    Load the value stored after the opcode directly into X register
+    and then evaluate X register for flags Zero and Negative.
+
+    Assembly example:
+    ```
+    LDX #nn
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if X = 0
+    - Negative Flag: Set if bit 7 of X is set
+
+    The instruction costs 2 bytes and 2 cycles to complete.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param bool flag_z: State of the Zero Flag
+    :param bool flag_n: State of the Negative Flag
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_x = _random_value(value)
+    memory[Processor.PC_INIT] = INS_LDX_IMM
+    memory[Processor.PC_INIT + 1] = value
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.reg_x,
+        cpu.flag_z,
+        cpu.flag_n,
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value, flag_z, flag_n)
+
+
+@pytest.mark.parametrize(
+    ("size", "cycles", "value", "memory_location", "flag_z", "flag_n"),
+    [
+        (2, 3, VALUE8_0000_0000, 0x80, True, False),
+        (2, 3, VALUE8_0000_1111, 0x80, False, False),
+        (2, 3, VALUE8_0101_1010, 0x80, False, False),
+        (2, 3, VALUE8_1010_0101, 0x80, False, True),
+        (2, 3, VALUE8_1111_0000, 0x80, False, True),
+        (2, 3, VALUE8_1111_1111, 0x80, False, True),
+    ],
+)
+def test_cpu_ins_ldx_zp(
+    size: int, cycles: int, value: int, memory_location: int, flag_z: bool, flag_n: bool
+) -> None:
+    """
+    LDX (0xA6) - Load X Register, Zero Page.
+
+    Load the value stored at the memory location that is after the opcode
+    directly into X register and then evaluate X register for flags Zero
+    and Negative. The memory location is a single byte and within the Zero
+    Page memory range of 0-255.
+
+    Assembly example:
+    ```
+    LDX nn
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if X = 0
+    - Negative Flag: Set if bit 7 of X is set
+
+    The instruction costs 2 bytes and 3 cycles to complete.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param int memory_zp: Value used for the test
+    :param bool flag_z: State of the Zero Flag
+    :param bool flag_n: State of the Negative Flag
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_x = _random_value(value)
+    memory[Processor.PC_INIT] = INS_LDX_ZP
+    memory[Processor.PC_INIT + 1] = memory_location
+    memory[memory_location] = value
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.reg_x,
+        cpu.flag_z,
+        cpu.flag_n,
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value, flag_z, flag_n)
+
+
+@pytest.mark.parametrize(
+    ("size", "cycles", "value", "reg_y", "memory_location", "flag_z", "flag_n"),
+    [
+        (2, 5, VALUE8_0000_0000, 0x00, 0x80, True, False),
+        (2, 5, VALUE8_0000_1111, 0x00, 0x80, False, False),
+        (2, 5, VALUE8_1111_0000, 0x00, 0x80, False, True),
+        (2, 5, VALUE8_1111_1111, 0x00, 0x80, False, True),
+        (2, 5, VALUE8_0000_0000, 0x0F, 0x80, True, False),
+        (2, 5, VALUE8_0000_1111, 0x0F, 0x80, False, False),
+        (2, 5, VALUE8_1111_0000, 0x0F, 0x80, False, True),
+        (2, 5, VALUE8_1111_1111, 0x0F, 0x80, False, True),
+        (2, 5, VALUE8_0000_0000, 0xF0, 0x80, True, False),
+        (2, 5, VALUE8_0000_1111, 0xF0, 0x80, False, False),
+        (2, 5, VALUE8_1111_0000, 0xF0, 0x80, False, True),
+        (2, 5, VALUE8_1111_1111, 0xF0, 0x80, False, True),
+        (2, 5, VALUE8_0000_0000, 0xFF, 0x80, True, False),
+        (2, 5, VALUE8_0000_1111, 0xFF, 0x80, False, False),
+        (2, 5, VALUE8_1111_0000, 0xFF, 0x80, False, True),
+        (2, 5, VALUE8_1111_1111, 0xFF, 0x80, False, True),
+    ],
+)
+def test_cpu_ins_ldx_zpy(
+    size: int,
+    cycles: int,
+    value: int,
+    reg_y: int,
+    memory_location: int,
+    flag_z: bool,
+    flag_n: bool,
+) -> None:
+    """
+    LDX (0xB6) - Load X Register, Zero Page, Y.
+
+    Load the value stored at the memory location that is after the opcode
+    directly into X register and then evaluate X register for flags Zero
+    and Negative. The memory location is a single byte and within the Zero
+    Page memory range of 0-255.
+
+    The Zero Page address may not exceed beyond 0xFF:
+    - 0x80 + 0x0F => 0x8F
+    - 0x80 + 0xFF => 0x7F (0x017F)
+
+    Assembly example:
+    ```
+    LDX nn, Y
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if X = 0
+    - Negative Flag: Set if bit 7 of X is set
+
+    The instruction costs 2 bytes and 5 cycles to complete.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param int reg_y: Value of the Y register
+    :param int memory_location: Memory location used for the test
+    :param bool flag_z: State of the Zero Flag
+    :param bool flag_n: State of the Negative Flag
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_x = _random_value(value)
+    cpu.reg_y = reg_y
+    memory[Processor.PC_INIT] = INS_LDX_ZPY
+    memory[Processor.PC_INIT + 1] = memory_location
+    memory[(memory_location + reg_y) & 0xFF] = value
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.reg_x,
+        cpu.flag_z,
+        cpu.flag_n,
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value, flag_z, flag_n)
+
+
+@pytest.mark.parametrize(
+    ("size", "cycles", "value", "memory_location", "flag_z", "flag_n"),
+    [
+        (3, 4, VALUE8_0000_0000, 0xFAFA, True, False),
+        (3, 4, VALUE8_0000_1111, 0xFAFA, False, False),
+        (3, 4, VALUE8_0101_1010, 0xFAFA, False, False),
+        (3, 4, VALUE8_1010_0101, 0xFAFA, False, True),
+        (3, 4, VALUE8_1111_0000, 0xFAFA, False, True),
+        (3, 4, VALUE8_1111_1111, 0xFAFA, False, True),
+        (3, 4, VALUE8_0000_0000, 0xAFAF, True, False),
+        (3, 4, VALUE8_0000_1111, 0xAFAF, False, False),
+        (3, 4, VALUE8_0101_1010, 0xAFAF, False, False),
+        (3, 4, VALUE8_1010_0101, 0xAFAF, False, True),
+        (3, 4, VALUE8_1111_0000, 0xAFAF, False, True),
+        (3, 4, VALUE8_1111_1111, 0xAFAF, False, True),
+    ],
+)
+def test_cpu_ins_ldx_abs(
+    size: int, cycles: int, value: int, memory_location: int, flag_z: bool, flag_n: bool
+) -> None:
+    """
+    LDX (0xAE) - Load X Register, Absolute.
+
+    Load the value stored at the memory location that is after the opcode
+    directly into X register and then evaluate X register for flags Zero
+    and Negative. The memory location is a two-byte address.
+
+    Assembly example:
+    ```
+    LDX nnnn
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if X = 0
+    - Negative Flag: Set if bit 7 of X is set
+
+    The instruction costs 3 bytes and 4 cycles to complete.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param int memory_location: Memory location used for the test
+    :param bool flag_z: State of the Zero Flag
+    :param bool flag_n: State of the Negative Flag
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_x = _random_value(value)
+    memory[Processor.PC_INIT] = INS_LDX_ABS
+    _write_word(memory, Processor.PC_INIT + 1, memory_location)
+    memory[memory_location] = value
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.reg_x,
+        cpu.flag_z,
+        cpu.flag_n,
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value, flag_z, flag_n)
+
+
+@pytest.mark.parametrize(
+    ("size", "cycles", "value", "reg_y", "memory_location", "flag_z", "flag_n"),
+    [
+        (3, 4, VALUE8_0000_0000, 0x04, 0x8000, True, False),
+        (3, 4, VALUE8_0000_1111, 0x04, 0x8000, False, False),
+        (3, 4, VALUE8_0101_1010, 0x04, 0x8000, False, False),
+        (3, 4, VALUE8_1010_0101, 0x04, 0x8000, False, True),
+        (3, 4, VALUE8_1111_0000, 0x04, 0x8000, False, True),
+        (3, 4, VALUE8_1111_1111, 0x04, 0x8000, False, True),
+        (3, 5, VALUE8_0000_0000, 0x04, 0x80FE, True, False),
+        (3, 5, VALUE8_0000_1111, 0x04, 0x80FE, False, False),
+        (3, 5, VALUE8_0101_1010, 0x04, 0x80FE, False, False),
+        (3, 5, VALUE8_1010_0101, 0x04, 0x80FE, False, True),
+        (3, 5, VALUE8_1111_0000, 0x04, 0x80FE, False, True),
+        (3, 5, VALUE8_1111_1111, 0x04, 0x80FE, False, True),
+    ],
+)
+def test_cpu_ins_ldx_aby(
+    size: int,
+    cycles: int,
+    value: int,
+    reg_y: int,
+    memory_location: int,
+    flag_z: bool,
+    flag_n: bool,
+) -> None:
+    """
+    LDX (0xBE) - Load X Register, Absolute, Y.
+
+    Load the value stored at the memory location that is after the opcode
+    directly into X register and then evaluate X register for flags Zero
+    and Negative. The memory location is a two-byte address that can range
+    from 0x0000 to 0xFFFF. The address is calculated by adding the
+    value of the Y register to the memory location specified by the
+    instruction. The result is wrapped around to fit within the memory
+    range (0-65535). For example:
+
+    - 0xFF04 + 0x04 => 0xFF08
+    - 0xFF04 + 0xFF => 0x0004 (0x010004)
+
+    Assembly example:
+    ```
+    LDX nnnn, Y
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if X = 0
+    - Negative Flag: Set if bit 7 of X is set
+
+    The instruction costs 3 bytes and 4 (or 5 when a page boundary is crossed) cycles to complete.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param int reg_y: Value of the Y register
+    :param int memory_location: Memory location to load the value from
+    :param bool flag_z: State of the Zero Flag
+    :param bool flag_n: State of the Negative Flag
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_x = _random_value(value)
+    cpu.reg_y = reg_y
+    memory[Processor.PC_INIT] = INS_LDX_ABY
+    _write_word(memory, Processor.PC_INIT + 1, memory_location)
+    memory[memory_location + reg_y] = value
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.reg_x,
+        cpu.flag_z,
+        cpu.flag_n,
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value, flag_z, flag_n)
+
+
+@pytest.mark.parametrize(
+    ("size", "cycles", "value", "flag_z", "flag_n"),
+    [
+        (2, 2, VALUE8_0000_0000, True, False),
+        (2, 2, VALUE8_0000_1111, False, False),
+        (2, 2, VALUE8_0101_1010, False, False),
+        (2, 2, VALUE8_1010_0101, False, True),
+        (2, 2, VALUE8_1111_0000, False, True),
+        (2, 2, VALUE8_1111_1111, False, True),
+    ],
+)
+def test_cpu_ins_ldy_imm(
+    size: int, cycles: int, value: int, flag_z: bool, flag_n: bool
+) -> None:
+    """
+    LDY (0xA0) - Load Y Register, Immediate.
+
+    Load the value stored after the opcode directly into Y register
+    and then evaluate Y register for flags Zero and Negative.
+
+    Assembly example:
+    ```
+    LDY #nn
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if Y = 0
+    - Negative Flag: Set if bit 7 of Y is set
+
+    The instruction costs 2 bytes and 2 cycles to complete.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param bool flag_z: State of the Zero Flag
+    :param bool flag_n: State of the Negative Flag
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_y = _random_value(value)
+    memory[Processor.PC_INIT] = INS_LDY_IMM
+    memory[Processor.PC_INIT + 1] = value
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.reg_y,
+        cpu.flag_z,
+        cpu.flag_n,
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value, flag_z, flag_n)
+
+
+@pytest.mark.parametrize(
+    ("size", "cycles", "value", "memory_location", "flag_z", "flag_n"),
+    [
+        (2, 3, VALUE8_0000_0000, 0x80, True, False),
+        (2, 3, VALUE8_0000_1111, 0x80, False, False),
+        (2, 3, VALUE8_1111_0000, 0x80, False, True),
+        (2, 3, VALUE8_1111_1111, 0x80, False, True),
+    ],
+)
+def test_cpu_ins_ldy_zp(
+    size: int, cycles: int, value: int, memory_location: int, flag_z: bool, flag_n: bool
+) -> None:
+    """
+    LDA (0xA4) - Load Y Register, Zero Page.
+
+    Load the value stored at the memory location that is after the opcode
+    directly into Y register and then evaluate Y register for flags Zero
+    and Negative. The memory location is a single byte and within the Zero
+    Page memory range of 0-255. The Zero Page address may not exceed beyond
+    0xFF:
+    - 0x80 + 0x0F => 0x8F
+    - 0x80 + 0xFF => 0x7F (0x017F)
+
+    Assembly example:
+    ```
+    LDY nn
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if Y = 0
+    - Negative Flag: Set if bit 7 of Y is set
+
+    The instruction costs 2 bytes and 3 cycles to complete.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param int memory_location: Memory location used for the test
+    :param bool flag_z: State of the Zero Flag
+    :param bool flag_n: State of the Negative Flag
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_y = _random_value(value)
+    memory[Processor.PC_INIT] = INS_LDY_ZP
+    memory[Processor.PC_INIT + 1] = memory_location
+    memory[memory_location] = value
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.reg_y,
+        cpu.flag_z,
+        cpu.flag_n,
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value, flag_z, flag_n)
+
+
+@pytest.mark.parametrize(
+    ("size", "cycles", "value", "reg_x", "memory_location", "flag_z", "flag_n"),
+    [
+        (2, 5, VALUE8_0000_0000, 0x00, 0x80, True, False),
+        (2, 5, VALUE8_0000_1111, 0x00, 0x80, False, False),
+        (2, 5, VALUE8_1111_0000, 0x00, 0x80, False, True),
+        (2, 5, VALUE8_1111_1111, 0x00, 0x80, False, True),
+        (2, 5, VALUE8_0000_0000, 0x0F, 0x80, True, False),
+        (2, 5, VALUE8_0000_1111, 0x0F, 0x80, False, False),
+        (2, 5, VALUE8_1111_0000, 0x0F, 0x80, False, True),
+        (2, 5, VALUE8_1111_1111, 0x0F, 0x80, False, True),
+        (2, 5, VALUE8_0000_0000, 0xF0, 0x80, True, False),
+        (2, 5, VALUE8_0000_1111, 0xF0, 0x80, False, False),
+        (2, 5, VALUE8_1111_0000, 0xF0, 0x80, False, True),
+        (2, 5, VALUE8_1111_1111, 0xF0, 0x80, False, True),
+        (2, 5, VALUE8_0000_0000, 0xFF, 0x80, True, False),
+        (2, 5, VALUE8_0000_1111, 0xFF, 0x80, False, False),
+        (2, 5, VALUE8_1111_0000, 0xFF, 0x80, False, True),
+        (2, 5, VALUE8_1111_1111, 0xFF, 0x80, False, True),
+    ],
+)
+def test_cpu_ins_ldy_zpx(
+    size: int,
+    cycles: int,
+    value: int,
+    reg_x: int,
+    memory_location: int,
+    flag_z: bool,
+    flag_n: bool,
+) -> None:
+    """
+    LDY (0xB4) - Load Y Register, Zero Page, X.
+
+    Load the value stored at the memory location that is after the opcode
+    directly into Y register and then evaluate Y register for flags Zero
+    and Negative. The memory location is a single byte and within the Zero
+    Page memory range of 0-255. The address is calculated by adding the
+    value of the X register to the memory location specified by the
+    instruction. The result is wrapped around to fit within the memory
+    range (0-255). For example:
+
+    - 0x80 + 0x0F => 0x8F
+    - 0x80 + 0xFF => 0x7F (0x017F)
+
+    Assembly example:
+    ```
+    LDY nn, X
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if Y = 0
+    - Negative Flag: Set if bit 7 of Y is set
+
+    The instruction costs 2 bytes and 5 cycles to complete.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param int reg_x: Value of the X register
+    :param int memory_location: Memory location to load the value from
+    :param bool flag_z: State of the Zero Flag
+    :param bool flag_n: State of the Negative Flag
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_y = _random_value(value)
+    cpu.reg_x = reg_x
+    memory[Processor.PC_INIT] = INS_LDY_ZPX
+    memory[Processor.PC_INIT + 1] = memory_location
+    memory[(memory_location + reg_x) & 0xFF] = value
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.reg_y,
+        cpu.flag_z,
+        cpu.flag_n,
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value, flag_z, flag_n)
+
+
+@pytest.mark.parametrize(
+    ("size", "cycles", "value", "memory_location", "flag_z", "flag_n"),
+    [
+        (3, 4, VALUE8_0000_0000, 0xFAFA, True, False),
+        (3, 4, VALUE8_0000_1111, 0xFAFA, False, False),
+        (3, 4, VALUE8_0101_1010, 0xFAFA, False, False),
+        (3, 4, VALUE8_1010_0101, 0xFAFA, False, True),
+        (3, 4, VALUE8_1111_0000, 0xFAFA, False, True),
+        (3, 4, VALUE8_1111_1111, 0xFAFA, False, True),
+        (3, 4, VALUE8_0000_0000, 0xAFAF, True, False),
+        (3, 4, VALUE8_0000_1111, 0xAFAF, False, False),
+        (3, 4, VALUE8_0101_1010, 0xAFAF, False, False),
+        (3, 4, VALUE8_1010_0101, 0xAFAF, False, True),
+        (3, 4, VALUE8_1111_0000, 0xAFAF, False, True),
+        (3, 4, VALUE8_1111_1111, 0xAFAF, False, True),
+    ],
+)
+def test_cpu_ins_ldy_abs(
+    size: int, cycles: int, value: int, memory_location: int, flag_z: bool, flag_n: bool
+) -> None:
+    """
+    LDY (0xAC) - Load Y Register, Absolute.
+
+    Load the value stored at the memory location that is after the opcode
+    directly into Y register and then evaluate Y register for flags Zero
+    and Negative. The memory location is a two-byte address that can range
+    from 0x0000 to 0xFFFF. The address is specified by the instruction.
+
+    Assembly example:
+    ```
+    LDY nnnn
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if Y = 0
+    - Negative Flag: Set if bit 7 of Y is set
+
+    The instruction costs 3 bytes and 4 cycles to complete.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param int memory_location: Memory location to load the value from
+    :param bool flag_z: State of the Zero Flag
+    :param bool flag_n: State of the Negative Flag
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_y = _random_value(value)
+    memory[Processor.PC_INIT] = INS_LDY_ABS
+    _write_word(memory, Processor.PC_INIT + 1, memory_location)
+    memory[memory_location] = value
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.reg_y,
+        cpu.flag_z,
+        cpu.flag_n,
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value, flag_z, flag_n)
+
+
+@pytest.mark.parametrize(
+    ("size", "cycles", "value", "reg_x", "memory_location", "flag_z", "flag_n"),
+    [
+        (3, 4, VALUE8_0000_0000, 0x04, 0x8000, True, False),
+        (3, 4, VALUE8_0000_1111, 0x04, 0x8000, False, False),
+        (3, 4, VALUE8_0101_1010, 0x04, 0x8000, False, False),
+        (3, 4, VALUE8_1010_0101, 0x04, 0x8000, False, True),
+        (3, 4, VALUE8_1111_0000, 0x04, 0x8000, False, True),
+        (3, 4, VALUE8_1111_1111, 0x04, 0x8000, False, True),
+        (3, 5, VALUE8_0000_0000, 0x04, 0x80FE, True, False),
+        (3, 5, VALUE8_0000_1111, 0x04, 0x80FE, False, False),
+        (3, 5, VALUE8_0101_1010, 0x04, 0x80FE, False, False),
+        (3, 5, VALUE8_1010_0101, 0x04, 0x80FE, False, True),
+        (3, 5, VALUE8_1111_0000, 0x04, 0x80FE, False, True),
+        (3, 5, VALUE8_1111_1111, 0x04, 0x80FE, False, True),
+    ],
+)
+def test_cpu_ins_ldy_abx(
+    size: int,
+    cycles: int,
+    value: int,
+    reg_x: int,
+    memory_location: int,
+    flag_z: bool,
+    flag_n: bool,
+) -> None:
+    """
+    LDY (0xBC) - Load Y Register, Absolute, X.
+
+    Load the value stored at the memory location that is after the opcode
+    directly into Y register and then evaluate Y register for flags Zero
+    and Negative. The memory location is a two-byte address that can range
+    from 0x0000 to 0xFFFF. The address is calculated by adding the
+    value of the X register to the memory location specified by the
+    instruction. The result is wrapped around to fit within the memory
+    range (0-65535). For example:
+    - 0xFF04 + 0x04 => 0xFF08
+    - 0xFF04 + 0xFF => 0x0004 (0x010004)
+
+    Assembly example:
+    ```
+    LDY nnnn, X
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if Y = 0
+    - Negative Flag: Set if bit 7 of Y is set
+
+    The instruction costs 3 bytes and 4 (or 5 when a page boundary is crossed) cycles to complete.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param int reg_x: Value of the X register
+    :param int memory_location: Memory location to load the value from
+    :param bool flag_z: State of the Zero Flag
+    :param bool flag_n: State of the Negative Flag
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_y = _random_value(value)
+    cpu.reg_x = reg_x
+    memory[Processor.PC_INIT] = INS_LDY_ABX
+    _write_word(memory, Processor.PC_INIT + 1, memory_location)
+    memory[memory_location + reg_x] = value
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.reg_y,
+        cpu.flag_z,
+        cpu.flag_n,
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value, flag_z, flag_n)
+
+
+def test_cpu_ins_sec_imp() -> None:
+    """
+    SEC (0x38) - Set Carry Flag.
+
+    Set the Carry Flag to 1.
+
+    Assembly example:
+    ```
+    SEC
+    ```
+
+    Affected flags:
+    - Carry Flag: Set to 1
+
+    The instruction costs 1 byte and 2 cycles to complete.
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.flag_c = False
+    memory[Processor.PC_INIT] = INS_SEC_IMP
+    cpu.execute(2)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_c,
+    ) == (Processor.PC_INIT + 1, Processor.SP_INIT, 2, True)
+
+
+def test_cpu_ins_sed_imp() -> None:
+    """
+    SED (0xF8) - Set Decimal Mode.
+
+    Set the Decimal Flag to 1.
+
+    Assembly example:
+    ```
+    SED
+    ```
+
+    Affected flags:
+    - Decimal Flag: Set to 1
+
+    The instruction costs 1 byte and 2 cycles to complete.
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.flag_d = False
+    memory[Processor.PC_INIT] = INS_SED_IMP
+    cpu.execute(2)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_d,
+    ) == (Processor.PC_INIT + 1, Processor.SP_INIT, 2, True)
+
+
+def test_cpu_ins_sei_imp() -> None:
+    """
+    SEI (0x78) - Set Interrupt Disable.
+
+    Set the Interrupt Disable Flag to 1.
+
+    Assembly example:
+    ```
+    SEI
+    ```
+
+    Affected flags:
+    - Interrupt Disable Flag: Set to 1
+
+    The instruction costs 1 byte and 2 cycles to complete.
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.flag_i = False
+    memory[Processor.PC_INIT] = INS_SEI_IMP
+    cpu.execute(2)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_i,
+    ) == (Processor.PC_INIT + 1, Processor.SP_INIT, 2, True)
+
+
+@pytest.mark.parametrize(
+    ("size", "cycles", "value", "memory_location"),
+    [
+        (2, 3, VALUE8_0000_0000, 0x80),
+        (2, 3, VALUE8_0000_1111, 0x80),
+        (2, 3, VALUE8_0101_1010, 0x80),
+        (2, 3, VALUE8_1010_0101, 0x80),
+        (2, 3, VALUE8_1111_0000, 0x80),
+        (2, 3, VALUE8_1111_1111, 0x80),
+    ],
+)
+def test_cpu_ins_sta_zp(
+    size: int, cycles: int, value: int, memory_location: int
+) -> None:
+    """
+    Store Accumulator, Zero Page.
+
+    Store the value of the Accumulator into the memory location that is
+    after the opcode. The memory location is a single byte and within the
+    Zero Page memory range of 0-255. The Zero Page address may not exceed
+    beyond 0xFF:
+
+    - 0x80 + 0x0F => 0x8F
+    - 0x80 + 0xFF => 0x7F (0x017F)
+
+    Assembly example:
+    ```
+    STA nn
+    ```
+
+    Affected flags:
+    - None
+
+    The instruction costs 2 bytes and 3 cycles to complete.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param int memory_location: Memory location to store the value in
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_a = value
+    memory[Processor.PC_INIT] = INS_STA_ZP
+    memory[Processor.PC_INIT + 1] = memory_location
+    memory[memory_location] = _random_value(value)
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        memory[memory_location],
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value)
+
+
+@pytest.mark.parametrize(
+    ("size", "cycles", "value", "reg_x", "memory_zp"),
+    [
+        (2, 3, VALUE8_0000_0000, 0x00, 0x80),
+        (2, 3, VALUE8_0000_1111, 0x00, 0x80),
+        (2, 3, VALUE8_0101_1010, 0x00, 0x80),
+        (2, 3, VALUE8_1010_0101, 0x00, 0x80),
+        (2, 3, VALUE8_1111_0000, 0x00, 0x80),
+        (2, 3, VALUE8_1111_1111, 0x00, 0x80),
+        (2, 3, VALUE8_0000_0000, 0x0F, 0x80),
+        (2, 3, VALUE8_0000_1111, 0x0F, 0x80),
+        (2, 3, VALUE8_0101_1010, 0x0F, 0x80),
+        (2, 3, VALUE8_1010_0101, 0x0F, 0x80),
+        (2, 3, VALUE8_1111_0000, 0x0F, 0x80),
+        (2, 3, VALUE8_1111_1111, 0x0F, 0x80),
+        (2, 3, VALUE8_0000_0000, 0xF0, 0x80),
+        (2, 3, VALUE8_0000_1111, 0xF0, 0x80),
+        (2, 3, VALUE8_0101_1010, 0xF0, 0x80),
+        (2, 3, VALUE8_1010_0101, 0xF0, 0x80),
+        (2, 3, VALUE8_1111_0000, 0xF0, 0x80),
+        (2, 3, VALUE8_1111_1111, 0xF0, 0x80),
+        (2, 3, VALUE8_0000_0000, 0xFF, 0x80),
+        (2, 3, VALUE8_0000_1111, 0xFF, 0x80),
+        (2, 3, VALUE8_0101_1010, 0xFF, 0x80),
+        (2, 3, VALUE8_1010_0101, 0xFF, 0x80),
+        (2, 3, VALUE8_1111_0000, 0xFF, 0x80),
+        (2, 3, VALUE8_1111_1111, 0xFF, 0x80),
+    ],
+)
+def test_cpu_ins_sta_zpx(
+    size: int, cycles: int, value: int, reg_x: int, memory_zp: int
+) -> None:
+    """
+    STA (0x95) - Store Accumulator, Zero Page, X.
+
+    Store the value of the Accumulator into the memory location that is
+    after the opcode. The memory location is a single byte and within the
+    Zero Page memory range of 0-255. The address is calculated by adding
+    the value of the X register to the memory location specified by the
+
+    Affected flags:
+    - None
+
+    The instruction costs 2 bytes and 3 cycles to complete.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param int reg_x: Value of the X register
+    :param int memory_zp: Memory location to store the value in
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_a = value
+    cpu.reg_x = reg_x
+    memory[Processor.PC_INIT] = INS_STA_ZPX
+    memory[Processor.PC_INIT + 1] = memory_zp
+    memory[(memory_zp + reg_x) & 0xFF] = _random_value(value)
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        memory[(memory_zp + reg_x) & 0xFF],
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value)
+
+
+@pytest.mark.parametrize(
+    ("size", "cycles", "value", "memory_location"),
+    [
+        (3, 4, VALUE8_0000_0000, 0xFAFA),
+        (3, 4, VALUE8_0000_1111, 0xFAFA),
+        (3, 4, VALUE8_0101_1010, 0xFAFA),
+        (3, 4, VALUE8_1010_0101, 0xFAFA),
+        (3, 4, VALUE8_1111_0000, 0xFAFA),
+        (3, 4, VALUE8_1111_1111, 0xFAFA),
+        (3, 4, VALUE8_0000_0000, 0xAFAF),
+        (3, 4, VALUE8_0000_1111, 0xAFAF),
+        (3, 4, VALUE8_0101_1010, 0xAFAF),
+        (3, 4, VALUE8_1010_0101, 0xAFAF),
+        (3, 4, VALUE8_1111_0000, 0xAFAF),
+        (3, 4, VALUE8_1111_1111, 0xAFAF),
+    ],
+)
+def test_cpu_ins_sta_abs(
+    size: int, cycles: int, value: int, memory_location: int
+) -> None:
+    """
+    STA (0x8D) - Store Accumulator, Absolute.
+
+    Store the value of the Accumulator into the memory location that is
+    after the opcode. The memory location is a two-byte address that can
+    range from 0x0000 to 0xFFFF. The address is specified by the
+    instruction.
+
+    Assembly example:
+    ```
+    STA nnnn
+    ```
+
+    Affected flags:
+    - None
+
+    The instruction costs 3 bytes and 4 cycles to complete.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param int memory_location: Memory location to store the value in
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_a = value
+    memory[Processor.PC_INIT] = INS_STA_ABS
+    _write_word(memory, Processor.PC_INIT + 1, memory_location)
+    memory[memory_location] = _random_value(value)
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        memory[memory_location],
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value)
+
+
+@pytest.mark.parametrize(
+    ("size", "cycles", "value", "reg_x", "memory_location"),
+    [
+        (3, 5, VALUE8_0000_0000, 0x04, 0x8000),
+        (3, 5, VALUE8_0000_1111, 0x04, 0x8000),
+        (3, 5, VALUE8_0101_1010, 0x04, 0x8000),
+        (3, 5, VALUE8_1010_0101, 0x04, 0x8000),
+        (3, 5, VALUE8_1111_0000, 0x04, 0x8000),
+        (3, 5, VALUE8_1111_1111, 0x04, 0x8000),
+        (3, 5, VALUE8_0000_0000, 0x04, 0x80FE),
+        (3, 5, VALUE8_0000_1111, 0x04, 0x80FE),
+        (3, 5, VALUE8_0101_1010, 0x04, 0x80FE),
+        (3, 5, VALUE8_1010_0101, 0x04, 0x80FE),
+        (3, 5, VALUE8_1111_0000, 0x04, 0x80FE),
+        (3, 5, VALUE8_1111_1111, 0x04, 0x80FE),
+    ],
+)
+def test_cpu_ins_sta_abx(
+    size: int, cycles: int, value: int, reg_x: int, memory_location: int
+) -> None:
+    """
+    STA (0x9D) - Store Accumulator, Absolute, X.
+
+    Store the value of the Accumulator into the memory location that is
+    after the opcode. The memory location is a two-byte address that can
+
+    Assembly example:
+    ```
+    STA nnnn, X
+    ```
+
+    Affected flags:
+    - None
+
+    The instruction costs 3 bytes and 5 cycles to complete.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param int reg_x: Value of the X register
+    :param int memory_location: Memory location to store the value in
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_a = value
+    cpu.reg_x = reg_x
+    memory[Processor.PC_INIT] = INS_STA_ABX
+    _write_word(memory, Processor.PC_INIT + 1, memory_location)
+    memory[memory_location + cpu.reg_x] = _random_value(value)
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        memory[memory_location + cpu.reg_x],
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value)
+
+
+@pytest.mark.parametrize(
+    ("size", "cycles", "value", "reg_y", "memory_location"),
+    [
+        (3, 5, VALUE8_0000_0000, 0x04, 0x8000),
+        (3, 5, VALUE8_0000_1111, 0x04, 0x8000),
+        (3, 5, VALUE8_1111_0000, 0x04, 0x8000),
+        (3, 5, VALUE8_1111_1111, 0x04, 0x8000),
+        (3, 5, VALUE8_0000_0000, 0x04, 0x80FE),
+        (3, 5, VALUE8_0000_1111, 0x04, 0x80FE),
+        (3, 5, VALUE8_1111_0000, 0x04, 0x80FE),
+        (3, 5, VALUE8_1111_1111, 0x04, 0x80FE),
+    ],
+)
+def test_cpu_ins_sta_aby(
+    size: int, cycles: int, value: int, reg_y: int, memory_location: int
+) -> None:
+    """
+    STA (0x99) - Store Accumulator, Absolute, Y.
+
+    Store the value of the Accumulator into the memory location that is
+    after the opcode. The memory location is a two-byte address that can
+    range from 0x0000 to 0xFFFF. The address is calculated by adding the
+    value of the Y register to the memory location specified by the
+    instruction. The result is wrapped around to fit within the memory
+    range (0-65535). For example:
+    - 0xFF04 + 0x04 => 0xFF08
+    - 0xFF04 + 0xFF => 0x0004 (0x010004)
+
+    Assembly example:
+    ```
+    STA nnnn, Y
+    ```
+
+    Affected flags:
+    - None
+
+    The instruction costs 3 bytes and 5 cycles to complete.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param int reg_y: Value of the Y register
+    :param int memory_location: Memory location to store the value in
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_a = value
+    cpu.reg_y = reg_y
+    memory[Processor.PC_INIT] = INS_STA_ABY
+    _write_word(memory, Processor.PC_INIT + 1, memory_location)
+    memory[memory_location + reg_y] = _random_value(value)
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        memory[memory_location + reg_y],
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value)
+
+
+@pytest.mark.parametrize(
+    ("size", "cycles", "value", "reg_x", "memory_zp", "memory_location"),
+    [
+        (2, 6, VALUE8_0000_0000, 0x04, 0x02, 0x8000),
+        (2, 6, VALUE8_0000_1111, 0x04, 0x02, 0x8000),
+        (2, 6, VALUE8_0101_1010, 0x04, 0x02, 0x8000),
+        (2, 6, VALUE8_1010_0101, 0x04, 0x02, 0x8000),
+        (2, 6, VALUE8_1111_0000, 0x04, 0x02, 0x8000),
+        (2, 6, VALUE8_1111_1111, 0x04, 0x02, 0x8000),
+    ],
+)
+def test_cpu_ins_sta_inx(
+    size: int, cycles: int, value: int, reg_x: int, memory_zp: int, memory_location: int
+) -> None:
+    """
+    STA (0x81) - Store Accumulator, Indexed Indirect.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param int reg_x: Value of the X register
+    :param int memory_zp: Zero Page memory location
+    :param int memory_location: Memory location to store the value in
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_a = value
+    cpu.reg_x = reg_x
+    memory[Processor.PC_INIT] = INS_STA_INX
+    memory[Processor.PC_INIT + 1] = memory_zp
+    _write_word(memory, memory_zp + reg_x, memory_location)
+    memory[memory_location] = _random_value(value)
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.reg_a,
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value)
+
+
+@pytest.mark.parametrize(
+    ("size", "cycles", "value", "reg_y", "memory_zp", "memory_location"),
+    [
+        (2, 6, VALUE8_0000_0000, 0x04, 0x02, 0x8000),
+        (2, 6, VALUE8_0000_1111, 0x04, 0x02, 0x8000),
+        (2, 6, VALUE8_0101_1010, 0x04, 0x02, 0x8000),
+        (2, 6, VALUE8_1010_0101, 0x04, 0x02, 0x8000),
+        (2, 6, VALUE8_1111_0000, 0x04, 0x02, 0x8000),
+        (2, 6, VALUE8_1111_1111, 0x04, 0x02, 0x8000),
+    ],
+)
+def test_cpu_ins_sta_iny(
+    size: int, cycles: int, value: int, reg_y: int, memory_zp: int, memory_location: int
+) -> None:
+    """
+    STA (0x91) - Store Accumulator, Indirect Indexed.
+
+    ```
+    STA nnnn
+    ```
+
+    TODO: This test doesn't test the page crossing.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param int reg_y: Value of the Y register
+    :param int memory_zp: Zero Page memory location
+    :param int memory_location: Memory location to store the value in
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_a = value
+    cpu.reg_y = reg_y
+    memory[Processor.PC_INIT] = INS_STA_INY
+    memory[Processor.PC_INIT + 1] = 0x86
+    _write_word(memory, memory_zp, memory_location)
+    memory[memory_location + reg_y] = _random_value(value)
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.reg_a,
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value)
+
+
+@pytest.mark.parametrize(
+    ("size", "cycles", "value", "memory_zp"),
+    [
+        (2, 3, VALUE8_0000_0000, 0x80),
+        (2, 3, VALUE8_0000_1111, 0x80),
+        (2, 3, VALUE8_1111_0000, 0x80),
+        (2, 3, VALUE8_1111_1111, 0x80),
+    ],
+)
+def test_cpu_ins_stx_zp(size: int, cycles: int, value: int, memory_zp: int) -> None:
+    """
+    STX (0x86) - Store X Register, Zero Page.
+
+    Store the value of the X register into the memory location that is
+    after the opcode. The memory location is a single byte and within the
+    Zero Page memory range of 0-255.
+
+    Assembly example:
+    ```
+    STX nn
+    ```
+
+    Affected flags:
+    - None
+
+    The instruction costs 2 bytes and 3 cycles to complete.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param int memory_zp: Memory location to store the value in
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_x = value
+    memory[Processor.PC_INIT] = INS_STX_ZP
+    memory[Processor.PC_INIT + 1] = memory_zp
+    memory[memory_zp] = _random_value(value)
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        memory[memory_zp],
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value)
+
+
+@pytest.mark.parametrize(
+    ("reg_y", "memory_location"),
+    [
+        (0x0F, 0x8F),
+        (0xFF, 0x7F),
+    ],
+)
+def test_cpu_ins_stx_zpy(reg_y: int, memory_location: int) -> None:
+    """
+    STX (0x96) - Store X Register, Zero Page, Y.
+
+    The Zero Page address may not exceed beyond 0xFF:
+
+    - 0x80 + 0x0F => 0x8F
+    - 0x80 + 0xFF => 0x7F (0x017F)
+
+    Assembly example:
+    ```
+    STX nn, Y
+    ```
+
+    Affected flags:
+    - None
+
+    The instruction costs 2 bytes and 4 cycles to complete.
+
+    :param int reg_y: Value of the Y register
+    :param int memory_location: Memory location to store the value in
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_x = 0xF0
+    cpu.reg_y = reg_y
+    memory[Processor.PC_INIT] = INS_STX_ZPY
+    memory[Processor.PC_INIT + 1] = 0x80
+    memory[memory_location] = 0x00
+    cpu.execute(4)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        memory[memory_location],
+    ) == (Processor.PC_INIT + 2, Processor.SP_INIT, 4, 0xF0)
+
+
+@pytest.mark.parametrize(
+    ("size", "cycles", "value", "memory_location"),
+    [
+        (3, 4, VALUE8_0000_0000, 0xFAFA),
+        (3, 4, VALUE8_0000_1111, 0xFAFA),
+        (3, 4, VALUE8_0101_1010, 0xFAFA),
+        (3, 4, VALUE8_1010_0101, 0xFAFA),
+        (3, 4, VALUE8_1111_0000, 0xFAFA),
+        (3, 4, VALUE8_1111_1111, 0xFAFA),
+        (3, 4, VALUE8_0000_0000, 0xAFAF),
+        (3, 4, VALUE8_0000_1111, 0xAFAF),
+        (3, 4, VALUE8_0101_1010, 0xAFAF),
+        (3, 4, VALUE8_1010_0101, 0xAFAF),
+        (3, 4, VALUE8_1111_0000, 0xAFAF),
+        (3, 4, VALUE8_1111_1111, 0xAFAF),
+    ],
+)
+def test_cpu_ins_stx_abs(
+    size: int, cycles: int, value: int, memory_location: int
+) -> None:
+    """
+    Store X Register, Absolute.
+
+    return: None
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_x = value
+    memory[Processor.PC_INIT] = INS_STX_ABS
+    _write_word(memory, Processor.PC_INIT + 1, memory_location)
+    memory[memory_location] = _random_value(value)
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.reg_x,
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value)
+
+
+@pytest.mark.parametrize(
+    ("size", "cycles", "value", "memory_location"),
+    [
+        (2, 3, VALUE8_0000_0000, 0x80),
+        (2, 3, VALUE8_0000_1111, 0x80),
+        (2, 3, VALUE8_1111_0000, 0x80),
+        (2, 3, VALUE8_1111_1111, 0x80),
+    ],
+)
+def test_cpu_ins_sty_zp(
+    size: int, cycles: int, value: int, memory_location: int
+) -> None:
+    """
+    STY (0x84) - Store Y Register, Zero Page.
+
+    Store the value of the Y register into the memory location that is after the opcode. The memory location is a single byte and within the
+    Zero Page memory range of 0-255.
+
+    Assembly example:
+    ```
+    STY nn
+    ```
+
+    Affected flags:
+    - None
+
+    The instruction costs 2 bytes and 3 cycles to complete.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param int memory_location: Memory location to store the value in
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_y = value
+    memory[Processor.PC_INIT] = INS_STY_ZP
+    memory[Processor.PC_INIT + 1] = memory_location
+    memory[memory_location] = _random_value(value)
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        memory[memory_location],
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value)
+
+
+@pytest.mark.parametrize(
+    ("reg_x", "memory_location"),
+    [
+        (0x0F, 0x8F),
+        (0xFF, 0x7F),
+    ],
+)
+def test_cpu_ins_sty_zpx(reg_x: int, memory_location: int) -> None:
+    """
+    STY (0x94) - Store Y Register, Zero Page, X.
+
+    Store the value of the Y register into the memory location that is after the opcode. The memory location is a single byte and within the
+    Zero Page memory range of 0-255. The address is calculated by adding the value of the X register to the memory location specified by the instruction. The Zero Page address may not exceed beyond 0xFF:
+
+    - 0x80 + 0x0F => 0x8F
+    - 0x80 + 0xFF => 0x7F (0x017F)
+
+    Assembly example:
+    ```
+    STY nn, X
+    ```
+
+    Affected flags:
+    - None
+
+    The instruction costs 2 bytes and 4 cycles to complete.
+
+    :param int reg_x: Value of the X register
+    :param int memory_location: Memory location to store the value in
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_y = 0xF0
+    cpu.reg_x = reg_x
+    memory[Processor.PC_INIT] = INS_STY_ZPX
+    memory[Processor.PC_INIT + 1] = 0x80
+    memory[memory_location] = 0x00
+    cpu.execute(4)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        memory[memory_location],
+    ) == (Processor.PC_INIT + 2, Processor.SP_INIT, 4, 0xF0)
+
+
+@pytest.mark.parametrize(
+    ("size", "cycles", "value", "memory_location"),
+    [
+        (3, 4, VALUE8_0000_0000, 0xFAFA),
+        (3, 4, VALUE8_0000_1111, 0xFAFA),
+        (3, 4, VALUE8_0101_1010, 0xFAFA),
+        (3, 4, VALUE8_1010_0101, 0xFAFA),
+        (3, 4, VALUE8_1111_0000, 0xFAFA),
+        (3, 4, VALUE8_1111_1111, 0xFAFA),
+        (3, 4, VALUE8_0000_0000, 0xAFAF),
+        (3, 4, VALUE8_0000_1111, 0xAFAF),
+        (3, 4, VALUE8_0101_1010, 0xAFAF),
+        (3, 4, VALUE8_1010_0101, 0xAFAF),
+        (3, 4, VALUE8_1111_0000, 0xAFAF),
+        (3, 4, VALUE8_1111_1111, 0xAFAF),
+    ],
+)
+def test_cpu_ins_sty_abs(
+    size: int, cycles: int, value: int, memory_location: int
+) -> None:
+    """
+    STY (0x8C) - Store Y Register, Absolute.
+
+    Store the value of the Y register into the memory location that is after the opcode. The memory location is a two-byte address that can range from 0x0000 to 0xFFFF. The address is specified by the instruction.
+
+    Assembly example:
+    ```
+    STY nnnn
+    ```
+
+    Affected flags:
+    - None
+
+    The instruction costs 3 bytes and 4 cycles to complete.
+
+    :param int size: Number of bytes consumed by the stack pointer
+    :param int cycles: Number of CPU cycles used
+    :param int value: Value used for the test
+    :param int memory_location: Memory location to store the value in
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_y = value
+    memory[Processor.PC_INIT] = INS_STY_ABS
+    _write_word(memory, Processor.PC_INIT + 1, memory_location)
+    memory[memory_location] = _random_value(value)
+    cpu.execute(cycles)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.reg_y,
+    ) == (Processor.PC_INIT + size, Processor.SP_INIT, cycles, value)
+
+
+@pytest.mark.parametrize(
+    ("value", "flag_n", "flag_z"),
+    [
+        (VALUE8_0000_1111, False, False),
+        (VALUE8_0000_0000, False, True),
+        (VALUE8_1111_0000, True, False),
+    ],
+)
+def test_cpu_ins_tax_imp(value: int, flag_n: bool, flag_z: bool) -> None:
+    """
+    TAX (0xAA) - Transfer Accumulator to X, Implied.
+
+    Transfer the value stored in the accumulator directly into register X and
+    then evaluate register X for flags Zero and Negative.
+
+    Assembly example:
+    ```
+    TAX
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if X = 0
+    - Negative Flag: Set if bit 7 of X is set
+
+    The instruction costs 1 byte and 2 cycles to complete.
+
+    :param int value: Value used for the test
+    :param bool flag_n: Expected value of the Negative flag after execution
+    :param bool flag_z: Expected value of the Zero flag after execution
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_a = value
+    cpu.reg_x = VALUE8_EMPTY
+    memory[Processor.PC_INIT] = INS_TAX_IMP
+    cpu.execute(2)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_n,
+        cpu.flag_z,
+        cpu.reg_x,
+    ) == (Processor.PC_INIT + 1, Processor.SP_INIT, 2, flag_n, flag_z, value)
+
+
+@pytest.mark.parametrize(
+    ("value", "flag_n", "flag_z"),
+    [
+        (0x0F, False, False),
+        (0x00, False, True),
+        (0xF0, True, False),
+    ],
+)
+def test_cpu_ins_tay_imp(value: int, flag_n: bool, flag_z: bool) -> None:
+    """
+    TAY (0xA8) - Transfer Accumulator to Y, Implied.
+
+    Transfer the value stored in the accumulator directly into register Y and
+    then evaluate register Y for flags Zero and Negative.
+
+    Assembly example:
+    ```
+    TAY
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if Y = 0
+    - Negative Flag: Set if bit 7 of Y is set
+
+    The instruction costs 1 byte and 2 cycles to complete.
+
+    :param int value: Value used for the test
+    :param bool flag_n: Expected value of the Negative flag after execution
+    :param bool flag_z: Expected value of the Zero flag after execution
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_a = value
+    cpu.reg_y = VALUE8_EMPTY
+    memory[Processor.PC_INIT] = INS_TAY_IMP
+    cpu.execute(2)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_n,
+        cpu.flag_z,
+        cpu.reg_y,
+    ) == (Processor.PC_INIT + 1, Processor.SP_INIT, 2, flag_n, flag_z, value)
+
+
+@pytest.mark.parametrize(
+    ("value", "flag_n", "flag_z"),
+    [
+        (0x0F, False, False),
+        (0x00, False, True),
+        (0xF0, True, False),
+    ],
+)
+def test_cpu_ins_txa_imp(value: int, flag_n: bool, flag_z: bool) -> None:
+    """
+    TXA (0x8A) - Transfer X Register to Accumulator, Implied.
+
+    Transfer the value stored in register X directly into the accumulator and
+    then evaluate the accumulator for flags Zero and Negative.
+
+    Assembly example:
+    ```
+    TXA
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if A = 0
+    - Negative Flag: Set if bit 7 of A is set
+
+    The instruction costs 1 byte and 2 cycles to complete.
+
+    :param int value: Value used for the test
+    :param bool flag_n: Expected value of the Negative flag after execution
+    :param bool flag_z: Expected value of the Zero flag after execution
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_a = VALUE8_EMPTY
+    cpu.reg_x = value
+    memory[Processor.PC_INIT] = INS_TXA_IMP
+    cpu.execute(2)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_n,
+        cpu.flag_z,
+        cpu.reg_a,
+    ) == (Processor.PC_INIT + 1, Processor.SP_INIT, 2, flag_n, flag_z, value)
+
+
+@pytest.mark.parametrize(
+    ("value", "flag_n", "flag_z"),
+    [
+        (0x0F, False, False),
+        (0x00, False, True),
+        (0xF0, True, False),
+    ],
+)
+def test_cpu_ins_tya_imp(value: int, flag_n: bool, flag_z: bool) -> None:
+    """
+    TYA (0x98) - Transfer Y Register to Accumulator, Implied.
+
+    Transfer the value stored in register Y directly into the accumulator and
+    then evaluate the accumulator for flags Zero and Negative.
+
+    Assembly example:
+    ```
+    TYA
+    ```
+
+    Affected flags:
+    - Zero Flag: Set if A = 0
+    - Negative Flag: Set if bit 7 of A is set
+
+    The instruction costs 1 byte and 2 cycles to complete.
+
+    :param int value: Value used for the test
+    :param bool flag_n: Expected value of the Negative flag after execution
+    :param bool flag_z: Expected value of the Zero flag after execution
+    """
+    memory = Memory()
+    cpu = Processor(memory)
+    cpu.reset()
+    cpu.reg_a = VALUE8_EMPTY
+    cpu.reg_y = value
+    memory[Processor.PC_INIT] = INS_TYA_IMP
+    cpu.execute(2)
+    assert (
+        cpu.program_counter,
+        cpu.stack_pointer,
+        cpu.cycles,
+        cpu.flag_n,
+        cpu.flag_z,
+        cpu.reg_a,
+    ) == (Processor.PC_INIT + 1, Processor.SP_INIT, 2, flag_n, flag_z, value)
