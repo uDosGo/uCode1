@@ -1,4 +1,0 @@
-{
-    "flake8.importStrategy": "fromEnvironment",
-    "python.testing.pytestEnabled": true
-}
