@@ -32,7 +32,9 @@ docs/
 ├── CHARACTER_SET_REFERENCE.md  # Teletext character set
 ├── C_LAYER_CHEAT_SHEET.md     # C layer reference
 ├── SPATIAL_CHARACTER_MAPPING.md  # Spatial character mapping
-└── SPATIAL_CHARACTER_INTEGRATION.md  # Spatial integration
+├── SPATIAL_CHARACTER_INTEGRATION.md  # Spatial integration
+├── legacy/                  # Superseded docs (USYSTEM_*, usystem_schema.sql)
+└── review/                  # Docs under review (currently empty)
 ```
 
 ## Core Concepts
