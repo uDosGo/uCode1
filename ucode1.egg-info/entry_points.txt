@@ -1,0 +1,2 @@
+[console_scripts]
+ucode1 = ucode1.cli:main
