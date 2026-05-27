@@ -62,7 +62,7 @@ ucode <command> [arguments] [flags]
 | `locate` | Position within grid | `ucode locate L100-AA10-0000-0 X=100 Y=50` |
 | `move` | Animate movement | `ucode move L100-AA10-0000-0 TO 200,100 STEP 10` |
 | `collide` | Check collision | `ucode collide L100-AA10-0000-0` |
-| `sound` | Audio playback | `ucode sound play alert.wav` |
+| `sound` | Audio playback | `ucode play sound alert.wav` |
 | `print` | Output to console | `ucode print "Hello, uDos!"` |
 | `input` | Read user input | `ucode input "Your name? " name$` |
 | `let` | Variable assignment | `ucode let score = 100` |
@@ -80,7 +80,7 @@ uCode1 (Python)
 ├── Teletext Renderer — MODE 7 character graphics
 ├── Ceefax Bridge     — Teletext grid rendering + CEETEX RSS reader
 ├── Snack System      — Pluggable app runner (textual-based)
-├── LENS/SKIN/MCP     — State capture, theme hot-reload, remote control
+├── LENS/SKIN/MCP     — State capture, theme hot-reload, remote control (⚠️ "MCP" here = Mini Control Protocol, an internal uCode1 IPC mechanism — NOT the Model Context Protocol used by uCode2's MCP Gateway)
 ├── UDO Runtime       — Agentic workflow engine (skills, tasks, agents)
 └── CLI               — Command-line interface
 ```

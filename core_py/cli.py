@@ -38,14 +38,18 @@ def main():
     # Handle subcommands
     if len(sys.argv) > 1:
         subcommand = sys.argv[1]
-        if subcommand == 'snack':
-            from .snack_cli import main as snack_main
-            snack_main()
-            return
-        elif subcommand == 'ceefax':
-            from .ceefax_cli import main as ceefax_main
-            ceefax_main()
-            return
+    if subcommand == 'snack':
+        from .snack_cli import main as snack_main
+        snack_main()
+        return
+    elif subcommand == 'ceefax':
+        from .ceefax_cli import main as ceefax_main
+        ceefax_main()
+        return
+    elif subcommand == 'acs':
+        from .bbc.acs.acs_cli import main as acs_main
+        acs_main()
+        return
     
     parser = argparse.ArgumentParser(
         description='uCode1 - BASIC-inspired scripting language',
