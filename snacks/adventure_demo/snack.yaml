@@ -1,0 +1,101 @@
+# Adventure Demo Snack — uCode1 Teletext Adventure
+#
+# A simple teletext adventure game demonstrating the uCode1 + CEETEX
+# integration. Uses BBC BASIC-style scripting with teletext output.
+#
+# Usage:
+#   ucode1 snack run snacks/adventure_demo/snack.yaml
+#   ucode1 snack run adventure_demo
+
+name: adventure_demo
+display_name: "Teletext Adventure Demo"
+description: "A simple teletext adventure game — explore the dungeon!"
+version: "1.0.0"
+author: "uDos Team"
+
+type: textual
+entry: "ucode1.ceefax.ceetex_app:CeetexUCodeApp"
+
+# ── Runtime Requirements ────────────────────────────────────────────
+
+requirements:
+  python:
+    - textual>=0.41.0
+    - feedparser>=6.0.0
+    - rich>=13.0.0
+
+# ── uCode1 Bridge Integration ───────────────────────────────────────
+
+bridges:
+  lens:
+    enabled: true
+    adapter: "ucode1.ceefax.ceetex_app:CeetexLENSAdapter"
+    capture_interval: 5.0
+    fields:
+      - current_page
+      - view_mode
+      - headline_count
+      - headlines
+      - ticker
+      - timestamp
+
+  skin:
+    enabled: true
+    adapter: "ucode1.ceefax.ceetex_app:CeetexSKINAdapter"
+    default: "teletext_classic"
+    options:
+      - teletext_classic
+      - paper_retro
+      - dark_mode
+      - high_vis
+      - amiga_workbench
+
+  mcp:
+    enabled: true
+    controller: "ucode1.ceefax.ceetex_app:CeetexMCPController"
+    commands:
+      - name: PAGE
+        description: "Navigate to a teletext page"
+        args:
+          page: { type: string, required: true }
+      - name: NEXT
+        description: "Next page in sequence"
+      - name: PREV
+        description: "Previous page in sequence"
+      - name: REVEAL
+        description: "Toggle concealed text"
+      - name: SKIN
+        description: "Change visual skin"
+        args:
+          name: { type: string, required: true }
+      - name: STATUS
+        description: "Get current state"
+
+# ── Display Configuration ───────────────────────────────────────────
+
+display:
+  width: 80
+  height: 24
+  title: "Teletext Adventure — Dungeon of Doom"
+  icon: "⚔️"
+
+# ── Key Bindings ────────────────────────────────────────────────────
+
+bindings:
+  - key: escape
+    action: back_to_list
+    description: "Index/Back"
+  - key: home
+    action: go_home
+    description: "Home"
+  - key: q
+    action: quit
+    description: "Quit"
+  - key: s
+    action: cycle_skin
+    description: "Cycle Skin"
+
+# ── Pages Configuration ─────────────────────────────────────────────
+
+pages:
+  config: "adventure_demo/pages.json"

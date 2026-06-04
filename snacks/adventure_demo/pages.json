@@ -1,0 +1,13 @@
+{
+  "100": ["INDEX", ""],
+  "200": ["DUNGEON ENTRANCE", "https://raw.githubusercontent.com/uDosGo/uCode1/main/snacks/adventure_demo/feeds/dungeon_entrance.xml"],
+  "201": ["DARK CORRIDOR", "https://raw.githubusercontent.com/uDosGo/uCode1/main/snacks/adventure_demo/feeds/dark_corridor.xml"],
+  "202": ["TREASURE ROOM", "https://raw.githubusercontent.com/uDosGo/uCode1/main/snacks/adventure_demo/feeds/treasure_room.xml"],
+  "203": ["GOBLIN LAIR", "https://raw.githubusercontent.com/uDosGo/uCode1/main/snacks/adventure_demo/feeds/goblin_lair.xml"],
+  "204": ["SECRET PASSAGE", "https://raw.githubusercontent.com/uDosGo/uCode1/main/snacks/adventure_demo/feeds/secret_passage.xml"],
+  "205": ["DRAGON'S DEN", "https://raw.githubusercontent.com/uDosGo/uCode1/main/snacks/adventure_demo/feeds/dragons_den.xml"],
+  "300": ["INVENTORY", ""],
+  "301": ["PLAYER STATS", ""],
+  "400": ["HELP", ""],
+  "401": ["ABOUT", ""]
+}
