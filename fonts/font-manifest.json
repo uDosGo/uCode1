@@ -1,0 +1,59 @@
+{
+  "manifest_version": "1.0",
+  "description": "uCode1 font manifest — references vendor fonts by path, only mods live in-repo",
+  "vendor_base": "~/Code/Vendor/fonts/retro",
+  "fonts": {
+    "terminal": {
+      "description": "Fonts used in uCode1 Terminal mode",
+      "primary": {
+        "name": "PressStart2P",
+        "style": "NES-style pixel",
+        "vendor_path": "~/Code/Vendor/fonts/retro/PressStart2P-Regular.ttf",
+        "license": "SIL OFL 1.1",
+        "author": "CodeMan38",
+        "mod": "mods/PressStart2P-udos.ttf"
+      },
+      "secondary": {
+        "name": "PetMe128",
+        "style": "C64-style",
+        "vendor_path": "~/Code/Vendor/fonts/retro/PetMe128.ttf",
+        "license": "MIT",
+        "author": "Style-7",
+        "mod": "mods/PetMe128-udos.ttf"
+      },
+      "variant": {
+        "name": "PetMe128 2Y",
+        "style": "C64-style variant",
+        "vendor_path": "~/Code/Vendor/fonts/retro/PetMe1282Y.ttf",
+        "license": "MIT",
+        "author": "Style-7"
+      }
+    },
+    "ceefax": {
+      "description": "Fonts used in uCode1 Ceefax/Teletext mode",
+      "primary": {
+        "name": "Teletext50",
+        "style": "Teletext Mode 7",
+        "vendor_path": "~/Code/Vendor/fonts/retro/Teletext50.otf",
+        "license": "MIT",
+        "author": "Teletext Fonts Project",
+        "mod": "mods/Teletext50-udos.otf"
+      },
+      "condensed": {
+        "name": "Teletext50 Condensed",
+        "style": "Teletext Mode 7 condensed",
+        "vendor_path": "~/Code/Vendor/fonts/retro/Teletext50-condensed.otf",
+        "license": "MIT",
+        "author": "Teletext Fonts Project",
+        "mod": "mods/Teletext50-udos-condensed.otf"
+      }
+    }
+  },
+  "rules": [
+    "Terminal mode uses PressStart2P (NES) or PetMe128 (C64) — no other retro fonts",
+    "Ceefax/Teletext mode uses Teletext50 (standard or condensed) — no other fonts",
+    "No other fonts are used in uCode1 grid modes",
+    "Vendor fonts are never copied into this repo — only referenced by path",
+    "Modified variants (mods/) live in this repo with full attribution"
+  ]
+}

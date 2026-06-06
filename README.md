@@ -42,6 +42,20 @@ Each layer may only depend on layers below it. uCode1 has zero dependencies.
 
 ---
 
+## Documentation
+
+- **[User Guide](docs/USER_GUIDE.md)** — Complete reference covering all 6 parts:
+  - Part A: Core uDos Commands
+  - Part B: BBC BASIC Command Set Reference
+  - Part C: m6502 Emulator & Game-Skit Variables
+  - Part D: Teletext & Ceefax Integration
+  - Part E: Adventure Game Creator & Story Scripting Engine
+  - Part F: Education Program & Curriculum
+- **[BBC BASIC Examples](examples/README.md)** — 5 example programs to get started
+- **[Curriculum Lesson Plans](lessons/README.md)** — 40 lessons across 4 levels
+- **[Ceefax Container Spec](ceefax/spec/README.md)** — Teletext RSS reader service
+- **[Font Manifest](fonts/font-manifest.json)** — Retro font references
+
 ## CLI: `ucode` (Runtime/Educational)
 
 ```
