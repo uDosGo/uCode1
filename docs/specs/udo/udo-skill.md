@@ -1,3 +1,11 @@
+---
+title: "UDO Skill Specification — v1.0"
+status: draft
+last_updated: 2026-05-17T22:11:35+10:00
+category: specification
+tags: [cli, specification, ucode1, udo]
+description: "> **Skill kind — invocable capabilities.** Migrated from OBF v1.0 Skill kind."
+---
 # UDO Skill Specification — v1.0
 
 > **Skill kind — invocable capabilities.** Migrated from OBF v1.0 Skill kind.

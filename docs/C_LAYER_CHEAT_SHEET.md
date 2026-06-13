@@ -1,3 +1,11 @@
+---
+title: "uCode1 C-Layer Character System Cheat Sheet"
+status: draft
+last_updated: 2026-04-25T16:27:54+10:00
+category: documentation
+tags: [ucode1]
+description: "- **CXXX**: Layer number (100-899)"
+---
 # uCode1 C-Layer Character System Cheat Sheet
 
 ## 🎯 Quick Reference

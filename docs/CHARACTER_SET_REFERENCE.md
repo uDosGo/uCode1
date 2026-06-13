@@ -1,3 +1,11 @@
+---
+title: "uCode1 Character Set Reference"
+status: draft
+last_updated: 2026-04-25T16:27:54+10:00
+category: reference
+tags: [reference, ucode1]
+description: "uCode1 implements a sophisticated multi-layered character mapping system that combines modern emoji with retro comput..."
+---
 # uCode1 Character Set Reference
 
 ## Overview

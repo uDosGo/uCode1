@@ -1,3 +1,11 @@
+---
+title: "uCode1 Documentation"
+status: draft
+last_updated: 2026-05-24T12:16:17+10:00
+category: readme
+tags: [ucode1]
+description: "Welcome to the uCode1 documentation hub. uCode1 is the **Text/ASCII/Teletext layer** of the uDos ecosystem — a BBC BA..."
+---
 # uCode1 Documentation
 
 Welcome to the uCode1 documentation hub. uCode1 is the **Text/ASCII/Teletext layer** of the uDos ecosystem — a BBC BASIC-inspired scripting runtime with a spatial grid/cell system.

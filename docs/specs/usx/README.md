@@ -1,3 +1,11 @@
+---
+title: "USX — Unified Surface eXchange Format"
+status: draft
+last_updated: 2026-05-17T22:11:35+10:00
+category: specification
+tags: [specification, surface, ucode1, usx]
+description: "**USX** is the style/design/surface format for the uDos ecosystem, merging the former **OBF** (Open Box Format) and *..."
+---
 # USX — Unified Surface eXchange Format
 
 **USX** is the style/design/surface format for the uDos ecosystem, merging the former **OBF** (Open Box Format) and **USXD** (Universal Surface Definition) into a single, coherent specification.

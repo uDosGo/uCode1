@@ -1,3 +1,11 @@
+---
+title: "uCode1 CLI Command Reference"
+status: draft
+last_updated: 2026-05-10T19:12:56+10:00
+category: reference
+tags: [ucode1]
+description: "The `ucode` command is the **runtime and educational interface** for the uDos ecosystem. It provides BBC BASIC script..."
+---
 # uCode1 CLI Command Reference
 
 ## Overview

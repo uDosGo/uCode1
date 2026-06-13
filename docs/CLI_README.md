@@ -1,3 +1,11 @@
+---
+title: "uCode1 CLI — User Guide"
+status: draft
+last_updated: 2026-05-10T19:12:56+10:00
+category: readme
+tags: [ucode1]
+description: "Welcome to uCode1 — the **Text/ASCII/Teletext layer** of the uDos ecosystem. uCode1 provides a modern BBC BASIC-inspi..."
+---
 # uCode1 CLI — User Guide
 
 ## Introduction

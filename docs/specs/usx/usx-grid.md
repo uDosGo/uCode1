@@ -1,3 +1,11 @@
+---
+title: "USX Grid Specification — v1.0"
+status: draft
+last_updated: 2026-05-17T22:11:35+10:00
+category: specification
+tags: [grid, specification, surface, ucode1, ui, usx]
+description: "> **Grid system, teletext cells, pixel/QR maths, and display sizes.** Merged from grid-spec.md, grid-cell-cube-maths...."
+---
 # USX Grid Specification — v1.0
 
 > **Grid system, teletext cells, pixel/QR maths, and display sizes.** Merged from grid-spec.md, grid-cell-cube-maths.md, and display-sizes.md.

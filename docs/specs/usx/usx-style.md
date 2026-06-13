@@ -1,3 +1,11 @@
+---
+title: "USX Style Specification — v1.0"
+status: draft
+last_updated: 2026-05-17T22:11:35+10:00
+category: specification
+tags: [specification, surface, ucode1, usx]
+description: "> **Style tokens, themes, and font system.** Merged from OBF style guide, VA1 style guide, and Monaspace font system."
+---
 # USX Style Specification — v1.0
 
 > **Style tokens, themes, and font system.** Merged from OBF style guide, VA1 style guide, and Monaspace font system.

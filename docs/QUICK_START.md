@@ -1,3 +1,11 @@
+---
+title: "uCode1 Quick Start Guide"
+status: draft
+last_updated: 2026-04-25T16:27:54+10:00
+category: guide
+tags: [ucode1]
+description: "git clone https://github.com/your-repo/uCode1.git"
+---
 # uCode1 Quick Start Guide
 
 ## Installation

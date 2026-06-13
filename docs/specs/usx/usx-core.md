@@ -1,3 +1,11 @@
+---
+title: "USX Core Specification — v1.0"
+status: draft
+last_updated: 2026-05-17T22:11:35+10:00
+category: specification
+tags: [specification, surface, ucode1, usx]
+description: "> **The style/design/surface format for the uDos ecosystem.** Merged from OBF (Open Box Format) and USXD (Universal S..."
+---
 # USX Core Specification — v1.0
 
 > **The style/design/surface format for the uDos ecosystem.** Merged from OBF (Open Box Format) and USXD (Universal Surface Definition).

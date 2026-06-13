@@ -1,3 +1,11 @@
+---
+title: "UDO — Unified Document Object Format"
+status: draft
+last_updated: 2026-05-17T22:11:35+10:00
+category: specification
+tags: [cli, specification, ucode1, udo]
+description: "**UDO** is the system-layer document format for the uDos ecosystem. It defines structured document kinds for skills, ..."
+---
 # UDO — Unified Document Object Format
 
 **UDO** is the system-layer document format for the uDos ecosystem. It defines structured document kinds for skills, tasks, variables, agents, workflows, and publishing — the "what it does" layer.

@@ -1,3 +1,11 @@
+---
+title: "uCode1 SPRITE & OBJECT Reference"
+status: draft
+last_updated: 2026-04-25T16:27:54+10:00
+category: reference
+tags: [reference, ucode1]
+description: "This document provides a comprehensive reference for **SPRITE** and **OBJECT** cell types in uCode1, including their ..."
+---
 # uCode1 SPRITE & OBJECT Reference
 
 ## Overview

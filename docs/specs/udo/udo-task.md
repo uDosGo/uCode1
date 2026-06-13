@@ -1,3 +1,11 @@
+---
+title: "UDO Task Specification — v1.0"
+status: draft
+last_updated: 2026-05-17T22:11:35+10:00
+category: specification
+tags: [cli, specification, ucode1, udo]
+description: "> **Task kind — work items with state.** Migrated from OBF v1.0 Task kind."
+---
 # UDO Task Specification — v1.0
 
 > **Task kind — work items with state.** Migrated from OBF v1.0 Task kind.

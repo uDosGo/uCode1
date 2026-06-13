@@ -1,3 +1,11 @@
+---
+title: "USX Surface Specification — v1.0"
+status: draft
+last_updated: 2026-05-17T22:11:35+10:00
+category: specification
+tags: [specification, surface, ucode1, usx]
+description: "> **Surface definitions, ASCII blocks, and story format.** Merged from USXD spec, USXD ASCII blocks, USXD-GO, and USX..."
+---
 # USX Surface Specification — v1.0
 
 > **Surface definitions, ASCII blocks, and story format.** Merged from USXD spec, USXD ASCII blocks, USXD-GO, and USXD story format.

@@ -1,3 +1,11 @@
+---
+title: "UDO Core Specification — v1.0"
+status: draft
+last_updated: 2026-05-17T22:11:35+10:00
+category: specification
+tags: [cli, specification, ucode1, udo]
+description: "> **Core format for system-layer documents in the uDos ecosystem.** Migrated from OBF v1.0 system kinds."
+---
 # UDO Core Specification — v1.0
 
 > **Core format for system-layer documents in the uDos ecosystem.** Migrated from OBF v1.0 system kinds.

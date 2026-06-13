@@ -1,3 +1,11 @@
+---
+title: "OBF Core — Redirect"
+status: draft
+last_updated: 2026-05-17T22:11:35+10:00
+category: specification
+tags: [character-set, obf, specification, surface, ucode1, usx]
+description: "> **This spec has been superseded.** The OBF format has been split into two separate specifications:"
+---
 # OBF Core — Redirect
 
 > **This spec has been superseded.** The OBF format has been split into two separate specifications:

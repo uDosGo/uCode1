@@ -1,3 +1,11 @@
+---
+title: "UDO Variable Specification — v1.0"
+status: draft
+last_updated: 2026-05-17T22:11:35+10:00
+category: specification
+tags: [cli, specification, ucode1, udo]
+description: "> **Variable kind — configuration and secrets.** Migrated from OBF v1.0 Variable kind."
+---
 # UDO Variable Specification — v1.0
 
 > **Variable kind — configuration and secrets.** Migrated from OBF v1.0 Variable kind.

@@ -1,3 +1,11 @@
+---
+title: "USX UI Specification — v1.0"
+status: draft
+last_updated: 2026-05-17T22:11:35+10:00
+category: specification
+tags: [specification, surface, ucode1, usx]
+description: "> **UI components, authoring blocks, and grid layouts.** Merged from OBF components, UI blocks, and grid spec."
+---
 # USX UI Specification — v1.0
 
 > **UI components, authoring blocks, and grid layouts.** Merged from OBF components, UI blocks, and grid spec.

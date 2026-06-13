@@ -1,3 +1,11 @@
+---
+title: "uCode1 Spatial-Character Mapping Reference"
+status: draft
+last_updated: 2026-04-25T16:27:54+10:00
+category: reference
+tags: [ucode1]
+description: "L<level>-<gridX><gridY>-<cellX><cellY>-<layer>"
+---
 # uCode1 Spatial-Character Mapping Reference
 
 ## Quick Reference Guide

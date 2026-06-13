@@ -1,3 +1,11 @@
+---
+title: "uCode1 User Guide"
+status: draft
+last_updated: 2026-06-06T12:00:42+10:00
+category: guide
+tags: [guide, ucode1]
+description: "- [Part A: Core uDos Commands](#part-a-core-udos-commands)"
+---
 # uCode1 User Guide
 
 ## Table of Contents

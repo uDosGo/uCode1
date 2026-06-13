@@ -1,3 +1,11 @@
+---
+title: "uCode1 Spatial Grid & Character System Integration"
+status: draft
+last_updated: 2026-04-25T16:27:54+10:00
+category: documentation
+tags: [ucode1]
+description: "This document specifies how the **uCode1 Spatial Grid System** integrates with the **C-Layer Character System** to en..."
+---
 # uCode1 Spatial Grid & Character System Integration
 
 ## Overview

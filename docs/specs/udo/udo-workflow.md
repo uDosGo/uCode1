@@ -1,3 +1,11 @@
+---
+title: "UDO Workflow Specification — v1.0"
+status: draft
+last_updated: 2026-05-17T22:11:35+10:00
+category: specification
+tags: [cli, specification, ucode1, udo]
+description: "> **Workflow kind — multi-step process definitions.** Migrated from OBF v1.0 Workflow kind."
+---
 # UDO Workflow Specification — v1.0
 
 > **Workflow kind — multi-step process definitions.** Migrated from OBF v1.0 Workflow kind.

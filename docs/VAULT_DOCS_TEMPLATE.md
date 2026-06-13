@@ -1,3 +1,11 @@
+---
+title: "uSystem Documentation in Vault"
+status: draft
+last_updated: 2026-04-25T16:27:54+10:00
+category: documentation
+tags: [storage, ucode1, vault]
+description: "**These documents are automatically generated from usystem.db and synced ONE-WAY to your Vault.**"
+---
 # uSystem Documentation in Vault
 
 ## Important Notice
