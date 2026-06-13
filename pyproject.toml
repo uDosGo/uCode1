@@ -44,7 +44,7 @@ Documentation = "https://github.com/uDosGo/uCode1#readme"
 ucode1 = "ucode1.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["ucode1*"]
+include = ["ucode1*", "core_py*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

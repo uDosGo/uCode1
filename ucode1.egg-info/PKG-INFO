@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: ucode1
-Version: 0.1.0
+Version: 1.0.0
 Summary: uCode1 - BASIC-inspired scripting language for uDos ecosystem
 Author-email: uDos Team <team@udos.io>
 License: MIT
@@ -71,6 +71,20 @@ Each layer may only depend on layers below it. uCode1 has zero dependencies.
 
 ---
 
+## Documentation
+
+- **[User Guide](docs/USER_GUIDE.md)** — Complete reference covering all 6 parts:
+  - Part A: Core uDos Commands
+  - Part B: BBC BASIC Command Set Reference
+  - Part C: m6502 Emulator & Game-Skit Variables
+  - Part D: Teletext & Ceefax Integration
+  - Part E: Adventure Game Creator & Story Scripting Engine
+  - Part F: Education Program & Curriculum
+- **[BBC BASIC Examples](examples/README.md)** — 5 example programs to get started
+- **[Curriculum Lesson Plans](lessons/README.md)** — 40 lessons across 4 levels
+- **[Ceefax Container Spec](ceefax/spec/README.md)** — Teletext RSS reader service
+- **[Font Manifest](fonts/font-manifest.json)** — Retro font references
+
 ## CLI: `ucode` (Runtime/Educational)
 
 ```
@@ -91,7 +105,7 @@ ucode <command> [arguments] [flags]
 | `locate` | Position within grid | `ucode locate L100-AA10-0000-0 X=100 Y=50` |
 | `move` | Animate movement | `ucode move L100-AA10-0000-0 TO 200,100 STEP 10` |
 | `collide` | Check collision | `ucode collide L100-AA10-0000-0` |
-| `sound` | Audio playback | `ucode sound play alert.wav` |
+| `sound` | Audio playback | `ucode play sound alert.wav` |
 | `print` | Output to console | `ucode print "Hello, uDos!"` |
 | `input` | Read user input | `ucode input "Your name? " name$` |
 | `let` | Variable assignment | `ucode let score = 100` |
@@ -109,7 +123,7 @@ uCode1 (Python)
 ├── Teletext Renderer — MODE 7 character graphics
 ├── Ceefax Bridge     — Teletext grid rendering + CEETEX RSS reader
 ├── Snack System      — Pluggable app runner (textual-based)
-├── LENS/SKIN/MCP     — State capture, theme hot-reload, remote control
+├── LENS/SKIN/MCP     — State capture, theme hot-reload, remote control (⚠️ "MCP" here = Mini Control Protocol, an internal uCode1 IPC mechanism — NOT the Model Context Protocol used by uCode2's MCP Gateway)
 ├── UDO Runtime       — Agentic workflow engine (skills, tasks, agents)
 └── CLI               — Command-line interface
 ```
