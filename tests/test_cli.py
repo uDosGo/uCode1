@@ -20,4 +20,5 @@ def test_cli_has_get_runtime():
     from ucode1.cli import _get_runtime
     runtime = _get_runtime()
     # Runtime may not exist yet, but should not crash
-    assert runtime is None or hasattr(runtime, 'run')
+    assert runtime is None or hasattr(runtime, 'list_skills')
+

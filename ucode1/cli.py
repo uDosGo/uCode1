@@ -8,7 +8,6 @@ Usage:
 Options:
   --help       Show this help
   --version    Show version
-  --rust       Enable Rust acceleration (if available)
   --repl       Start interactive REPL
   --debug      Enable debug output
 
@@ -26,12 +25,81 @@ import argparse
 
 
 def _get_runtime():
-    """Lazy import of Runtime to avoid import errors when module doesn't exist."""
+    """Lazy import of UDORuntime from core_py.udo_runtime."""
     try:
-        from .runtime import Runtime
-        return Runtime()
+        from core_py.udo_runtime import UDORuntime
+        return UDORuntime()
     except ImportError:
         return None
+
+
+def _get_liquid_engine():
+    """Lazy import of LiquidEngine from core_py.liquid_engine."""
+    try:
+        from core_py.liquid_engine import LiquidEngine
+        return LiquidEngine()
+    except ImportError:
+        return None
+
+
+def _run_bas_file(filepath: str) -> None:
+    """Render a .bas file through the Liquid engine.
+    
+    .bas files are BBC BASIC-style programs. The Liquid engine renders
+    any Liquid template syntax within them. Full BASIC execution requires
+    a BASIC interpreter (planned for future release).
+    """
+    engine = _get_liquid_engine()
+    if engine is None:
+        print("Error: Liquid engine not available")
+        sys.exit(1)
+    
+    with open(filepath, 'r') as f:
+        source = f.read()
+    
+    result = engine.render(source, {"file": filepath})
+    print(result)
+
+
+def _run_repl(runtime) -> None:
+    """Start an interactive REPL using UDORuntime."""
+    import sys as _sys
+    
+    print("uCode1 REPL (UDO Runtime mode)")
+    print("Type 'exit' to quit")
+    print("Available: list_skills, list_tasks, list_variables, run_skill <id>")
+    
+    while True:
+        try:
+            line = input("> ")
+            if line.lower() in ['exit', 'quit']:
+                break
+            parts = line.strip().split()
+            if not parts:
+                continue
+            cmd = parts[0].lower()
+            if cmd == 'list_skills':
+                for s in runtime.list_skills():
+                    print(f"  {s.id}: {s.name} ({'enabled' if s.enabled else 'disabled'})")
+            elif cmd == 'list_tasks':
+                for t in runtime.list_tasks():
+                    print(f"  {t.id}: {t.type} (priority {t.priority})")
+            elif cmd == 'list_variables':
+                for v in runtime.list_variables():
+                    print(f"  {v.key} = {'***' if v.encrypted else v.value} ({v.scope})")
+            elif cmd == 'run_skill' and len(parts) >= 2:
+                result = runtime.run_skill(parts[1])
+                print(f"Result: {result}")
+            else:
+                print(f"Unknown command: {cmd}")
+        except EOFError:
+            print()
+            break
+        except KeyboardInterrupt:
+            print("\nUse 'exit' to quit")
+        except Exception as e:
+            print(f"Error: {e}")
+
 
 
 def main():
@@ -45,13 +113,11 @@ def main():
         description='uCode1 - BASIC-inspired scripting language',
         add_help=False
     )
-    parser.add_argument('file', nargs='?', help='uCode1 program file')
+    parser.add_argument('file', nargs='?', help='uCode1 program file (.bas)')
     parser.add_argument('--help', action='store_true', help='Show this help message')
     parser.add_argument('--version', action='version', 
-                       version='uCode1 0.1.0',
+                       version='uCode1 1.0.0',
                        help='Show version')
-    parser.add_argument('--rust', action='store_true',
-                       help='Enable Rust acceleration (if available)')
     parser.add_argument('--repl', action='store_true',
                        help='Start interactive REPL')
     parser.add_argument('--debug', action='store_true',
@@ -63,37 +129,18 @@ def main():
         parser.print_help()
         return
     
-    runtime = _get_runtime()
-    if runtime is None:
-        print("Error: uCode1 runtime module not available")
-        sys.exit(1)
-    
     if args.repl:
-        print("uCode1 REPL (Python mode)")
-        print("Type 'exit' to quit")
-        
-        while True:
-            try:
-                line = input("> ")
-                if line.lower() in ['exit', 'quit']:
-                    break
-                runtime.run_string(line)
-            except KeyboardInterrupt:
-                print("\nUse 'exit' to quit")
-            except Exception as e:
-                print(f"Error: {e}")
+        runtime = _get_runtime()
+        if runtime is None:
+            print("Error: uCode1 runtime module not available")
+            sys.exit(1)
+        _run_repl(runtime)
     elif args.file:
-        try:
-            runtime.run_file(args.file)
-        except FileNotFoundError:
-            print(f"File not found: {args.file}")
-            sys.exit(1)
-        except Exception as e:
-            print(f"Error: {e}")
-            sys.exit(1)
+        _run_bas_file(args.file)
     else:
         parser.print_help()
 
 
 if __name__ == '__main__':
     main()
+
